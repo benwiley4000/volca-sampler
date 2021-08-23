@@ -74,6 +74,7 @@ function App() {
   const handleBeginRecording = useCallback(async () => {
     const { mediaRecording, stop } = await captureAudio({
       deviceId: selectedCaptureDeviceId,
+      channelCount: selectedChannelCount,
       onStart: () => setCaptureState('capturing'),
     });
     setStop({ fn: stop });

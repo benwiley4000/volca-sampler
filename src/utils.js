@@ -277,16 +277,17 @@ export async function getAudioInputDevices() {
 /**
  * @param {{
  *   deviceId: string;
+ *   channelCount: number;
  *   onStart: () => void;
  * }} options
  * @returns {Promise<{ mediaRecording: Promise<Uint8Array>; stop: () => void }>}
  */
-export async function captureAudio({ deviceId, onStart }) {
+export async function captureAudio({ deviceId, channelCount, onStart }) {
   const stream = await navigator.mediaDevices.getUserMedia({
     // TODO: support more recording configuration options
     // https://developer.mozilla.org/en-US/docs/Web/API/MediaTrackConstraints#properties_of_audio_tracks
-    // autoGainControl, channelCount, echoCancellation, latency, noiseSuppression, volume
-    audio: { deviceId, sampleRate: SAMPLE_RATE },
+    // autoGainControl, echoCancellation, latency, noiseSuppression, volume
+    audio: { deviceId, channelCount, sampleRate: SAMPLE_RATE },
     video: false,
   });
   const options = { mimeType: 'audio/webm' };

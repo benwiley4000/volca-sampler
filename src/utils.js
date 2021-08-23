@@ -290,12 +290,11 @@ export async function captureAudio({ deviceId, channelCount, onStart }) {
     audio: { deviceId, channelCount, sampleRate: SAMPLE_RATE },
     video: false,
   });
-  const options = { mimeType: 'audio/webm' };
   const timeLimit = 10000; // 10 seconds
   const timeslice = 1000;
   let timeRecorded = 0;
   const recordedChunks = [];
-  const mediaRecorder = new MediaRecorder(stream, options);
+  const mediaRecorder = new MediaRecorder(stream);
   let stopped = false;
   function stop() {
     mediaRecorder.stop();

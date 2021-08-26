@@ -290,74 +290,99 @@ export async function captureAudio({ deviceId, channelCount, onStart }) {
     audio: { deviceId, channelCount, sampleRate: SAMPLE_RATE },
     video: false,
   });
-  const timeLimit = 10000; // 10 seconds
-  const timeslice = 1000;
-  let timeRecorded = 0;
-  const recordedChunks = [];
-  const mediaRecorder = new MediaRecorder(stream);
+  const timeLimitSeconds = 10;
+  const maxSamples = timeLimitSeconds * SAMPLE_RATE;
+  let samplesRecorded = 0;
+  /**
+   * @type {Float32Array[][]}
+   */
+  const recordedChunks = Array(channelCount).fill([]);
+  const audioContext = getAudioContext();
+  const mediaStreamSourceNode = audioContext.createMediaStreamSource(stream);
+  const recorderNode = audioContext.createScriptProcessor(
+    1024,
+    channelCount,
+    channelCount
+  );
+  // to be set by user if they want to stop recording before time limit reached
   let stopped = false;
-  function stop() {
-    mediaRecorder.stop();
-    stopped = true;
-  }
-  mediaRecorder.addEventListener('dataavailable', (e) => {
-    if (e.data.size > 0) {
-      recordedChunks.push(e.data);
-    }
-    timeRecorded += timeslice;
-    if (!stopped && timeRecorded >= timeLimit) {
-      stop();
-    }
-  });
-  mediaRecorder.addEventListener('start', onStart);
-  return {
-    stop,
-    mediaRecording: new Promise((resolve, reject) => {
-      mediaRecorder.addEventListener('error', (e) =>
-        reject(
-          new Error(/** @type {MediaRecorderErrorEvent} */ (e).error.message)
-        )
+  recorderNode.onaudioprocess = (e) => {
+    /**
+     * @type {number}
+     */
+    let sampleCount;
+    for (let channel = 0; channel < channelCount; channel++) {
+      const chunk = e.inputBuffer.getChannelData(channel);
+      const chunkSize = chunk.length;
+      const chunkSliced = chunk.slice(
+        0,
+        Math.min(chunkSize, maxSamples - samplesRecorded)
       );
-      mediaRecorder.addEventListener('stop', () => {
-        try {
-          const blob = new Blob(recordedChunks);
-          recordedChunks.splice(0, recordedChunks.length);
-          var fileReader = new FileReader();
-          fileReader.onload = async (event) => {
-            const arrayBuffer = event.target.result;
-            if (!(arrayBuffer instanceof ArrayBuffer)) {
-              reject(new Error('Expected ArrayBuffer'));
-              return;
-            }
-            try {
-              const audioBuffer = await getAudioBufferForAudioFileData(
-                new Uint8Array(arrayBuffer)
-              );
-              /**
-               * @type {Float32Array[]}
-               */
-              const samples = [];
-              for (let i = 0; i < audioBuffer.numberOfChannels; i++) {
-                samples.push(audioBuffer.getChannelData(i));
-              }
-              const wav = new WaveFile();
-              wav.fromScratch(
-                samples.length,
-                audioBuffer.sampleRate,
-                '32f',
-                samples
-              );
-              resolve(wav.toBuffer());
-            } catch (err) {
-              reject(new Error(err));
-            }
-          };
-          fileReader.readAsArrayBuffer(blob);
-        } catch (err) {
-          reject(new Error(err));
+      if (sampleCount === undefined) {
+        sampleCount = chunkSliced.length;
+      }
+      recordedChunks[channel].push(chunkSliced);
+    }
+    samplesRecorded += sampleCount;
+    // should never be >, but just in case we did something wrong we use >=
+    if (samplesRecorded >= maxSamples || stopped) {
+      finish();
+    }
+  };
+  mediaStreamSourceNode.connect(recorderNode);
+  recorderNode.connect(audioContext.destination);
+  onStart();
+  /**
+   * @type {(wavBuffer: Uint8Array) => void}
+   */
+  let onDone;
+  /**
+   * @type {(error: unknown) => void}
+   */
+  let onError;
+  let finished = false;
+  function finish() {
+    if (finished) {
+      return;
+    }
+
+    // create wav file
+    try {
+      const samples = recordedChunks.map((chunks) => {
+        const merged = new Float32Array(
+          chunks.reduce((len, chunk) => len + chunk.length, 0)
+        );
+        let offset = 0;
+        for (const chunk of chunks) {
+          merged.set(chunk, offset);
+          offset += chunk.length;
         }
+        return merged;
       });
-      mediaRecorder.start(timeslice);
+      const wav = new WaveFile();
+      wav.fromScratch(samples.length, SAMPLE_RATE, '32f', samples);
+      onDone(wav.toBuffer());
+    } catch (err) {
+      onError(err);
+    }
+
+    // clean up
+    const tracks = stream.getTracks();
+    for (const track of tracks) {
+      track.stop();
+    }
+    recorderNode.disconnect(audioContext.destination);
+    mediaStreamSourceNode.disconnect(recorderNode);
+    finished = true;
+  }
+  return {
+    stop: () => {
+      // will cause the promise to settle on the next audioprocess event
+      stopped = true;
+    },
+    mediaRecording: new Promise((resolve, reject) => {
+      onDone = resolve;
+      onError = reject;
     }),
   };
 }

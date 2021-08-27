@@ -115,6 +115,7 @@ export async function convertWavTo16BitMono(sampleContainer) {
     applyQualityBitDepthToSamples(samples, qualityBitDepth);
   }
   const samples16 = convertSamplesTo16Bit(samples);
+  const samplesByteLength = samples16.length * 2;
   /**
    * @type {Uint8Array}
    */
@@ -122,9 +123,9 @@ export async function convertWavTo16BitMono(sampleContainer) {
     channels: 1,
     sampleRate: wavSrcAudioBuffer.sampleRate,
     bitDepth: 16,
-    dataLength: samples16.length,
+    dataLength: samplesByteLength,
   });
-  const wavBuffer = new Uint8Array(wavHeader.length + samples16.length * 2);
+  const wavBuffer = new Uint8Array(wavHeader.length + samplesByteLength);
   wavBuffer.set(wavHeader);
   wavBuffer.set(new Uint8Array(samples16.buffer), wavHeader.length);
   return {

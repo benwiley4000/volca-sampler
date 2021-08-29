@@ -98,7 +98,7 @@ function App() {
     setSamples((samples) => [sample, ...samples]);
     setFocusedSampleIndex(0);
     setCaptureState('idle');
-  }, [selectedCaptureDeviceId]);
+  }, [selectedCaptureDeviceId, selectedChannelCount]);
 
   return (
     <div>

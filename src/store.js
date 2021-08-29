@@ -13,7 +13,7 @@ import { v4 as uuidv4 } from 'uuid';
  * @property {number} [dateModified]
  * @property {boolean} [useCompression]
  * @property {number} [qualityBitDepth]
- * @property {boolean} [normalize]
+ * @property {number | false} [normalize]
  * @property {[number, number]} [clip]
  */
 
@@ -26,7 +26,7 @@ import { v4 as uuidv4 } from 'uuid';
  * @property {number} dateModified
  * @property {boolean} useCompression
  * @property {number} qualityBitDepth
- * @property {boolean} normalize
+ * @property {number | false} normalize
  * @property {[number, number]} clip
  * @property {string} metadataVersion
  */
@@ -37,7 +37,7 @@ import { v4 as uuidv4 } from 'uuid';
  * @property {number} [slotNumber]
  * @property {boolean} [useCompression]
  * @property {number} [qualityBitDepth]
- * @property {boolean} [normalize]
+ * @property {number | false} [normalize]
  * @property {[number, number]} [clip]
  */
 

@@ -234,7 +234,7 @@ export class SampleContainer {
         return new SampleContainer({ id, ...metadata });
       })
       .filter(Boolean)
-      .sort((a, b) => b.metadata.dateSampled - a.metadata.dateSampled);
+      .sort((a, b) => b.metadata.dateModified - a.metadata.dateModified);
     return sampleContainers;
   }
 }

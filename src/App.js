@@ -201,7 +201,7 @@ function App() {
           (() => {
             const sample = focusedSampleId && samples.get(focusedSampleId);
             if (!sample) {
-              return 'Loading...';
+              return;
             }
             return (
               <div>

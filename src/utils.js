@@ -3,6 +3,7 @@
 import getWavFileHeaders from 'wav-headers';
 import { WaveFile } from 'wavefile';
 
+import { SampleContainer } from './store';
 import { getSyroBindings } from './getSyroBindings';
 
 /**
@@ -20,7 +21,7 @@ function getClippedView(array, clipFrames) {
  * @param {AudioBuffer} audioBuffer
  * @param {[number, number]} clipFrames
  */
-function getMonoSamplesFromAudioBuffer(audioBuffer, clipFrames) {
+export function getMonoSamplesFromAudioBuffer(audioBuffer, clipFrames) {
   const clippedLength = audioBuffer.length - clipFrames[0] - clipFrames[1];
   const samples = new Float32Array(clippedLength);
   const channels = Array(audioBuffer.numberOfChannels)
@@ -42,7 +43,7 @@ function getMonoSamplesFromAudioBuffer(audioBuffer, clipFrames) {
  * @param {Float32Array} samples array of floats between -1 and 1
  * @returns {number} peak value between 0 and 1
  */
-function findSamplePeak(samples) {
+export function findSamplePeak(samples) {
   let peak = 0;
   for (const sample of samples) {
     const abs = Math.abs(sample);
@@ -119,7 +120,9 @@ export async function convertWavTo16BitMono(sampleContainer) {
     );
   }
   const wavSrcAudioBuffer = await getAudioBufferForAudioFileData(
-    await sampleContainer.getSourceFileData()
+    await SampleContainer.getSourceFileData(
+      sampleContainer.metadata.sourceFileId
+    )
   );
   const clipFrames = /** @type {[number, number]} */ (
     clip.map((c) => c * wavSrcAudioBuffer.sampleRate)

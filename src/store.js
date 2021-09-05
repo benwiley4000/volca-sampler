@@ -107,63 +107,6 @@ export class SampleContainer {
     });
   }
 
-  /**
-   * @private
-   * @type {Map<string, Uint8Array>}
-   */
-  static sourceFileData = new Map();
-
-  /**
-   * @private
-   * @type {string[]}
-   */
-  static recentlyCachedSourceFileIds = [];
-
-  /** @readonly @private */
-  static MAX_CACHED = 10;
-
-  /**
-   * @param {string} sourceFileId
-   * @param {Uint8Array} data
-   */
-  static cacheSourceFileData(sourceFileId, data) {
-    this.sourceFileData.set(sourceFileId, data);
-    this.recentlyCachedSourceFileIds = [
-      sourceFileId,
-      ...this.recentlyCachedSourceFileIds.filter((id) => id !== sourceFileId),
-    ];
-    const stale = this.recentlyCachedSourceFileIds.slice(this.MAX_CACHED);
-    for (const sourceFileId of stale) {
-      this.sourceFileData.delete(sourceFileId);
-    }
-    this.recentlyCachedSourceFileIds = this.recentlyCachedSourceFileIds.slice(
-      0,
-      this.MAX_CACHED
-    );
-  }
-
-  /**
-   * @returns {Promise<Uint8Array>}
-   */
-  async getSourceFileData() {
-    const { sourceFileId } = this.metadata;
-    if (SampleContainer.sourceFileData.has(sourceFileId)) {
-      return SampleContainer.sourceFileData.get(sourceFileId);
-    }
-    /**
-     * @type {unknown}
-     */
-    const data = await wavDataStore.getItem(sourceFileId);
-    if (data) {
-      if (data instanceof Uint8Array) {
-        SampleContainer.cacheSourceFileData(sourceFileId, data);
-        return data;
-      }
-      return Promise.reject('Source data is of unexpected type');
-    }
-    return Promise.reject('Missing source data');
-  }
-
   async persist() {
     await sampleMetadataStore.setItem(this.id, this.metadata);
   }
@@ -200,6 +143,63 @@ export class SampleContainer {
 
   async remove() {
     await sampleMetadataStore.removeItem(this.id);
+  }
+
+  /**
+   * @private
+   * @type {Map<string, Uint8Array>}
+   */
+  static sourceFileData = new Map();
+
+  /**
+   * @private
+   * @type {string[]}
+   */
+  static recentlyCachedSourceFileIds = [];
+
+  /** @readonly @private */
+  static MAX_CACHED = 10;
+
+  /**
+   * @param {string} sourceFileId
+   * @param {Uint8Array} data
+   */
+  static cacheSourceFileData(sourceFileId, data) {
+    this.sourceFileData.set(sourceFileId, data);
+    this.recentlyCachedSourceFileIds = [
+      sourceFileId,
+      ...this.recentlyCachedSourceFileIds.filter((id) => id !== sourceFileId),
+    ];
+    const stale = this.recentlyCachedSourceFileIds.slice(this.MAX_CACHED);
+    for (const sourceFileId of stale) {
+      this.sourceFileData.delete(sourceFileId);
+    }
+    this.recentlyCachedSourceFileIds = this.recentlyCachedSourceFileIds.slice(
+      0,
+      this.MAX_CACHED
+    );
+  }
+
+  /**
+   * @param {string} sourceFileId
+   * @returns {Promise<Uint8Array>}
+   */
+  static async getSourceFileData(sourceFileId) {
+    if (this.sourceFileData.has(sourceFileId)) {
+      return this.sourceFileData.get(sourceFileId);
+    }
+    /**
+     * @type {unknown}
+     */
+    const data = await wavDataStore.getItem(sourceFileId);
+    if (data) {
+      if (data instanceof Uint8Array) {
+        this.cacheSourceFileData(sourceFileId, data);
+        return data;
+      }
+      return Promise.reject('Source data is of unexpected type');
+    }
+    return Promise.reject('Missing source data');
   }
 
   static async getAllFromStorage() {

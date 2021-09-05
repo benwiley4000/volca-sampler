@@ -1,5 +1,3 @@
-// @ts-check
-
 import getWavFileHeaders from 'wav-headers';
 import { WaveFile } from 'wavefile';
 
@@ -24,7 +22,7 @@ function getClippedView(array, clipFrames) {
 export function getMonoSamplesFromAudioBuffer(audioBuffer, clipFrames) {
   const clippedLength = audioBuffer.length - clipFrames[0] - clipFrames[1];
   const samples = new Float32Array(clippedLength);
-  const channels = Array(audioBuffer.numberOfChannels)
+  const channels = /** @type {void[]} */ (Array(audioBuffer.numberOfChannels))
     .fill()
     .map((_, i) => getClippedView(audioBuffer.getChannelData(i), clipFrames));
   for (let i = 0; i < clippedLength; i++) {
@@ -189,40 +187,42 @@ export async function getSampleBuffer(sampleContainer, onProgress) {
   const bufferSize = getSampleBufferSize();
   const resultView = new Uint8Array(heap8Buffer(), bufferPointer, bufferSize);
   onProgress(getSampleBufferProgress() / bufferSize);
-  await new Promise((resolve, reject) => {
-    const targetIterationTime = 10;
-    // assume we're behind at the start, to avoid starting with a long frame
-    let lastTime = targetIterationTime * 2;
-    let lastIterationInterval = 100_000;
-    requestAnimationFrame(iterate);
-    function iterate() {
-      if (getSampleBufferProgress() >= bufferSize) {
-        resolve();
-        return;
-      }
-      const correctionCoefficient = targetIterationTime / lastTime;
-      const iterationInterval = Math.max(
-        Math.round(lastIterationInterval * correctionCoefficient),
-        1
-      );
-      const before = performance.now();
-      try {
-        iterateSampleBuffer(iterationInterval);
-      } catch (err) {
-        reject(err);
-        return;
-      }
-      lastTime = performance.now() - before;
-      if (lastTime === 0) {
-        // to avoid divide-by-zero due to potential rounding in Firefox
-        // https://developer.mozilla.org/en-US/docs/Web/API/Performance/now#reduced_time_precision
-        lastTime = 0.5;
-      }
-      lastIterationInterval = iterationInterval;
-      onProgress(getSampleBufferProgress() / bufferSize);
+  await /** @type {Promise<void>} */ (
+    new Promise((resolve, reject) => {
+      const targetIterationTime = 10;
+      // assume we're behind at the start, to avoid starting with a long frame
+      let lastTime = targetIterationTime * 2;
+      let lastIterationInterval = 100_000;
       requestAnimationFrame(iterate);
-    }
-  });
+      function iterate() {
+        if (getSampleBufferProgress() >= bufferSize) {
+          resolve();
+          return;
+        }
+        const correctionCoefficient = targetIterationTime / lastTime;
+        const iterationInterval = Math.max(
+          Math.round(lastIterationInterval * correctionCoefficient),
+          1
+        );
+        const before = performance.now();
+        try {
+          iterateSampleBuffer(iterationInterval);
+        } catch (err) {
+          reject(err);
+          return;
+        }
+        lastTime = performance.now() - before;
+        if (lastTime === 0) {
+          // to avoid divide-by-zero due to potential rounding in Firefox
+          // https://developer.mozilla.org/en-US/docs/Web/API/Performance/now#reduced_time_precision
+          lastTime = 0.5;
+        }
+        lastIterationInterval = iterationInterval;
+        onProgress(getSampleBufferProgress() / bufferSize);
+        requestAnimationFrame(iterate);
+      }
+    })
+  );
   // save a new copy of the data before freeing the result
   const sampleBuffer = new Uint8Array(resultView);
   freeSampleBuffer();
@@ -334,7 +334,7 @@ export async function captureAudio({ deviceId, channelCount, onStart }) {
     /**
      * @type {number}
      */
-    let sampleCount;
+    let sampleCount = 0;
     for (let channel = 0; channel < channelCount; channel++) {
       const chunk = e.inputBuffer.getChannelData(channel);
       const chunkSize = chunk.length;
@@ -342,7 +342,7 @@ export async function captureAudio({ deviceId, channelCount, onStart }) {
         0,
         Math.min(chunkSize, maxSamples - samplesRecorded)
       );
-      if (sampleCount === undefined) {
+      if (!sampleCount) {
         sampleCount = chunkSliced.length;
       }
       recordedChunks[channel].push(chunkSliced);

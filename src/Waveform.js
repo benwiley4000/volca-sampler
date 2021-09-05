@@ -71,7 +71,7 @@ function Waveform({ sample, onSetClip, onSetNormalize }) {
   /**
    * @type {React.RefObject<HTMLDivElement>}
    */
-  const ref = useRef();
+  const ref = useRef(null);
   const groupWidth = 6;
   const peaks = useMemo(() => {
     const pixelWidth = ref.current && ref.current.offsetWidth;

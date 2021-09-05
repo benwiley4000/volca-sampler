@@ -1,5 +1,3 @@
-// @ts-check
-
 import React, { useCallback, useEffect, useState } from 'react';
 
 import Waveform from './Waveform';
@@ -125,7 +123,7 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (samples.size && !samples.has(focusedSampleId)) {
+    if (samples.size && !(focusedSampleId && samples.has(focusedSampleId))) {
       setFocusedSampleId([...samples.values()][0].id);
     }
   }, [samples, focusedSampleId]);
@@ -201,7 +199,7 @@ function App() {
       <div className={classes.focusedSample}>
         {captureState === 'idle' ? (
           (() => {
-            const sample = samples.get(focusedSampleId);
+            const sample = focusedSampleId && samples.get(focusedSampleId);
             if (!sample) {
               return 'Loading...';
             }
@@ -453,8 +451,9 @@ function App() {
                         onClick={() => setSelectedChannelCount(count)}
                         disabled={
                           !captureDevices.has(selectedCaptureDeviceId) ||
-                          captureDevices.get(selectedCaptureDeviceId)
-                            .channelsAvailable < count
+                          /** @type {import('./utils').AudioDeviceInfoContainer} */ (
+                            captureDevices.get(selectedCaptureDeviceId)
+                          ).channelsAvailable < count
                         }
                       >
                         {count}

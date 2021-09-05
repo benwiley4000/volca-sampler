@@ -1,5 +1,3 @@
-// @ts-check
-
 import localforage from 'localforage';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -185,8 +183,11 @@ export class SampleContainer {
    * @returns {Promise<Uint8Array>}
    */
   static async getSourceFileData(sourceFileId) {
-    if (this.sourceFileData.has(sourceFileId)) {
-      return this.sourceFileData.get(sourceFileId);
+    {
+      const data = this.sourceFileData.get(sourceFileId);
+      if (data) {
+        return data;
+      }
     }
     /**
      * @type {unknown}
@@ -220,21 +221,22 @@ export class SampleContainer {
       }
     });
     const sourceIds = await wavDataStore.keys();
-    const sampleContainers = [...sampleMetadata]
-      .map(([id, metadata]) => {
-        const { sourceFileId } = metadata;
-        if (!sourceIds.includes(sourceFileId)) {
-          console.warn(
-            `Found metadata "${
-              metadata.name || id
-            }" with missing data "${sourceFileId}; ignoring.`
-          );
-          return null;
-        }
-        return new SampleContainer({ id, ...metadata });
-      })
-      .filter(Boolean)
-      .sort((a, b) => b.metadata.dateModified - a.metadata.dateModified);
+    const sampleContainers = /** @type {SampleContainer[]} */ (
+      [...sampleMetadata]
+        .map(([id, metadata]) => {
+          const { sourceFileId } = metadata;
+          if (!sourceIds.includes(sourceFileId)) {
+            console.warn(
+              `Found metadata "${
+                metadata.name || id
+              }" with missing data "${sourceFileId}; ignoring.`
+            );
+            return null;
+          }
+          return new SampleContainer({ id, ...metadata });
+        })
+        .filter(Boolean)
+    ).sort((a, b) => b.metadata.dateModified - a.metadata.dateModified);
     return sampleContainers;
   }
 }

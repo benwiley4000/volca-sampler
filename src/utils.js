@@ -299,6 +299,111 @@ export async function getAudioInputDevices() {
 }
 
 /**
+ * @typedef {Omit<AudioWorkletNode, 'parameters'> & {
+ *   parameters: Map<'isRecording' | 'bufferSize', AudioParam>
+ * }} TAudioWorkletNode
+ */
+
+/**
+ * @typedef {{
+ *  channelCount: number;
+ *  onData: (audioChannels: Float32Array[]) => void;
+ *  onFinish: () => void;
+ * }} PcmRecorderNodeOptions
+ */
+
+/**
+ * @type {Promise<void> | undefined}
+ */
+let recorderWorkletProcessorPromise;
+/**
+ * @param {PcmRecorderNodeOptions} options
+ * @returns {Promise<{ recorderNode: TAudioWorkletNode; stop: () => void }>}
+ */
+async function createAudioWorkletPcmRecorderNode({ onData, onFinish }) {
+  const audioContext = getAudioContext();
+  recorderWorkletProcessorPromise =
+    recorderWorkletProcessorPromise ||
+    audioContext.audioWorklet.addModule('/recorderWorkletProcessor.js');
+  await recorderWorkletProcessorPromise;
+  const recorderNode = /** @type {TAudioWorkletNode} */ (
+    new AudioWorkletNode(audioContext, 'recorder-worklet', {
+      parameterData: {
+        bufferSize: 1024,
+      },
+    })
+  );
+  recorderNode.port.onmessage = (e) => {
+    if (e.data.eventType === 'data') {
+      /**
+       * @type {Float32Array[]}
+       */
+      const audioChannels = e.data.audioChannels;
+      onData(audioChannels);
+    }
+
+    if (e.data.eventType === 'stop') {
+      onFinish();
+    }
+  };
+  const isRecordingParam = /** @type {AudioParam} */ (
+    recorderNode.parameters.get('isRecording')
+  );
+  isRecordingParam.setValueAtTime(1, audioContext.currentTime);
+  return {
+    recorderNode,
+    stop() {
+      isRecordingParam.setValueAtTime(0, audioContext.currentTime);
+    },
+  };
+}
+
+/**
+ * @param {PcmRecorderNodeOptions} options
+ * @returns {{ recorderNode: ScriptProcessorNode; stop: () => void }}
+ */
+function createScriptProcessorPcmRecorderNode({
+  channelCount,
+  onData,
+  onFinish,
+}) {
+  const audioContext = getAudioContext();
+  const recorderNode = audioContext.createScriptProcessor(
+    1024,
+    channelCount,
+    channelCount
+  );
+  // to be set by user if they want to stop recording before time limit reached
+  let stopped = false;
+  recorderNode.onaudioprocess = (e) => {
+    const audioChannels = /** @type {void[]} */ (Array(channelCount))
+      .fill()
+      .map((_, i) => e.inputBuffer.getChannelData(i));
+    onData(audioChannels);
+    if (stopped) {
+      onFinish();
+    }
+  };
+  return {
+    recorderNode,
+    stop() {
+      stopped = true;
+    },
+  };
+}
+
+/**
+ * @param {PcmRecorderNodeOptions} options
+ * @returns {Promise<{ recorderNode: AudioNode; stop: () => void }>}
+ */
+async function createPcmRecorderNode(options) {
+  if (typeof AudioWorkletNode === 'undefined') {
+    return createScriptProcessorPcmRecorderNode(options);
+  }
+  return await createAudioWorkletPcmRecorderNode(options);
+}
+
+/**
  * @param {{
  *   deviceId: string;
  *   channelCount: number;
@@ -314,6 +419,17 @@ export async function captureAudio({ deviceId, channelCount, onStart }) {
     audio: { deviceId, channelCount, sampleRate: SAMPLE_RATE },
     video: false,
   });
+  const audioContext = getAudioContext();
+  const mediaStreamSourceNode = audioContext.createMediaStreamSource(stream);
+  const { recorderNode, stop } = await createPcmRecorderNode({
+    channelCount,
+    onData,
+    onFinish,
+  });
+  mediaStreamSourceNode.connect(recorderNode);
+  recorderNode.connect(audioContext.destination);
+  onStart();
+
   const timeLimitSeconds = 10;
   const maxSamples = timeLimitSeconds * SAMPLE_RATE;
   let samplesRecorded = 0;
@@ -321,22 +437,17 @@ export async function captureAudio({ deviceId, channelCount, onStart }) {
    * @type {Float32Array[][]}
    */
   const recordedChunks = Array(channelCount).fill([]);
-  const audioContext = getAudioContext();
-  const mediaStreamSourceNode = audioContext.createMediaStreamSource(stream);
-  const recorderNode = audioContext.createScriptProcessor(
-    1024,
-    channelCount,
-    channelCount
-  );
-  // to be set by user if they want to stop recording before time limit reached
-  let stopped = false;
-  recorderNode.onaudioprocess = (e) => {
+
+  /**
+   * @param {Float32Array[]} audioChannels
+   */
+  function onData(audioChannels) {
     /**
      * @type {number}
      */
     let sampleCount = 0;
     for (let channel = 0; channel < channelCount; channel++) {
-      const chunk = e.inputBuffer.getChannelData(channel);
+      const chunk = audioChannels[channel];
       const chunkSize = chunk.length;
       const chunkSliced = chunk.slice(
         0,
@@ -349,13 +460,12 @@ export async function captureAudio({ deviceId, channelCount, onStart }) {
     }
     samplesRecorded += sampleCount;
     // should never be >, but just in case we did something wrong we use >=
-    if (samplesRecorded >= maxSamples || stopped) {
-      finish();
+    if (samplesRecorded >= maxSamples) {
+      onFinish();
+      stop();
     }
-  };
-  mediaStreamSourceNode.connect(recorderNode);
-  recorderNode.connect(audioContext.destination);
-  onStart();
+  }
+
   /**
    * @type {(wavBuffer: Uint8Array) => void}
    */
@@ -364,8 +474,16 @@ export async function captureAudio({ deviceId, channelCount, onStart }) {
    * @type {(error: unknown) => void}
    */
   let onError;
+  /**
+   * @type {Promise<Uint8Array>}
+   */
+  const mediaRecording = new Promise((resolve, reject) => {
+    onDone = resolve;
+    onError = reject;
+  });
   let finished = false;
-  function finish() {
+
+  function onFinish() {
     if (finished) {
       return;
     }
@@ -399,14 +517,9 @@ export async function captureAudio({ deviceId, channelCount, onStart }) {
     mediaStreamSourceNode.disconnect(recorderNode);
     finished = true;
   }
+
   return {
-    stop: () => {
-      // will cause the promise to settle on the next audioprocess event
-      stopped = true;
-    },
-    mediaRecording: new Promise((resolve, reject) => {
-      onDone = resolve;
-      onError = reject;
-    }),
+    stop,
+    mediaRecording,
   };
 }

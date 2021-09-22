@@ -416,7 +416,16 @@ export async function captureAudio({ deviceId, channelCount, onStart }) {
     // TODO: support more recording configuration options
     // https://developer.mozilla.org/en-US/docs/Web/API/MediaTrackConstraints#properties_of_audio_tracks
     // autoGainControl, echoCancellation, latency, noiseSuppression, volume
-    audio: { deviceId, channelCount, sampleRate: SAMPLE_RATE },
+    audio: {
+      deviceId,
+      channelCount,
+      sampleRate: SAMPLE_RATE,
+      echoCancellation: false,
+      // TODO: add advanced controls for these options
+      // @ts-ignore (should be in type)
+      autoGainControl: false,
+      noiseSuppression: false,
+    },
     video: false,
   });
   const audioContext = getAudioContext();
@@ -453,6 +462,16 @@ export async function captureAudio({ deviceId, channelCount, onStart }) {
         0,
         Math.min(chunkSize, maxSamples - samplesRecorded)
       );
+      // check for out-of-bounds values and just clip them (ideally we shouldn't
+      // have out-of-bounds values but this sometimes happens. by clipping them
+      // we kind of force the user to deal with the input levels.)
+      for (let i = 0; i < chunkSliced.length; i++) {
+        if (chunkSliced[i] > 1) {
+          chunkSliced[i] = 1;
+        } else if (chunkSliced[i] < -1) {
+          chunkSliced[i] = -1;
+        }
+      }
       if (!sampleCount) {
         sampleCount = chunkSliced.length;
       }

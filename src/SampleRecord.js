@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 
-import { captureAudio, getAudioInputDevices } from './utils';
+import { captureAudio, getAudioInputDevices } from './utils/recording';
 
 /**
  * @typedef {{
@@ -15,7 +15,7 @@ import { captureAudio, getAudioInputDevices } from './utils';
  */
 function useMediaRecording({ onRecordStart, onRecordFinish, onRecordError }) {
   const [captureDevices, setCaptureDevices] = useState(
-    /** @type {Map<string, import('./utils').AudioDeviceInfoContainer> | null} */ (
+    /** @type {Map<string, import('./utils/recording').AudioDeviceInfoContainer> | null} */ (
       null
     )
   );
@@ -137,7 +137,7 @@ function SampleRecord({ captureState, ...callbacks }) {
                   onClick={() => setSelectedChannelCount(count)}
                   disabled={
                     !captureDevices.has(selectedCaptureDeviceId) ||
-                    /** @type {import('./utils').AudioDeviceInfoContainer} */ (
+                    /** @type {import('./utils/recording').AudioDeviceInfoContainer} */ (
                       captureDevices.get(selectedCaptureDeviceId)
                     ).channelsAvailable < count
                   }

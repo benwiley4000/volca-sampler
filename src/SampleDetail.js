@@ -2,7 +2,8 @@ import React from 'react';
 
 import Waveform from './Waveform';
 import { SampleContainer } from './store';
-import { convertWavTo16BitMono, getSampleBuffer, playAudioFile } from './utils';
+import { convertWavTo16BitMono } from './utils/audioData';
+import { getSampleBuffer } from './utils/syro';
 
 {
   const css = `
@@ -21,6 +22,21 @@ const classes = ['sampleDetail'].reduce(
   (classes, className) => ({ ...classes, [className]: className }),
   {}
 );
+
+/**
+ * @param {Uint8Array} audioFileBuffer audio file to transform into audio buffer
+ */
+ export function playAudioFile(audioFileBuffer) {
+  const blob = new Blob([audioFileBuffer], {
+    type: 'audio/x-wav',
+  });
+  const audioElement = document.createElement('audio');
+  audioElement.src = URL.createObjectURL(blob);
+  audioElement.play();
+  audioElement.onended = () => {
+    URL.revokeObjectURL(audioElement.src);
+  };
+}
 
 /**
  * @param {{

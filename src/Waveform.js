@@ -4,7 +4,7 @@ import {
   getAudioBufferForAudioFileData,
   getMonoSamplesFromAudioBuffer,
   findSamplePeak,
-} from './utils';
+} from './utils/audioData';
 import { SampleContainer } from './store';
 
 /**

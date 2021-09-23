@@ -2,12 +2,7 @@ import React from 'react';
 
 import Waveform from './Waveform';
 import { SampleContainer } from './store';
-import {
-  convertWavTo16BitMono,
-  getSampleBuffer,
-  getAudioBufferForAudioFileData,
-  playAudioBuffer,
-} from './utils';
+import { convertWavTo16BitMono, getSampleBuffer, playAudioFile } from './utils';
 
 {
   const css = `
@@ -130,8 +125,7 @@ function SampleDetail({
           type="button"
           onClick={async () => {
             const { data } = await convertWavTo16BitMono(sample);
-            const audioBuffer = await getAudioBufferForAudioFileData(data);
-            playAudioBuffer(audioBuffer);
+            playAudioFile(data);
           }}
         >
           regular play
@@ -188,10 +182,7 @@ function SampleDetail({
         onClick={async () => {
           try {
             const sampleBuffer = await getSampleBuffer(sample, console.log);
-            const audioBuffer = await getAudioBufferForAudioFileData(
-              sampleBuffer
-            );
-            playAudioBuffer(audioBuffer);
+            playAudioFile(sampleBuffer);
           } catch (err) {
             console.error(err);
           }

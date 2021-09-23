@@ -4,6 +4,30 @@ import { WaveFile } from 'wavefile';
 import { SampleContainer } from './store';
 import { getSyroBindings } from './getSyroBindings';
 
+const SAMPLE_RATE = 31250;
+
+/**
+ * @param {AudioBuffer} sourceAudioBuffer
+ * @returns {Promise<AudioBuffer>}
+ */
+async function resampleToTargetSampleRate(sourceAudioBuffer) {
+  if (sourceAudioBuffer.sampleRate === SAMPLE_RATE) {
+    return sourceAudioBuffer;
+  }
+  const ratio = SAMPLE_RATE / sourceAudioBuffer.sampleRate;
+  const offlineContext = new OfflineAudioContext(
+    sourceAudioBuffer.numberOfChannels,
+    sourceAudioBuffer.length * ratio,
+    SAMPLE_RATE
+  );
+  const offlineSource = offlineContext.createBufferSource();
+  offlineSource.buffer = sourceAudioBuffer;
+  offlineSource.connect(offlineContext.destination);
+  offlineSource.start();
+  const audioBufferResampled = await offlineContext.startRendering();
+  return audioBufferResampled;
+}
+
 /**
  * @param {Float32Array} array
  * @param {[number, number]} clipFrames
@@ -117,9 +141,11 @@ export async function convertWavTo16BitMono(sampleContainer) {
       `Expected bit depth between 8 and 16. Received: ${qualityBitDepth}`
     );
   }
-  const wavSrcAudioBuffer = await getAudioBufferForAudioFileData(
-    await SampleContainer.getSourceFileData(
-      sampleContainer.metadata.sourceFileId
+  const wavSrcAudioBuffer = await resampleToTargetSampleRate(
+    await getAudioBufferForAudioFileData(
+      await SampleContainer.getSourceFileData(
+        sampleContainer.metadata.sourceFileId
+      )
     )
   );
   const clipFrames = /** @type {[number, number]} */ (
@@ -229,16 +255,29 @@ export async function getSampleBuffer(sampleContainer, onProgress) {
   return sampleBuffer;
 }
 
-const SAMPLE_RATE = 31250;
+/**
+ * @type {AudioContext | undefined}
+ */
+let recordingAudioContext;
+
+function getRecordingAudioContext() {
+  return (recordingAudioContext =
+    recordingAudioContext ||
+    new AudioContext(
+      navigator.mediaDevices.getSupportedConstraints().sampleRate
+        ? { sampleRate: SAMPLE_RATE }
+        : {}
+    ));
+}
 
 /**
  * @type {AudioContext | undefined}
  */
-let audioContext;
+let targetAudioContext;
 
-function getAudioContext() {
-  return (audioContext =
-    audioContext || new AudioContext({ sampleRate: SAMPLE_RATE }));
+function getTargetAudioContext() {
+  return (targetAudioContext =
+    targetAudioContext || new AudioContext({ sampleRate: SAMPLE_RATE }));
 }
 
 /**
@@ -252,20 +291,24 @@ export async function getAudioBufferForAudioFileData(audioFileBuffer) {
    * @type {AudioBuffer}
    */
   const audioBuffer = await new Promise((resolve, reject) => {
-    getAudioContext().decodeAudioData(bufferCopy.buffer, resolve, reject);
+    getTargetAudioContext().decodeAudioData(bufferCopy.buffer, resolve, reject);
   });
   return audioBuffer;
 }
 
 /**
- * @param {AudioBuffer} audioBuffer buffer to play
+ * @param {Uint8Array} audioFileBuffer audio file to transform into audio buffer
  */
-export function playAudioBuffer(audioBuffer) {
-  const audioContext = getAudioContext();
-  const source = audioContext.createBufferSource();
-  source.buffer = audioBuffer;
-  source.connect(audioContext.destination);
-  source.start();
+export function playAudioFile(audioFileBuffer) {
+  const blob = new Blob([audioFileBuffer], {
+    type: 'audio/x-wav',
+  });
+  const audioElement = document.createElement('audio');
+  audioElement.src = URL.createObjectURL(blob);
+  audioElement.play();
+  audioElement.onended = () => {
+    URL.revokeObjectURL(audioElement.src);
+  };
 }
 
 /**
@@ -324,7 +367,7 @@ let recorderWorkletProcessorPromise;
  * @returns {Promise<{ recorderNode: TAudioWorkletNode; stop: () => void }>}
  */
 async function createAudioWorkletPcmRecorderNode({ onData, onFinish }) {
-  const audioContext = getAudioContext();
+  const audioContext = getRecordingAudioContext();
   recorderWorkletProcessorPromise =
     recorderWorkletProcessorPromise ||
     audioContext.audioWorklet.addModule('/recorderWorkletProcessor.js');
@@ -370,7 +413,7 @@ function createScriptProcessorPcmRecorderNode({
   onData,
   onFinish,
 }) {
-  const audioContext = getAudioContext();
+  const audioContext = getRecordingAudioContext();
   const recorderNode = audioContext.createScriptProcessor(
     1024,
     channelCount,
@@ -431,7 +474,7 @@ export async function captureAudio({ deviceId, channelCount, onStart }) {
     },
     video: false,
   });
-  const audioContext = getAudioContext();
+  const audioContext = getRecordingAudioContext();
   const mediaStreamSourceNode = audioContext.createMediaStreamSource(stream);
   const { recorderNode, stop } = await createPcmRecorderNode({
     channelCount,
@@ -443,7 +486,7 @@ export async function captureAudio({ deviceId, channelCount, onStart }) {
   onStart();
 
   const timeLimitSeconds = 10;
-  const maxSamples = timeLimitSeconds * SAMPLE_RATE;
+  const maxSamples = timeLimitSeconds * audioContext.sampleRate;
   let samplesRecorded = 0;
   /**
    * @type {Float32Array[][]}

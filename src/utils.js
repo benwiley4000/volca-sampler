@@ -290,6 +290,9 @@ export async function getAudioInputDevices() {
       // TODO: validate this is the right way to get the channel count..
       // maybe we have to wait for data available or something else?
       const channelsAvailable = stream.getAudioTracks().length;
+      for (const track of stream.getTracks()) {
+        track.stop();
+      }
       return {
         device,
         channelsAvailable,

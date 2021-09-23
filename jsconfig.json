@@ -4,6 +4,7 @@
     "checkJs": true,
     "strict": true,
     "downlevelIteration": true,
+    "resolveJsonModule": true,
     "jsx": "react"
   }
 }

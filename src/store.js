@@ -1,6 +1,8 @@
 import localforage from 'localforage';
 import { v4 as uuidv4 } from 'uuid';
 
+import factorySampleParams from './factory-samples.json';
+
 /**
  * @typedef {object} SampleContainerParams
  * @property {string} name
@@ -95,41 +97,13 @@ export class SampleContainer {
       clip,
       metadataVersion: METADATA_VERSION,
     };
-    setTimeout(async () => {
-      const ids = await sampleMetadataStore.keys();
-      if (!ids.includes(this.id)) {
-        console.warn(
-          `Expected sample metadata container ${this.id} to be persisted`
-        );
-      }
-    });
-  }
-
-  async persist() {
-    await sampleMetadataStore.setItem(this.id, this.metadata);
   }
 
   /**
-   * @param {SampleMetadataUpdate} update
+   * @returns {SampleContainer}
    */
-  update(update) {
-    const { id, metadata } = this;
-    /**
-     * @type {SampleMetadata}
-     */
-    const newMetadata = {
-      ...metadata,
-      ...update,
-      dateModified: Date.now(),
-    };
-    const newContainer = new SampleContainer({ id, ...newMetadata });
-    // async - does not block
-    newContainer.persist();
-    return newContainer;
-  }
-
   duplicate() {
-    const copy = new SampleContainer({
+    const copy = new SampleContainer.Mutable({
       ...this.metadata,
       name: `${this.metadata.name} (copy)`,
       dateModified: Date.now(),
@@ -139,9 +113,50 @@ export class SampleContainer {
     return copy;
   }
 
-  async remove() {
-    await sampleMetadataStore.removeItem(this.id);
-  }
+  static Mutable = class extends SampleContainer {
+    /**
+     * @param {SampleContainerParams} sampleContainerParams
+     */
+    constructor(sampleContainerParams) {
+      super(sampleContainerParams);
+      setTimeout(async () => {
+        const ids = await sampleMetadataStore.keys();
+        if (!ids.includes(this.id)) {
+          console.warn(
+            `Expected sample metadata container ${this.id} to be persisted`
+          );
+        }
+      });
+    }
+
+    async persist() {
+      await sampleMetadataStore.setItem(this.id, this.metadata);
+    }
+
+    /**
+     * @param {SampleMetadataUpdate} update
+     * @returns {SampleContainer}
+     */
+    update(update) {
+      const { id, metadata } = this;
+      /**
+       * @type {SampleMetadata}
+       */
+      const newMetadata = {
+        ...metadata,
+        ...update,
+        dateModified: Date.now(),
+      };
+      const newContainer = new SampleContainer.Mutable({ id, ...newMetadata });
+      // async - does not block
+      newContainer.persist();
+      return newContainer;
+    }
+
+    async remove() {
+      await sampleMetadataStore.removeItem(this.id);
+    }
+  };
 
   /**
    * @private
@@ -189,6 +204,13 @@ export class SampleContainer {
         return data;
       }
     }
+    if (sourceFileId.includes('.')) {
+      // assume it's a URL pointing to a WAV file
+      const buffer = await (await fetch(sourceFileId)).arrayBuffer();
+      const data = new Uint8Array(buffer);
+      this.cacheSourceFileData(sourceFileId, data);
+      return data;
+    }
     /**
      * @type {unknown}
      */
@@ -220,7 +242,9 @@ export class SampleContainer {
         );
       }
     });
-    const sourceIds = await wavDataStore.keys();
+    const sourceIds = (await wavDataStore.keys()).concat(
+      factorySampleParams.map(({ sourceFileId }) => sourceFileId)
+    );
     const sampleContainers = /** @type {SampleContainer[]} */ (
       [...sampleMetadata]
         .map(([id, metadata]) => {
@@ -233,10 +257,14 @@ export class SampleContainer {
             );
             return null;
           }
-          return new SampleContainer({ id, ...metadata });
+          return new SampleContainer.Mutable({ id, ...metadata });
         })
         .filter(Boolean)
     ).sort((a, b) => b.metadata.dateModified - a.metadata.dateModified);
     return sampleContainers;
   }
 }
+
+export const factorySamples = new Map(
+  factorySampleParams.map((params) => [params.id, new SampleContainer(params)])
+);

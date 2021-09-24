@@ -115,13 +115,12 @@ function SampleRecord({ captureState, ...callbacks }) {
         <div>
           <label>
             Capture Device
-            <select value={selectedCaptureDeviceId}>
+            <select
+              value={selectedCaptureDeviceId}
+              onChange={(e) => setSelectedCaptureDeviceId(e.target.value)}
+            >
               {[...captureDevices].map(([id, { device }]) => (
-                <option
-                  key={id}
-                  value={id}
-                  onClick={() => setSelectedCaptureDeviceId(id)}
-                >
+                <option key={id} value={id}>
                   {device.label || id}
                 </option>
               ))}
@@ -129,12 +128,14 @@ function SampleRecord({ captureState, ...callbacks }) {
           </label>
           <label>
             Channel count
-            <select value={selectedChannelCount}>
+            <select
+              value={selectedChannelCount}
+              onChange={(e) => setSelectedChannelCount(Number(e.target.value))}
+            >
               {[1, 2].map((count) => (
                 <option
                   key={count}
                   value={count}
-                  onClick={() => setSelectedChannelCount(count)}
                   disabled={
                     !captureDevices.has(selectedCaptureDeviceId) ||
                     /** @type {import('./utils/recording').AudioDeviceInfoContainer} */ (

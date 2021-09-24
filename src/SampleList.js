@@ -1,7 +1,5 @@
 import React from 'react';
 
-import { SampleContainer } from './store';
-
 {
   const css = `
 .sampleList {
@@ -33,7 +31,7 @@ const classes = ['sampleList', 'sampleListItem'].reduce(
 
 /**
  * @param {{
- *   samples: Map<string, SampleContainer>;
+ *   samples: Map<string, import('./store').SampleContainer>;
  *   selectedSampleId: string | null;
  *   readonly: boolean;
  *   onNewSample: () => void;

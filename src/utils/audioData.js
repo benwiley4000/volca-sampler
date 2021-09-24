@@ -172,7 +172,7 @@ export async function convertWavTo16BitMono(sampleContainer) {
     )
   );
   const clipFrames = /** @type {[number, number]} */ (
-    clip.map((c) => c * wavSrcAudioBuffer.sampleRate)
+    clip.map((c) => Math.round(c * wavSrcAudioBuffer.sampleRate))
   );
   const samples =
     wavSrcAudioBuffer.numberOfChannels === 1

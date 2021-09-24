@@ -21,16 +21,12 @@ function useMediaRecording({ onRecordStart, onRecordFinish, onRecordError }) {
   );
   const [selectedCaptureDeviceId, setSelectedCaptureDeviceId] = useState('');
   useEffect(() => {
-    getAudioInputDevices()
-      .then((devices) => devices.filter((d) => d.device.kind === 'audioinput'))
-      .then((devices) => {
-        if (devices.length) {
-          setCaptureDevices(
-            new Map(devices.map((d) => [d.device.deviceId, d]))
-          );
-          setSelectedCaptureDeviceId((id) => id || devices[0].device.deviceId);
-        }
-      });
+    getAudioInputDevices().then((devices) => {
+      if (devices.length) {
+        setCaptureDevices(new Map(devices.map((d) => [d.device.deviceId, d])));
+        setSelectedCaptureDeviceId((id) => id || devices[0].device.deviceId);
+      }
+    });
   }, []);
   const [selectedChannelCount, setSelectedChannelCount] = useState(1);
   useEffect(() => {

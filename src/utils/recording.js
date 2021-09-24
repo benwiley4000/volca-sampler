@@ -18,7 +18,7 @@ function getRecordingAudioContext() {
 }
 
 /**
- * @typedef {{ device: MediaDeviceInfo; channelsAvailable: number }} AudioDeviceInfoContainer
+ * @typedef {{ device: { deviceId: string; label: string }; channelsAvailable: number }} AudioDeviceInfoContainer
  */
 
 /**
@@ -29,25 +29,35 @@ export async function getAudioInputDevices() {
   const audioInputDevices = devices.filter(
     (device) => device.kind === 'audioinput'
   );
-  return Promise.all(
-    audioInputDevices.map(async (device) => {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        // try to grab stereo audio
-        audio: { deviceId: device.deviceId, channelCount: 2 },
-        video: false,
-      });
-      // TODO: validate this is the right way to get the channel count..
-      // maybe we have to wait for data available or something else?
-      const channelsAvailable = stream.getAudioTracks().length;
-      for (const track of stream.getTracks()) {
-        track.stop();
-      }
-      return {
-        device,
-        channelsAvailable,
-      };
-    })
-  );
+  /**
+   * @type {AudioDeviceInfoContainer[]}
+   */
+  const infoContainers = [];
+  for (const device of audioInputDevices) {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      // try to grab stereo audio
+      audio: { deviceId: device.deviceId, channelCount: 2 },
+      video: false,
+    });
+    // for Firefox, which requires us to check this info after
+    // permissions have been granted
+    const realLabel = /** @type {MediaDeviceInfo} */ (
+      (await navigator.mediaDevices.enumerateDevices()).find(
+        ({ deviceId }) => device.deviceId === deviceId
+      )
+    ).label;
+    // TODO: validate this is the right way to get the channel count..
+    // maybe we have to wait for data available or something else?
+    const channelsAvailable = stream.getAudioTracks().length;
+    for (const track of stream.getTracks()) {
+      track.stop();
+    }
+    infoContainers.push({
+      device: { deviceId: device.deviceId, label: realLabel },
+      channelsAvailable,
+    });
+  }
+  return infoContainers;
 }
 
 /**

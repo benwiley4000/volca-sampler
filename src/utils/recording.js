@@ -273,7 +273,7 @@ export async function captureAudio({ deviceId, channelCount, onStart }) {
         return merged;
       });
       const wav = new WaveFile();
-      wav.fromScratch(samples.length, SAMPLE_RATE, '32f', samples);
+      wav.fromScratch(samples.length, audioContext.sampleRate, '32f', samples);
       onDone(wav.toBuffer());
     } catch (err) {
       onError(err);

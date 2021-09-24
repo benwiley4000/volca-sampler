@@ -86,7 +86,7 @@ async function createAudioWorkletPcmRecorderNode({ onData, onFinish }) {
   const audioContext = getRecordingAudioContext();
   recorderWorkletProcessorPromise =
     recorderWorkletProcessorPromise ||
-    audioContext.audioWorklet.addModule('/recorderWorkletProcessor.js');
+    audioContext.audioWorklet.addModule('recorderWorkletProcessor.js');
   await recorderWorkletProcessorPromise;
   const recorderNode = /** @type {TAudioWorkletNode} */ (
     new AudioWorkletNode(audioContext, 'recorder-worklet', {

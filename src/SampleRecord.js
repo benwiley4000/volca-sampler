@@ -155,6 +155,17 @@ function SampleRecord({ captureState, ...callbacks }) {
       >
         {['capturing', 'preparing'].includes(captureState) ? 'Stop' : 'Record'}
       </button>
+      <input
+        type="file"
+        onChange={(e) => {
+          if (e.target.files) {
+            const file = e.target.files[0];
+            file.arrayBuffer().then((arrayBuffer) => {
+              callbacks.onRecordFinish(new Uint8Array(arrayBuffer));
+            });
+          }
+        }}
+      />
     </div>
   );
 }

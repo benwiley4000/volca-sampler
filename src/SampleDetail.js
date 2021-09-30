@@ -104,31 +104,31 @@ function SampleDetail({
       </h4>
       <h4>Sampled: {new Date(sample.metadata.dateSampled).toLocaleString()}</h4>
       <label>
-        <h4>Clip start</h4>
+        <h4>Trim start</h4>
         <input
           type="number"
-          value={sample.metadata.clip[0]}
-          step={0.1}
+          value={sample.metadata.trimFrames[0]}
+          step={1}
           min={0}
           onChange={(e) => {
-            const clipStart = Number(e.target.value);
+            const trimStart = Number(e.target.value);
             onSampleUpdate(sample.id, {
-              clip: [clipStart, sample.metadata.clip[1]],
+              trimFrames: [trimStart, sample.metadata.trimFrames[1]],
             });
           }}
         />
       </label>
       <label>
-        <h4>Clip end</h4>
+        <h4>Trim end</h4>
         <input
           type="number"
-          value={sample.metadata.clip[1]}
-          step={0.1}
+          value={sample.metadata.trimFrames[1]}
+          step={1}
           min={0}
           onChange={(e) => {
-            const clipEnd = Number(e.target.value);
+            const trimEnd = Number(e.target.value);
             onSampleUpdate(sample.id, {
-              clip: [sample.metadata.clip[0], clipEnd],
+              trimFrames: [sample.metadata.trimFrames[0], trimEnd],
             });
           }}
         />
@@ -141,7 +141,7 @@ function SampleDetail({
         }}
       >
         <Waveform
-          onSetClip={() => null}
+          onSetTrimFrames={() => null}
           onSetScaleCoefficient={handleSetScaleCoefficient}
           sample={sample}
         />

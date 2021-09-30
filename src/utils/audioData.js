@@ -27,26 +27,26 @@ async function resampleToTargetSampleRate(sourceAudioBuffer) {
 
 /**
  * @param {Float32Array} array
- * @param {[number, number]} clipFrames
+ * @param {[number, number]} trimFrames
  */
-export function getClippedView(array, clipFrames) {
+export function getTrimmedView(array, trimFrames) {
   const frameSizeInBytes = 4;
-  const byteOffset = clipFrames[0] * frameSizeInBytes;
-  const viewLength = array.length - clipFrames[0] - clipFrames[1];
+  const byteOffset = trimFrames[0] * frameSizeInBytes;
+  const viewLength = array.length - trimFrames[0] - trimFrames[1];
   return new Float32Array(array.buffer, byteOffset, viewLength);
 }
 
 /**
  * @param {AudioBuffer} audioBuffer
- * @param {[number, number]} clipFrames
+ * @param {[number, number]} trimFrames
  */
-export function getMonoSamplesFromAudioBuffer(audioBuffer, clipFrames) {
-  const clippedLength = audioBuffer.length - clipFrames[0] - clipFrames[1];
-  const samples = new Float32Array(clippedLength);
+export function getMonoSamplesFromAudioBuffer(audioBuffer, trimFrames) {
+  const trimmedLength = audioBuffer.length - trimFrames[0] - trimFrames[1];
+  const samples = new Float32Array(trimmedLength);
   const channels = /** @type {void[]} */ (Array(audioBuffer.numberOfChannels))
     .fill()
-    .map((_, i) => getClippedView(audioBuffer.getChannelData(i), clipFrames));
-  for (let i = 0; i < clippedLength; i++) {
+    .map((_, i) => getTrimmedView(audioBuffer.getChannelData(i), trimFrames));
+  for (let i = 0; i < trimmedLength; i++) {
     let monoSample = 0;
     for (let j = 0; j < channels.length; j++) {
       monoSample += channels[j][i];
@@ -181,7 +181,7 @@ export async function convertWavTo16BitMono(sampleContainer) {
     sourceFileId,
     userFileInfo,
     scaleCoefficient,
-    clip,
+    trimFrames,
   } = sampleContainer.metadata;
   if (
     qualityBitDepth < 8 ||
@@ -195,13 +195,10 @@ export async function convertWavTo16BitMono(sampleContainer) {
   const wavSrcAudioBuffer = await resampleToTargetSampleRate(
     await getSourceAudioBuffer(sourceFileId, Boolean(userFileInfo))
   );
-  const clipFrames = /** @type {[number, number]} */ (
-    clip.map((c) => Math.round(c * wavSrcAudioBuffer.sampleRate))
-  );
   const samples =
     wavSrcAudioBuffer.numberOfChannels === 1
-      ? getClippedView(wavSrcAudioBuffer.getChannelData(0), clipFrames)
-      : getMonoSamplesFromAudioBuffer(wavSrcAudioBuffer, clipFrames);
+      ? getTrimmedView(wavSrcAudioBuffer.getChannelData(0), trimFrames)
+      : getMonoSamplesFromAudioBuffer(wavSrcAudioBuffer, trimFrames);
   if (scaleCoefficient !== 1) {
     scaleSamples(samples, scaleCoefficient);
   }

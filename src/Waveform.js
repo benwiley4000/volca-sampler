@@ -10,7 +10,7 @@ import {
   getSourceAudioBuffer,
   getMonoSamplesFromAudioBuffer,
   findSamplePeak,
-  getClippedView,
+  getTrimmedView,
 } from './utils/audioData';
 
 /**
@@ -50,15 +50,15 @@ function getPeaksForSamples(samples, groupSize) {
 /**
  * @param {{
  *   sample: import('./store').SampleContainer;
- *   onSetClip: (clip: [number, number]) => void;
+ *   onSetTrimFrames: (trimFrames: [number, number]) => void;
  *   onSetScaleCoefficient: (scaleCoefficient: number) => void;
  * }} props
  */
 function Waveform({
   sample: {
-    metadata: { sourceFileId, userFileInfo, clip, scaleCoefficient },
+    metadata: { sourceFileId, userFileInfo, trimFrames, scaleCoefficient },
   },
-  onSetClip,
+  onSetTrimFrames,
   onSetScaleCoefficient,
 }) {
   const [sourceAudioBuffer, setSourceAudioBuffer] = useState(
@@ -109,28 +109,25 @@ function Waveform({
     return getPeaksForSamples(monoSamples, groupSize);
   }, [monoSamples]);
 
-  const clippedSamplePeak = useMemo(() => {
+  const trimmedSamplePeak = useMemo(() => {
     if (!sourceAudioBuffer) {
       return 1;
     }
-    const clipFrames = /** @type {[number, number]} */ (
-      clip.map((c) => Math.round(c * sourceAudioBuffer.sampleRate))
-    );
-    const clippedView = getClippedView(monoSamples, clipFrames);
-    const samplePeak = findSamplePeak(clippedView);
+    const trimmedView = getTrimmedView(monoSamples, trimFrames);
+    const samplePeak = findSamplePeak(trimmedView);
     return samplePeak;
-  }, [sourceAudioBuffer, monoSamples, clip]);
+  }, [sourceAudioBuffer, monoSamples, trimFrames]);
 
-  const maxCoefficient = 1 / clippedSamplePeak;
+  const maxCoefficient = 1 / trimmedSamplePeak;
 
-  // ensure that our max scaled sample in our clipped view doesn't exceed 1 / -1
+  // ensure that our max scaled sample in our trimmed view doesn't exceed 1 / -1
   useLayoutEffect(() => {
     if (scaleCoefficient > maxCoefficient) {
       onSetScaleCoefficient(maxCoefficient);
     }
   }, [scaleCoefficient, maxCoefficient, onSetScaleCoefficient]);
 
-  const peakTarget = scaleCoefficient * clippedSamplePeak;
+  const peakTarget = scaleCoefficient * trimmedSamplePeak;
 
   return (
     <>
@@ -226,7 +223,7 @@ function Waveform({
           max={1}
           step={0.01}
           onChange={(e) => {
-            onSetScaleCoefficient(Number(e.target.value) / clippedSamplePeak);
+            onSetScaleCoefficient(Number(e.target.value) / trimmedSamplePeak);
           }}
         />
       </div>

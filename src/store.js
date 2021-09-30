@@ -2,6 +2,7 @@ import localforage from 'localforage';
 import { v4 as uuidv4 } from 'uuid';
 
 import factorySampleParams from './factory-samples.json';
+import { SAMPLE_RATE } from './utils/constants';
 
 /**
  * @typedef {object} SampleContainerParams
@@ -15,7 +16,7 @@ import factorySampleParams from './factory-samples.json';
  * @property {boolean} [useCompression]
  * @property {number} [qualityBitDepth]
  * @property {number} [scaleCoefficient]
- * @property {[number, number]} [clip]
+ * @property {[number, number]} [trimFrames]
  */
 
 /**
@@ -29,7 +30,7 @@ import factorySampleParams from './factory-samples.json';
  * @property {boolean} useCompression
  * @property {number} qualityBitDepth
  * @property {number} scaleCoefficient
- * @property {[number, number]} clip
+ * @property {[number, number]} trimFrames
  * @property {string} metadataVersion
  */
 
@@ -40,7 +41,7 @@ import factorySampleParams from './factory-samples.json';
  * @property {boolean} [useCompression]
  * @property {number} [qualityBitDepth]
  * @property {number} [scaleCoefficient]
- * @property {[number, number]} [clip]
+ * @property {[number, number]} [trimFrames]
  */
 
 const wavDataStore = localforage.createInstance({
@@ -63,7 +64,65 @@ export async function storeWavSourceFile(wavData) {
   return id;
 }
 
-const METADATA_VERSION = '0.1.0';
+const METADATA_VERSION = '0.2.0';
+
+// These properties are considered fundamental and should never break
+/**
+ * @typedef {{
+ *   name: string;
+ *   sourceFileId: string;
+ *   id: string;
+ *   metadataVersion: string;
+ * }} OldMetadata
+ */
+
+/**
+ * @type {Record<string, (oldMetadata: OldMetadata) => OldMetadata>}
+ */
+const metadataUpgrades = {
+  '0.1.0': (oldMetadata) => {
+    /**
+     * @typedef {OldMetadata & { clip: [number, number] }} PrevMetadata
+     */
+    const { clip, ...prevMetadata } = /** @type {PrevMetadata} */ (oldMetadata);
+    const newMetadata = {
+      ...prevMetadata,
+      trimFrames: /** @type {[number, number]} */ (
+        clip.map((c) => Math.round(c * SAMPLE_RATE))
+      ),
+      metadataVersion: '0.2.0',
+    };
+    return newMetadata;
+  },
+};
+
+/**
+ * @param {OldMetadata} oldMetadata
+ * @returns {SampleMetadata}
+ */
+function upgradeMetadata(oldMetadata) {
+  let prevMetadata = oldMetadata;
+  while (prevMetadata.metadataVersion !== METADATA_VERSION) {
+    /**
+     * @type {(typeof metadataUpgrades)[string] | undefined}
+     */
+    const matchedUpgrade = metadataUpgrades[oldMetadata.metadataVersion];
+    if (!matchedUpgrade) {
+      console.warn(
+        `Failed to properly upgrade metadata for sample "${prevMetadata.name}"`
+      );
+      prevMetadata = {
+        name: prevMetadata.name,
+        sourceFileId: prevMetadata.sourceFileId,
+        id: prevMetadata.id,
+        metadataVersion: METADATA_VERSION,
+      };
+      break;
+    }
+    prevMetadata = matchedUpgrade(prevMetadata);
+  }
+  return /** @type {SampleMetadata} */ (/** @type {unknown} */ (prevMetadata));
+}
 
 export class SampleContainer {
   /**
@@ -80,7 +139,7 @@ export class SampleContainer {
     useCompression = false,
     qualityBitDepth = 16,
     scaleCoefficient = 1,
-    clip = [0, 0],
+    trimFrames = [0, 0],
   }) {
     /** @readonly */
     this.id = id;
@@ -98,7 +157,7 @@ export class SampleContainer {
       useCompression,
       qualityBitDepth,
       scaleCoefficient,
-      clip,
+      trimFrames,
       metadataVersion: METADATA_VERSION,
     };
   }
@@ -235,15 +294,9 @@ export class SampleContainer {
      */
     const sampleMetadata = new Map();
     await sampleMetadataStore.iterate((metadata, id) => {
-      if (metadata && metadata.metadataVersion === METADATA_VERSION) {
-        sampleMetadata.set(id, metadata);
-      } else {
-        // TODO: handle upgrade
-        console.warn(
-          `Found metadata "${metadata.name || id} with unhandled version ${
-            metadata.metadataVersion
-          }"; ignoring.`
-        );
+      if (metadata) {
+        const upgradedMetadata = upgradeMetadata(metadata);
+        sampleMetadata.set(id, upgradedMetadata);
       }
     });
     const sourceIds = (await wavDataStore.keys()).concat(

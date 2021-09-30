@@ -112,6 +112,23 @@ function applyQualityBitDepthToSamples(samples, qualityBitDepth) {
 }
 
 /**
+ * Check for values greater than 1 or less than -1 and just clamp them (ideally
+ * we shouldn't have out-of-bounds samples but this sometimes happens.. by
+ * clamping them we kind of force the user to deal with the input levels).
+ * Note: mutates input array (no return value).
+ * @param {Float32Array} samples array of floats
+ */
+export function clampOutOfBoundsValues(samples) {
+  for (let i = 0; i < samples.length; i++) {
+    if (samples[i] > 1) {
+      samples[i] = 1;
+    } else if (samples[i] < -1) {
+      samples[i] = -1;
+    }
+  }
+}
+
+/**
  * @param {Float32Array} samples
  */
 function convertSamplesTo16Bit(samples) {
@@ -150,11 +167,33 @@ export async function getAudioBufferForAudioFileData(audioFileBuffer) {
 }
 
 /**
+ * @param {string} sourceFileId sourceFileId to grab from store
+ * @param {boolean} shouldClampValues do we need to clamp out of bounds values
+ * @returns {Promise<AudioBuffer>}
+ */
+export async function getSourceAudioBuffer(sourceFileId, shouldClampValues) {
+  const sourceFileData = await SampleContainer.getSourceFileData(sourceFileId);
+  const audioBuffer = await getAudioBufferForAudioFileData(sourceFileData);
+  if (shouldClampValues) {
+    for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
+      clampOutOfBoundsValues(audioBuffer.getChannelData(channel));
+    }
+  }
+  return audioBuffer;
+}
+
+/**
  * @param {import('../store').SampleContainer} sampleContainer
  * @returns {Promise<{ data: Uint8Array; sampleRate: number }>}
  */
 export async function convertWavTo16BitMono(sampleContainer) {
-  const { qualityBitDepth, normalize, clip } = sampleContainer.metadata;
+  const {
+    qualityBitDepth,
+    sourceFileId,
+    fromUserFile,
+    normalize,
+    clip,
+  } = sampleContainer.metadata;
   if (
     qualityBitDepth < 8 ||
     qualityBitDepth > 16 ||
@@ -165,11 +204,7 @@ export async function convertWavTo16BitMono(sampleContainer) {
     );
   }
   const wavSrcAudioBuffer = await resampleToTargetSampleRate(
-    await getAudioBufferForAudioFileData(
-      await SampleContainer.getSourceFileData(
-        sampleContainer.metadata.sourceFileId
-      )
-    )
+    await getSourceAudioBuffer(sourceFileId, fromUserFile)
   );
   const clipFrames = /** @type {[number, number]} */ (
     clip.map((c) => Math.round(c * wavSrcAudioBuffer.sampleRate))

@@ -1,5 +1,6 @@
 import { WaveFile } from 'wavefile';
 
+import { clampOutOfBoundsValues } from './audioData';
 import { SAMPLE_RATE } from './constants';
 
 /**
@@ -166,6 +167,19 @@ async function createPcmRecorderNode(options) {
 }
 
 /**
+ *
+ * @param {Float32Array[]} samples
+ * @param {number} sampleRate
+ * @returns {Uint8Array}
+ */
+export function samplesToWav(samples, sampleRate) {
+  const wav = new WaveFile();
+  wav.fromScratch(samples.length, sampleRate, '32f', samples);
+  const wavBuffer = wav.toBuffer();
+  return wavBuffer;
+}
+
+/**
  * @param {{
  *   deviceId: string;
  *   channelCount: number;
@@ -224,16 +238,7 @@ export async function captureAudio({ deviceId, channelCount, onStart }) {
         0,
         Math.min(chunkSize, maxSamples - samplesRecorded)
       );
-      // check for out-of-bounds values and just clip them (ideally we shouldn't
-      // have out-of-bounds values but this sometimes happens. by clipping them
-      // we kind of force the user to deal with the input levels.)
-      for (let i = 0; i < chunkSliced.length; i++) {
-        if (chunkSliced[i] > 1) {
-          chunkSliced[i] = 1;
-        } else if (chunkSliced[i] < -1) {
-          chunkSliced[i] = -1;
-        }
-      }
+      clampOutOfBoundsValues(chunkSliced);
       if (!sampleCount) {
         sampleCount = chunkSliced.length;
       }
@@ -282,9 +287,8 @@ export async function captureAudio({ deviceId, channelCount, onStart }) {
         }
         return merged;
       });
-      const wav = new WaveFile();
-      wav.fromScratch(samples.length, audioContext.sampleRate, '32f', samples);
-      onDone(wav.toBuffer());
+      const wavBuffer = samplesToWav(samples, audioContext.sampleRate);
+      onDone(wavBuffer);
     } catch (err) {
       onError(err);
     }

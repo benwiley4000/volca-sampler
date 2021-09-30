@@ -1,11 +1,16 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { getAudioBufferForAudioFileData } from './utils/audioData';
 
-import { captureAudio, getAudioInputDevices } from './utils/recording';
+import {
+  captureAudio,
+  getAudioInputDevices,
+  samplesToWav,
+} from './utils/recording';
 
 /**
  * @typedef {{
  *   onRecordStart: () => void;
- *   onRecordFinish: (wavBuffer: Uint8Array) => void;
+ *   onRecordFinish: (wavBuffer: Uint8Array, userFileName?: string) => void;
  *   onRecordError: (err: unknown) => void;
  * }} MediaRecordingCallbacks
  */
@@ -157,11 +162,22 @@ function SampleRecord({ captureState, ...callbacks }) {
       </button>
       <input
         type="file"
+        accept="audio/*,.wav,.mp3,.ogg"
         onChange={(e) => {
-          if (e.target.files) {
+          if (e.target.files && e.target.files.length) {
             const file = e.target.files[0];
-            file.arrayBuffer().then((arrayBuffer) => {
-              callbacks.onRecordFinish(new Uint8Array(arrayBuffer));
+            file.arrayBuffer().then(async (arrayBuffer) => {
+              const audioFileBuffer = new Uint8Array(arrayBuffer);
+              const audioBuffer = await getAudioBufferForAudioFileData(
+                audioFileBuffer
+              );
+              const samples = /** @type {void[]} */ (
+                Array(audioBuffer.numberOfChannels)
+              )
+                .fill()
+                .map((_, i) => audioBuffer.getChannelData(i));
+              const wavBuffer = samplesToWav(samples, audioBuffer.sampleRate);
+              callbacks.onRecordFinish(wavBuffer, file.name);
             });
           }
         }}

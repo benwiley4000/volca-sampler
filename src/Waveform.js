@@ -1,11 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import {
-  getAudioBufferForAudioFileData,
+  getSourceAudioBuffer,
   getMonoSamplesFromAudioBuffer,
   findSamplePeak,
 } from './utils/audioData';
-import { SampleContainer } from './store';
 
 /**
  * @param {Float32Array} samples an array of floats from -1 to 1
@@ -48,17 +47,22 @@ function getPeaksForSamples(samples, groupSize) {
  *   onSetNormalize: (normalize: number | false) => void;
  * }} props
  */
-function Waveform({ sample, onSetClip, onSetNormalize }) {
+function Waveform({
+  sample: {
+    metadata: { sourceFileId, fromUserFile, clip, normalize },
+  },
+  onSetClip,
+  onSetNormalize,
+}) {
   const [monoSamples, setMonoSamples] = useState(new Float32Array());
   useEffect(() => {
     let cancelled = false;
     (async () => {
       if (cancelled) return;
-      const fileData = await SampleContainer.getSourceFileData(
-        sample.metadata.sourceFileId
+      const audioBuffer = await getSourceAudioBuffer(
+        sourceFileId,
+        fromUserFile
       );
-      if (cancelled) return;
-      const audioBuffer = await getAudioBufferForAudioFileData(fileData);
       if (cancelled) return;
       const monoSamples = getMonoSamplesFromAudioBuffer(audioBuffer, [0, 0]);
       setMonoSamples(monoSamples);
@@ -66,7 +70,7 @@ function Waveform({ sample, onSetClip, onSetNormalize }) {
     return () => {
       cancelled = true;
     };
-  }, [sample.metadata.sourceFileId]);
+  }, [sourceFileId, fromUserFile]);
 
   /**
    * @type {React.RefObject<HTMLDivElement>}
@@ -91,7 +95,7 @@ function Waveform({ sample, onSetClip, onSetNormalize }) {
       Math.max(findSamplePeak(peaks.negative), findSamplePeak(peaks.positive)),
     [peaks]
   );
-  const peakTarget = sample.metadata.normalize || samplePeak;
+  const peakTarget = normalize || samplePeak;
   const scaleCoefficient = peakTarget / samplePeak;
 
   return (
@@ -182,7 +186,7 @@ function Waveform({ sample, onSetClip, onSetNormalize }) {
       <input
         style={{ position: 'absolute', top: 0, left: 0 }}
         type="range"
-        value={sample.metadata.normalize || undefined}
+        value={normalize || undefined}
         min={0.1}
         max={1}
         step={0.01}

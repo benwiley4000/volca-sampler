@@ -1,7 +1,6 @@
 import React, { useCallback } from 'react';
 
 import Waveform from './Waveform';
-import { SampleContainer } from './store';
 import { convertWavTo16BitMono } from './utils/audioData';
 import { getSampleBuffer } from './utils/syro';
 
@@ -26,7 +25,7 @@ const classes = ['sampleDetail'].reduce(
 /**
  * @param {Uint8Array} audioFileBuffer audio file to transform into audio buffer
  */
- export function playAudioFile(audioFileBuffer) {
+function playAudioFile(audioFileBuffer) {
   const blob = new Blob([audioFileBuffer], {
     type: 'audio/x-wav',
   });
@@ -40,7 +39,7 @@ const classes = ['sampleDetail'].reduce(
 
 /**
  * @param {{
- *   sample: SampleContainer | null;
+ *   sample: import('./store').SampleContainer | null;
  *   onSampleUpdate: (id: string, update: import('./store').SampleMetadataUpdate) => void;
  *   onSampleDuplicate: (id: string) => void;
  *   onSampleDelete: (id: string) => void;

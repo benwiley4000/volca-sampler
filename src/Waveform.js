@@ -1,4 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import {
   getSourceAudioBuffer,
@@ -118,7 +124,7 @@ function Waveform({
   const maxCoefficient = 1 / clippedSamplePeak;
 
   // ensure that our max scaled sample in our clipped view doesn't exceed 1 / -1
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (scaleCoefficient > maxCoefficient) {
       onSetScaleCoefficient(maxCoefficient);
     }

@@ -3,6 +3,7 @@ import React, { useCallback } from 'react';
 import Waveform from './Waveform';
 import { convertWavTo16BitMono } from './utils/audioData';
 import { getSampleBuffer } from './utils/syro';
+import { SampleContainer } from './store';
 
 {
   const css = `
@@ -35,6 +36,22 @@ function playAudioFile(audioFileBuffer) {
   audioElement.onended = () => {
     URL.revokeObjectURL(audioElement.src);
   };
+}
+
+/**
+ * @param {Blob} blob
+ * @param {string} filename
+ */
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
 /**
@@ -135,7 +152,7 @@ function SampleDetail({
             playAudioFile(data);
           }}
         >
-          regular play
+          play
         </button>
         <button
           type="button"
@@ -144,18 +161,28 @@ function SampleDetail({
             const blob = new Blob([data], {
               type: 'audio/x-wav',
             });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${sample.metadata.name}.wav`;
-            a.style.display = 'none';
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            URL.revokeObjectURL(url);
+            downloadBlob(blob, `${sample.metadata.name}.wav`);
           }}
         >
           download
+        </button>
+        <button
+          type="button"
+          onClick={async () => {
+            const { sourceFileId, userFileInfo } = sample.metadata;
+            const data = await SampleContainer.getSourceFileData(sourceFileId);
+            const blob = new Blob([data], {
+              type: userFileInfo ? userFileInfo.type : 'audio/x-wav',
+            });
+            downloadBlob(
+              blob,
+              `${sample.metadata.name}${
+                userFileInfo ? userFileInfo.ext : '.wav'
+              }`
+            );
+          }}
+        >
+          download (orig)
         </button>
       </div>
       <h4>Quality bit depth: {sample.metadata.qualityBitDepth}</h4>

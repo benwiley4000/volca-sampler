@@ -50,7 +50,7 @@ function getPeaksForSamples(samples, groupSize) {
  */
 function Waveform({
   sample: {
-    metadata: { sourceFileId, fromUserFile, clip, scaleCoefficient },
+    metadata: { sourceFileId, userFileInfo, clip, scaleCoefficient },
   },
   onSetClip,
   onSetScaleCoefficient,
@@ -64,7 +64,7 @@ function Waveform({
       if (cancelled) return;
       const audioBuffer = await getSourceAudioBuffer(
         sourceFileId,
-        fromUserFile
+        Boolean(userFileInfo)
       );
       if (cancelled) return;
       setSourceAudioBuffer(audioBuffer);
@@ -72,7 +72,7 @@ function Waveform({
     return () => {
       cancelled = true;
     };
-  }, [sourceFileId, fromUserFile]);
+  }, [sourceFileId, userFileInfo]);
 
   const monoSamples = useMemo(
     () =>

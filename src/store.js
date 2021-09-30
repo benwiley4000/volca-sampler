@@ -8,7 +8,7 @@ import factorySampleParams from './factory-samples.json';
  * @property {string} name
  * @property {string} sourceFileId
  * @property {string} [id]
- * @property {boolean} [fromUserFile]
+ * @property {{ type: string; ext: string } | null} [userFileInfo]
  * @property {number} [slotNumber]
  * @property {number} [dateSampled]
  * @property {number} [dateModified]
@@ -22,7 +22,7 @@ import factorySampleParams from './factory-samples.json';
  * @typedef {object} SampleMetadata
  * @property {string} name
  * @property {string} sourceFileId
- * @property {boolean} fromUserFile
+ * @property {{ type: string; ext: string } | null} userFileInfo
  * @property {number} slotNumber
  * @property {number} dateSampled
  * @property {number} dateModified
@@ -73,7 +73,7 @@ export class SampleContainer {
     name,
     sourceFileId,
     id = uuidv4(),
-    fromUserFile = false,
+    userFileInfo = null,
     slotNumber = 0,
     dateSampled = Date.now(),
     dateModified = dateSampled,
@@ -91,7 +91,7 @@ export class SampleContainer {
     this.metadata = {
       name,
       sourceFileId,
-      fromUserFile,
+      userFileInfo,
       slotNumber,
       dateSampled,
       dateModified,

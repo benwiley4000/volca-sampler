@@ -179,7 +179,7 @@ export async function convertWavTo16BitMono(sampleContainer) {
   const {
     qualityBitDepth,
     sourceFileId,
-    fromUserFile,
+    userFileInfo,
     scaleCoefficient,
     clip,
   } = sampleContainer.metadata;
@@ -193,7 +193,7 @@ export async function convertWavTo16BitMono(sampleContainer) {
     );
   }
   const wavSrcAudioBuffer = await resampleToTargetSampleRate(
-    await getSourceAudioBuffer(sourceFileId, fromUserFile)
+    await getSourceAudioBuffer(sourceFileId, Boolean(userFileInfo))
   );
   const clipFrames = /** @type {[number, number]} */ (
     clip.map((c) => Math.round(c * wavSrcAudioBuffer.sampleRate))

@@ -89,26 +89,34 @@ function App() {
   const handleRecordStart = useCallback(() => setCaptureState('capturing'), []);
 
   /**
-   * @type {(wavBuffer: Uint8Array, userFileName?: string) => void}
+   * @type {(wavBuffer: Uint8Array, userFile?: File) => void}
    * */
-  const handleRecordFinish = useCallback(async (wavBuffer, userFileName) => {
+  const handleRecordFinish = useCallback(async (wavBuffer, userFile) => {
     setCaptureState('preparing');
     const sourceFileId = await storeWavSourceFile(wavBuffer);
     /**
      * @type {string}
      */
-    let name;
-    if (userFileName) {
-      const lastDotIndex = userFileName.lastIndexOf('.');
-      name =
-        lastDotIndex > 0 ? userFileName.slice(0, lastDotIndex) : userFileName;
+    let name = '';
+    let userFileExtension = '';
+    if (userFile) {
+      const lastDotIndex = userFile.name.lastIndexOf('.');
+      if (lastDotIndex > 0) {
+        name = userFile.name.slice(0, lastDotIndex);
+        userFileExtension = userFile.name.slice(lastDotIndex);
+      } else {
+        name = userFile.name;
+      }
     } else {
       name = 'New one';
     }
     const sample = new SampleContainer.Mutable({
       name,
       sourceFileId,
-      fromUserFile: Boolean(userFileName),
+      userFileInfo: userFile && {
+        type: userFile.type,
+        ext: userFileExtension,
+      },
     });
     await sample.persist();
     setSamples((samples) => new Map([[sample.id, sample], ...samples]));

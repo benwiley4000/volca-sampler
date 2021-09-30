@@ -10,7 +10,7 @@ import {
 /**
  * @typedef {{
  *   onRecordStart: () => void;
- *   onRecordFinish: (wavBuffer: Uint8Array, userFileName?: string) => void;
+ *   onRecordFinish: (wavBuffer: Uint8Array, userFile?: File) => void;
  *   onRecordError: (err: unknown) => void;
  * }} MediaRecordingCallbacks
  */
@@ -177,7 +177,7 @@ function SampleRecord({ captureState, ...callbacks }) {
                 .fill()
                 .map((_, i) => audioBuffer.getChannelData(i));
               const wavBuffer = samplesToWav(samples, audioBuffer.sampleRate);
-              callbacks.onRecordFinish(wavBuffer, file.name);
+              callbacks.onRecordFinish(wavBuffer, file);
             });
           }
         }}

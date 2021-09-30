@@ -125,6 +125,18 @@ function App() {
     setCaptureState('error');
   }, []);
 
+  const handleSampleUpdate = useCallback(
+    (id, update) => {
+      const sample = selectedSampleBank.get(id);
+      if (sample && sample instanceof SampleContainer.Mutable) {
+        setSamples((samples) =>
+          new Map(samples).set(sample.id, sample.update(update))
+        );
+      }
+    },
+    [selectedSampleBank]
+  );
+
   return (
     <div className={classes.volcaSampler}>
       <select
@@ -153,14 +165,7 @@ function App() {
               (focusedSampleId && selectedSampleBank.get(focusedSampleId)) ||
               null
             }
-            onSampleUpdate={(id, update) => {
-              const sample = selectedSampleBank.get(id);
-              if (sample && sample instanceof SampleContainer.Mutable) {
-                setSamples((samples) =>
-                  new Map(samples).set(sample.id, sample.update(update))
-                );
-              }
-            }}
+            onSampleUpdate={handleSampleUpdate}
             onSampleDuplicate={(id) => {
               const sample = selectedSampleBank.get(id);
               if (sample) {

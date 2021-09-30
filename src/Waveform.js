@@ -4,6 +4,7 @@ import {
   getSourceAudioBuffer,
   getMonoSamplesFromAudioBuffer,
   findSamplePeak,
+  getClippedView,
 } from './utils/audioData';
 
 /**
@@ -44,17 +45,19 @@ function getPeaksForSamples(samples, groupSize) {
  * @param {{
  *   sample: import('./store').SampleContainer;
  *   onSetClip: (clip: [number, number]) => void;
- *   onSetNormalize: (normalize: number | false) => void;
+ *   onSetScaleCoefficient: (scaleCoefficient: number) => void;
  * }} props
  */
 function Waveform({
   sample: {
-    metadata: { sourceFileId, fromUserFile, clip, normalize },
+    metadata: { sourceFileId, fromUserFile, clip, scaleCoefficient },
   },
   onSetClip,
-  onSetNormalize,
+  onSetScaleCoefficient,
 }) {
-  const [monoSamples, setMonoSamples] = useState(new Float32Array());
+  const [sourceAudioBuffer, setSourceAudioBuffer] = useState(
+    /** @type {AudioBuffer | null} */ (null)
+  );
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -64,21 +67,30 @@ function Waveform({
         fromUserFile
       );
       if (cancelled) return;
-      const monoSamples = getMonoSamplesFromAudioBuffer(audioBuffer, [0, 0]);
-      setMonoSamples(monoSamples);
+      setSourceAudioBuffer(audioBuffer);
     })();
     return () => {
       cancelled = true;
     };
   }, [sourceFileId, fromUserFile]);
 
+  const monoSamples = useMemo(
+    () =>
+      sourceAudioBuffer
+        ? getMonoSamplesFromAudioBuffer(sourceAudioBuffer, [0, 0])
+        : new Float32Array(),
+    [sourceAudioBuffer]
+  );
+
   /**
    * @type {React.RefObject<HTMLDivElement>}
    */
-  const ref = useRef(null);
+  const waveformRef = useRef(null);
+
   const groupWidth = 6;
+
   const peaks = useMemo(() => {
-    const pixelWidth = ref.current && ref.current.offsetWidth;
+    const pixelWidth = waveformRef.current && waveformRef.current.offsetWidth;
     if (!pixelWidth || !monoSamples.length) {
       return {
         positive: new Float32Array(),
@@ -90,109 +102,143 @@ function Waveform({
     );
     return getPeaksForSamples(monoSamples, groupSize);
   }, [monoSamples]);
-  const samplePeak = useMemo(
-    () =>
-      Math.max(findSamplePeak(peaks.negative), findSamplePeak(peaks.positive)),
-    [peaks]
-  );
-  const peakTarget = normalize || samplePeak;
-  const scaleCoefficient = peakTarget / samplePeak;
+
+  const clippedSamplePeak = useMemo(() => {
+    if (!sourceAudioBuffer) {
+      return 1;
+    }
+    const clipFrames = /** @type {[number, number]} */ (
+      clip.map((c) => Math.round(c * sourceAudioBuffer.sampleRate))
+    );
+    const clippedView = getClippedView(monoSamples, clipFrames);
+    const samplePeak = findSamplePeak(clippedView);
+    return samplePeak;
+  }, [sourceAudioBuffer, monoSamples, clip]);
+
+  const maxCoefficient = 1 / clippedSamplePeak;
+
+  // ensure that our max scaled sample in our clipped view doesn't exceed 1 / -1
+  useEffect(() => {
+    if (scaleCoefficient > maxCoefficient) {
+      onSetScaleCoefficient(maxCoefficient);
+    }
+  }, [scaleCoefficient, maxCoefficient, onSetScaleCoefficient]);
+
+  const peakTarget = scaleCoefficient * clippedSamplePeak;
 
   return (
-    <div
-      className="waveform"
-      style={{
-        width: '100%',
-        height: '100%',
-        position: 'relative',
-        overflow: 'hidden',
-      }}
-      ref={ref}
-    >
+    <>
       <div
-        className="positive"
+        className="waveform"
         style={{
           width: '100%',
-          height: '67%',
-          display: 'flex',
-          alignItems: 'flex-end',
+          height: '100%',
+          position: 'relative',
+          overflow: 'hidden',
         }}
+        ref={waveformRef}
       >
         <div
-          className="scaled"
+          className="positive"
           style={{
             width: '100%',
-            height: `${100 * scaleCoefficient}%`,
-            willChange: 'height',
+            height: '67%',
             display: 'flex',
             alignItems: 'flex-end',
           }}
         >
-          {[].map.call(peaks.positive, (amplitude, index) => (
-            <div
-              key={index}
-              className="bar"
-              style={{
-                width: groupWidth,
-                height: `${100 * amplitude}%`,
-                paddingRight: 1,
-              }}
-            >
+          <div
+            className="scaled"
+            style={{
+              width: '100%',
+              height: `${100 * scaleCoefficient}%`,
+              willChange: 'height',
+              display: 'flex',
+              alignItems: 'flex-end',
+            }}
+          >
+            {[].map.call(peaks.positive, (amplitude, index) => (
               <div
-                className="bar_inner"
-                style={{ backgroundColor: 'red', height: '100%' }}
-              />
-            </div>
-          ))}
+                key={index}
+                className="bar"
+                style={{
+                  width: groupWidth,
+                  height: `${100 * amplitude}%`,
+                  paddingRight: 1,
+                }}
+              >
+                <div
+                  className="bar_inner"
+                  style={{ backgroundColor: 'red', height: '100%' }}
+                />
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
-      <div
-        className="negative"
-        style={{
-          width: '100%',
-          height: '33%',
-          display: 'flex',
-          alignItems: 'flex-start',
-        }}
-      >
         <div
-          className="scaled"
+          className="negative"
           style={{
             width: '100%',
-            height: `${100 * scaleCoefficient}%`,
-            willChange: 'height',
+            height: '33%',
             display: 'flex',
             alignItems: 'flex-start',
           }}
         >
-          {[].map.call(peaks.negative, (amplitude, index) => (
-            <div
-              key={index}
-              className="bar"
-              style={{
-                width: groupWidth,
-                height: `${100 * -amplitude}%`,
-                paddingRight: 1,
-              }}
-            >
+          <div
+            className="scaled"
+            style={{
+              width: '100%',
+              height: `${100 * scaleCoefficient}%`,
+              willChange: 'height',
+              display: 'flex',
+              alignItems: 'flex-start',
+            }}
+          >
+            {[].map.call(peaks.negative, (amplitude, index) => (
               <div
-                className="bar_inner"
-                style={{ backgroundColor: 'darkred', height: '100%' }}
-              />
-            </div>
-          ))}
+                key={index}
+                className="bar"
+                style={{
+                  width: groupWidth,
+                  height: `${100 * -amplitude}%`,
+                  paddingRight: 1,
+                }}
+              >
+                <div
+                  className="bar_inner"
+                  style={{ backgroundColor: 'darkred', height: '100%' }}
+                />
+              </div>
+            ))}
+          </div>
         </div>
+        <input
+          style={{ position: 'absolute', top: 0, left: 0 }}
+          type="range"
+          value={peakTarget}
+          min={0.1}
+          max={1}
+          step={0.01}
+          onChange={(e) => {
+            onSetScaleCoefficient(Number(e.target.value) / clippedSamplePeak);
+          }}
+        />
       </div>
-      <input
-        style={{ position: 'absolute', top: 0, left: 0 }}
-        type="range"
-        value={normalize || undefined}
-        min={0.1}
-        max={1}
-        step={0.01}
-        onChange={(e) => onSetNormalize(Number(e.target.value))}
-      />
-    </div>
+      <button
+        type="button"
+        disabled={scaleCoefficient === maxCoefficient}
+        onClick={() => onSetScaleCoefficient(maxCoefficient)}
+      >
+        Normalize
+      </button>
+      <button
+        type="button"
+        disabled={scaleCoefficient === 1}
+        onClick={() => onSetScaleCoefficient(1)}
+      >
+        Original level
+      </button>
+    </>
   );
 }
 

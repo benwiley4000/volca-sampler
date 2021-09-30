@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 
 import Waveform from './Waveform';
 import { SampleContainer } from './store';
@@ -52,6 +52,14 @@ function SampleDetail({
   onSampleDuplicate,
   onSampleDelete,
 }) {
+  /**
+   * @type {(scaleCoefficient: number) => void}
+   */
+  const handleSetScaleCoefficient = useCallback(
+    (scaleCoefficient) =>
+      sample && onSampleUpdate(sample.id, { scaleCoefficient }),
+    [sample, onSampleUpdate]
+  );
   if (!sample) {
     return null;
   }
@@ -118,25 +126,9 @@ function SampleDetail({
       >
         <Waveform
           onSetClip={() => null}
-          onSetNormalize={(normalize) =>
-            onSampleUpdate(sample.id, { normalize })
-          }
+          onSetScaleCoefficient={handleSetScaleCoefficient}
           sample={sample}
         />
-        <button
-          type="button"
-          disabled={sample.metadata.normalize === 1}
-          onClick={() => onSampleUpdate(sample.id, { normalize: 1 })}
-        >
-          Normalize
-        </button>
-        <button
-          type="button"
-          disabled={!sample.metadata.normalize}
-          onClick={() => onSampleUpdate(sample.id, { normalize: false })}
-        >
-          Original level
-        </button>
         <button
           type="button"
           onClick={async () => {

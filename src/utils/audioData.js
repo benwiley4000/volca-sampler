@@ -29,7 +29,7 @@ async function resampleToTargetSampleRate(sourceAudioBuffer) {
  * @param {Float32Array} array
  * @param {[number, number]} clipFrames
  */
-function getClippedView(array, clipFrames) {
+export function getClippedView(array, clipFrames) {
   const frameSizeInBytes = 4;
   const byteOffset = clipFrames[0] * frameSizeInBytes;
   const viewLength = array.length - clipFrames[0] - clipFrames[1];
@@ -85,17 +85,6 @@ function scaleSamples(samples, coef) {
       samples[i] *= coef;
     }
   }
-}
-
-/**
- * Normalizes samples by adjusting max value to 1 and scaling others by same
- * coefficient. Note: mutates input array (no return value).
- * @param {Float32Array} samples array of floats between -1 and 1
- * @param {number} peakTarget float between 0 and 1
- */
-function normalizeSamples(samples, peakTarget = 1) {
-  const coef = peakTarget / findSamplePeak(samples);
-  scaleSamples(samples, coef);
 }
 
 /**
@@ -191,7 +180,7 @@ export async function convertWavTo16BitMono(sampleContainer) {
     qualityBitDepth,
     sourceFileId,
     fromUserFile,
-    normalize,
+    scaleCoefficient,
     clip,
   } = sampleContainer.metadata;
   if (
@@ -213,8 +202,8 @@ export async function convertWavTo16BitMono(sampleContainer) {
     wavSrcAudioBuffer.numberOfChannels === 1
       ? getClippedView(wavSrcAudioBuffer.getChannelData(0), clipFrames)
       : getMonoSamplesFromAudioBuffer(wavSrcAudioBuffer, clipFrames);
-  if (normalize) {
-    normalizeSamples(samples, normalize);
+  if (scaleCoefficient !== 1) {
+    scaleSamples(samples, scaleCoefficient);
   }
   if (qualityBitDepth < 16) {
     applyQualityBitDepthToSamples(samples, qualityBitDepth);

@@ -14,7 +14,7 @@ import factorySampleParams from './factory-samples.json';
  * @property {number} [dateModified]
  * @property {boolean} [useCompression]
  * @property {number} [qualityBitDepth]
- * @property {number | false} [normalize]
+ * @property {number} [scaleCoefficient]
  * @property {[number, number]} [clip]
  */
 
@@ -28,7 +28,7 @@ import factorySampleParams from './factory-samples.json';
  * @property {number} dateModified
  * @property {boolean} useCompression
  * @property {number} qualityBitDepth
- * @property {number | false} normalize
+ * @property {number} scaleCoefficient
  * @property {[number, number]} clip
  * @property {string} metadataVersion
  */
@@ -39,7 +39,7 @@ import factorySampleParams from './factory-samples.json';
  * @property {number} [slotNumber]
  * @property {boolean} [useCompression]
  * @property {number} [qualityBitDepth]
- * @property {number | false} [normalize]
+ * @property {number} [scaleCoefficient]
  * @property {[number, number]} [clip]
  */
 
@@ -79,7 +79,7 @@ export class SampleContainer {
     dateModified = dateSampled,
     useCompression = false,
     qualityBitDepth = 16,
-    normalize = false,
+    scaleCoefficient = 1,
     clip = [0, 0],
   }) {
     /** @readonly */
@@ -97,7 +97,7 @@ export class SampleContainer {
       dateModified,
       useCompression,
       qualityBitDepth,
-      normalize,
+      scaleCoefficient,
       clip,
       metadataVersion: METADATA_VERSION,
     };

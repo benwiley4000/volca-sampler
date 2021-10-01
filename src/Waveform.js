@@ -107,6 +107,8 @@ function Waveform({
   const maxCoefficient = 1 / trimmedSamplePeak;
 
   // ensure that our max scaled sample in our trimmed view doesn't exceed 1 / -1
+  // TODO: maybe refactor in a way that is less prone to triggering multiple
+  // updates before the first update is finished
   useLayoutEffect(() => {
     if (scaleCoefficient > maxCoefficient) {
       onSetScaleCoefficient(maxCoefficient);

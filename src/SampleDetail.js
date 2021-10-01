@@ -81,13 +81,14 @@ function SampleDetail({
       );
     }
   }, [sourceFileId]);
+  const sampleId = sample && sample.id;
   /**
    * @type {(scaleCoefficient: number) => void}
    */
   const handleSetScaleCoefficient = useCallback(
     (scaleCoefficient) =>
-      sample && onSampleUpdate(sample.id, { scaleCoefficient }),
-    [sample, onSampleUpdate]
+      sampleId && onSampleUpdate(sampleId, { scaleCoefficient }),
+    [sampleId, onSampleUpdate]
   );
   if (!sample) {
     return null;

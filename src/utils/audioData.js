@@ -4,28 +4,6 @@ import { SampleContainer } from '../store';
 import { SAMPLE_RATE } from './constants';
 
 /**
- * @param {AudioBuffer} sourceAudioBuffer
- * @returns {Promise<AudioBuffer>}
- */
-async function resampleToTargetSampleRate(sourceAudioBuffer) {
-  if (sourceAudioBuffer.sampleRate === SAMPLE_RATE) {
-    return sourceAudioBuffer;
-  }
-  const ratio = SAMPLE_RATE / sourceAudioBuffer.sampleRate;
-  const offlineContext = new OfflineAudioContext(
-    sourceAudioBuffer.numberOfChannels,
-    sourceAudioBuffer.length * ratio,
-    SAMPLE_RATE
-  );
-  const offlineSource = offlineContext.createBufferSource();
-  offlineSource.buffer = sourceAudioBuffer;
-  offlineSource.connect(offlineContext.destination);
-  offlineSource.start();
-  const audioBufferResampled = await offlineContext.startRendering();
-  return audioBufferResampled;
-}
-
-/**
  * @param {Float32Array} array
  * @param {[number, number]} trimFrames
  */
@@ -194,8 +172,9 @@ export async function getTargetWavForSample(sampleContainer) {
       `Expected bit depth between 8 and 16. Received: ${qualityBitDepth}`
     );
   }
-  const sourceAudioBuffer = await resampleToTargetSampleRate(
-    await getSourceAudioBuffer(sourceFileId, Boolean(userFileInfo))
+  const sourceAudioBuffer = await getSourceAudioBuffer(
+    sourceFileId,
+    Boolean(userFileInfo)
   );
   const samples =
     sourceAudioBuffer.numberOfChannels === 1

@@ -48,38 +48,24 @@ function getPeaksForSamples(samples, groupSize) {
 }
 
 /**
- * @param {{
+ * @typedef {{
  *   sample: import('./store').SampleContainer;
  *   onSetTrimFrames: (trimFrames: [number, number]) => void;
  *   onSetScaleCoefficient: (scaleCoefficient: number) => void;
- * }} props
+ * }} WaveformProps
+ */
+
+/**
+ * @param {WaveformProps & { sourceAudioBuffer: AudioBuffer | null }} props
  */
 function Waveform({
+  sourceAudioBuffer,
   sample: {
-    metadata: { sourceFileId, userFileInfo, trimFrames, scaleCoefficient },
+    metadata: { trimFrames, scaleCoefficient },
   },
   onSetTrimFrames,
   onSetScaleCoefficient,
 }) {
-  const [sourceAudioBuffer, setSourceAudioBuffer] = useState(
-    /** @type {AudioBuffer | null} */ (null)
-  );
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      if (cancelled) return;
-      const audioBuffer = await getSourceAudioBuffer(
-        sourceFileId,
-        Boolean(userFileInfo)
-      );
-      if (cancelled) return;
-      setSourceAudioBuffer(audioBuffer);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [sourceFileId, userFileInfo]);
-
   const monoSamples = useMemo(
     () =>
       sourceAudioBuffer
@@ -245,4 +231,48 @@ function Waveform({
   );
 }
 
-export default Waveform;
+/**
+ *
+ * @param {WaveformProps} props
+ */
+function AsyncWaveform({ sample, ...rest }) {
+  const [loadedAudioBuffer, setSourceAudioBuffer] = useState(
+    /** @type {[string, AudioBuffer] | null} */ (null)
+  );
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (cancelled) return;
+      const audioBuffer = await getSourceAudioBuffer(
+        sample.metadata.sourceFileId,
+        Boolean(sample.metadata.userFileInfo)
+      );
+      if (cancelled) return;
+      setSourceAudioBuffer([sample.metadata.sourceFileId, audioBuffer]);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [sample.metadata.sourceFileId, sample.metadata.userFileInfo]);
+
+  // We need to hold onto an internal state because when the sample changes,
+  // the sourceAudioBuffer loads asynchronously and we want to avoid trying
+  // to apply the new sample's metadata to the old sample's audio.
+  const displayedSample = useRef(sample);
+  if (
+    loadedAudioBuffer &&
+    sample.metadata.sourceFileId === loadedAudioBuffer[0]
+  ) {
+    displayedSample.current = sample;
+  }
+
+  return (
+    <Waveform
+      {...rest}
+      sample={displayedSample.current}
+      sourceAudioBuffer={loadedAudioBuffer && loadedAudioBuffer[1]}
+    />
+  );
+}
+
+export default AsyncWaveform;

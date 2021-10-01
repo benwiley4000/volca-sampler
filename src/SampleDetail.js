@@ -1,7 +1,7 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 import Waveform from './Waveform';
-import { getTargetWavForSample } from './utils/audioData';
+import { getTargetWavForSample, getSourceAudioBuffer } from './utils/audioData';
 import { getSampleBuffer } from './utils/syro';
 import { SampleContainer } from './store';
 
@@ -68,6 +68,19 @@ function SampleDetail({
   onSampleDuplicate,
   onSampleDelete,
 }) {
+  const [sampleLength, setSampleLength] = useState(0);
+  const sourceFileId = sample && sample.metadata.sourceFileId;
+  useEffect(() => {
+    // when the source file id changes, we should temporarily set the sample
+    // length to 0 so that we can't make changes to the trimming until the
+    // sample length is loaded
+    setSampleLength(0);
+    if (sourceFileId) {
+      getSourceAudioBuffer(sourceFileId, false).then((audioBuffer) =>
+        setSampleLength(audioBuffer.length)
+      );
+    }
+  }, [sourceFileId]);
   /**
    * @type {(scaleCoefficient: number) => void}
    */
@@ -79,6 +92,11 @@ function SampleDetail({
   if (!sample) {
     return null;
   }
+  const maxTrimStart = Math.max(
+    0,
+    sampleLength - sample.metadata.trimFrames[1]
+  );
+  const maxTrimEnd = Math.max(0, sampleLength - sample.metadata.trimFrames[0]);
   return (
     <div className={classes.sampleDetail}>
       <h3>{sample.metadata.name}</h3>
@@ -110,11 +128,21 @@ function SampleDetail({
           value={sample.metadata.trimFrames[0]}
           step={1}
           min={0}
+          max={maxTrimStart}
           onChange={(e) => {
-            const trimStart = Number(e.target.value);
-            onSampleUpdate(sample.id, {
-              trimFrames: [trimStart, sample.metadata.trimFrames[1]],
-            });
+            if (sampleLength) {
+              const trimStart = Number(e.target.value);
+              onSampleUpdate(sample.id, {
+                trimFrames: [
+                  Math.min(trimStart, maxTrimStart),
+                  sample.metadata.trimFrames[1],
+                ],
+              });
+            } else {
+              onSampleUpdate(sample.id, {
+                trimFrames: [...sample.metadata.trimFrames],
+              });
+            }
           }}
         />
       </label>
@@ -125,11 +153,21 @@ function SampleDetail({
           value={sample.metadata.trimFrames[1]}
           step={1}
           min={0}
+          max={maxTrimEnd}
           onChange={(e) => {
-            const trimEnd = Number(e.target.value);
-            onSampleUpdate(sample.id, {
-              trimFrames: [sample.metadata.trimFrames[0], trimEnd],
-            });
+            if (sampleLength) {
+              const trimEnd = Number(e.target.value);
+              onSampleUpdate(sample.id, {
+                trimFrames: [
+                  sample.metadata.trimFrames[0],
+                  Math.min(trimEnd, maxTrimEnd),
+                ],
+              });
+            } else {
+              onSampleUpdate(sample.id, {
+                trimFrames: [...sample.metadata.trimFrames],
+              });
+            }
           }}
         />
       </label>

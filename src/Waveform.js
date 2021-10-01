@@ -206,11 +206,15 @@ function Waveform({
         <input
           style={{ position: 'absolute', top: 0, left: 0 }}
           type="range"
+          disabled={trimmedSamplePeak === 0}
           value={peakTarget}
           min={0.1}
           max={1}
           step={0.01}
           onChange={(e) => {
+            if (trimmedSamplePeak === 0) {
+              return;
+            }
             onSetScaleCoefficient(Number(e.target.value) / trimmedSamplePeak);
           }}
         />

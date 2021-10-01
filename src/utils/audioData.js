@@ -172,10 +172,12 @@ export async function getSourceAudioBuffer(sourceFileId, shouldClampValues) {
 }
 
 /**
+ * Given sample container, returns a 16-bit mono wav file with the sample's
+ * metadata parameters applied
  * @param {import('../store').SampleContainer} sampleContainer
  * @returns {Promise<{ data: Uint8Array; sampleRate: number }>}
  */
-export async function convertWavTo16BitMono(sampleContainer) {
+export async function getTargetWavForSample(sampleContainer) {
   const {
     qualityBitDepth,
     sourceFileId,
@@ -192,13 +194,13 @@ export async function convertWavTo16BitMono(sampleContainer) {
       `Expected bit depth between 8 and 16. Received: ${qualityBitDepth}`
     );
   }
-  const wavSrcAudioBuffer = await resampleToTargetSampleRate(
+  const sourceAudioBuffer = await resampleToTargetSampleRate(
     await getSourceAudioBuffer(sourceFileId, Boolean(userFileInfo))
   );
   const samples =
-    wavSrcAudioBuffer.numberOfChannels === 1
-      ? getTrimmedView(wavSrcAudioBuffer.getChannelData(0), trimFrames)
-      : getMonoSamplesFromAudioBuffer(wavSrcAudioBuffer, trimFrames);
+    sourceAudioBuffer.numberOfChannels === 1
+      ? getTrimmedView(sourceAudioBuffer.getChannelData(0), trimFrames)
+      : getMonoSamplesFromAudioBuffer(sourceAudioBuffer, trimFrames);
   if (scaleCoefficient !== 1) {
     scaleSamples(samples, scaleCoefficient);
   }
@@ -212,7 +214,7 @@ export async function convertWavTo16BitMono(sampleContainer) {
    */
   const wavHeader = getWavFileHeaders({
     channels: 1,
-    sampleRate: wavSrcAudioBuffer.sampleRate,
+    sampleRate: sourceAudioBuffer.sampleRate,
     bitDepth: 16,
     dataLength: samplesByteLength,
   });

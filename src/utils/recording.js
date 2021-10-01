@@ -167,19 +167,6 @@ async function createPcmRecorderNode(options) {
 }
 
 /**
- *
- * @param {Float32Array[]} samples
- * @param {number} sampleRate
- * @returns {Uint8Array}
- */
-export function samplesToWav(samples, sampleRate) {
-  const wav = new WaveFile();
-  wav.fromScratch(samples.length, sampleRate, '32f', samples);
-  const wavBuffer = wav.toBuffer();
-  return wavBuffer;
-}
-
-/**
  * @param {{
  *   deviceId: string;
  *   channelCount: number;
@@ -287,7 +274,9 @@ export async function captureAudio({ deviceId, channelCount, onStart }) {
         }
         return merged;
       });
-      const wavBuffer = samplesToWav(samples, audioContext.sampleRate);
+      const wav = new WaveFile();
+      wav.fromScratch(samples.length, audioContext.sampleRate, '32f', samples);
+      const wavBuffer = wav.toBuffer();
       onDone(wavBuffer);
     } catch (err) {
       onError(err);

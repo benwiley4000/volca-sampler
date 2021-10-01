@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import SampleList from './SampleList';
 import SampleDetail from './SampleDetail';
 import SampleRecord from './SampleRecord';
-import { factorySamples, SampleContainer, storeWavSourceFile } from './store';
+import { factorySamples, SampleContainer, storeAudioSourceFile } from './store';
 
 {
   const css = `
@@ -89,11 +89,11 @@ function App() {
   const handleRecordStart = useCallback(() => setCaptureState('capturing'), []);
 
   /**
-   * @type {(wavBuffer: Uint8Array, userFile?: File) => void}
+   * @type {(audioFileBuffer: Uint8Array, userFile?: File) => void}
    * */
-  const handleRecordFinish = useCallback(async (wavBuffer, userFile) => {
+  const handleRecordFinish = useCallback(async (audioFileBuffer, userFile) => {
     setCaptureState('preparing');
-    const sourceFileId = await storeWavSourceFile(wavBuffer);
+    const sourceFileId = await storeAudioSourceFile(audioFileBuffer);
     /**
      * @type {string}
      */

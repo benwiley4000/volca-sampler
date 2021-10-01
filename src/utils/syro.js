@@ -1,5 +1,5 @@
 import { getSyroBindings } from './getSyroBindings';
-import { convertWavTo16BitMono } from './audioData';
+import { getTargetWavForSample } from './audioData';
 
 /**
  * @param {import('../store').SampleContainer} sampleContainer
@@ -16,7 +16,7 @@ export async function getSampleBuffer(sampleContainer, onProgress) {
     freeSampleBuffer,
     heap8Buffer,
   } = await getSyroBindings();
-  const { data, sampleRate } = await convertWavTo16BitMono(sampleContainer);
+  const { data, sampleRate } = await getTargetWavForSample(sampleContainer);
   const pcmData = data.slice(44);
   const err = startSampleBufferFrom16BitPcmData(
     pcmData,

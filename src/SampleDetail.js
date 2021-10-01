@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
 
 import Waveform from './Waveform';
-import { convertWavTo16BitMono } from './utils/audioData';
+import { getTargetWavForSample } from './utils/audioData';
 import { getSampleBuffer } from './utils/syro';
 import { SampleContainer } from './store';
 
@@ -148,7 +148,7 @@ function SampleDetail({
         <button
           type="button"
           onClick={async () => {
-            const { data } = await convertWavTo16BitMono(sample);
+            const { data } = await getTargetWavForSample(sample);
             playAudioFile(data);
           }}
         >
@@ -157,7 +157,7 @@ function SampleDetail({
         <button
           type="button"
           onClick={async () => {
-            const { data } = await convertWavTo16BitMono(sample);
+            const { data } = await getTargetWavForSample(sample);
             const blob = new Blob([data], {
               type: 'audio/x-wav',
             });

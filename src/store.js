@@ -44,7 +44,9 @@ import { SAMPLE_RATE } from './utils/constants';
  * @property {[number, number]} [trimFrames]
  */
 
-const wavDataStore = localforage.createInstance({
+const audioFileDataStore = localforage.createInstance({
+  // stores more than wavs but keeping this for now for backwards compatibility
+  // TODO: rename store to audio_file_data before releasing
   name: 'wav_data',
   driver: localforage.INDEXEDDB,
 });
@@ -55,12 +57,12 @@ const sampleMetadataStore = localforage.createInstance({
 });
 
 /**
- * @param {Uint8Array} wavData
+ * @param {Uint8Array} audioFileData
  * @returns {Promise<string>} id
  */
-export async function storeWavSourceFile(wavData) {
+export async function storeAudioSourceFile(audioFileData) {
   const id = uuidv4();
-  await wavDataStore.setItem(id, wavData);
+  await audioFileDataStore.setItem(id, audioFileData);
   return id;
 }
 
@@ -268,7 +270,7 @@ export class SampleContainer {
       }
     }
     if (sourceFileId.includes('.')) {
-      // assume it's a URL pointing to a WAV file
+      // assume it's a URL pointing to a an audio file
       const buffer = await (await fetch(sourceFileId)).arrayBuffer();
       const data = new Uint8Array(buffer);
       this.cacheSourceFileData(sourceFileId, data);
@@ -277,7 +279,7 @@ export class SampleContainer {
     /**
      * @type {unknown}
      */
-    const data = await wavDataStore.getItem(sourceFileId);
+    const data = await audioFileDataStore.getItem(sourceFileId);
     if (data) {
       if (data instanceof Uint8Array) {
         this.cacheSourceFileData(sourceFileId, data);
@@ -299,7 +301,7 @@ export class SampleContainer {
         sampleMetadata.set(id, upgradedMetadata);
       }
     });
-    const sourceIds = (await wavDataStore.keys()).concat(
+    const sourceIds = (await audioFileDataStore.keys()).concat(
       factorySampleParams.map(({ sourceFileId }) => sourceFileId)
     );
     const sampleContainers = /** @type {SampleContainer[]} */ (

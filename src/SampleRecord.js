@@ -1,16 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { getAudioBufferForAudioFileData } from './utils/audioData';
 
-import {
-  captureAudio,
-  getAudioInputDevices,
-  samplesToWav,
-} from './utils/recording';
+import { captureAudio, getAudioInputDevices } from './utils/recording';
 
 /**
  * @typedef {{
  *   onRecordStart: () => void;
- *   onRecordFinish: (wavBuffer: Uint8Array, userFile?: File) => void;
+ *   onRecordFinish: (audioFileBuffer: Uint8Array, userFile?: File) => void;
  *   onRecordError: (err: unknown) => void;
  * }} MediaRecordingCallbacks
  */
@@ -168,16 +164,25 @@ function SampleRecord({ captureState, ...callbacks }) {
             const file = e.target.files[0];
             file.arrayBuffer().then(async (arrayBuffer) => {
               const audioFileBuffer = new Uint8Array(arrayBuffer);
-              const audioBuffer = await getAudioBufferForAudioFileData(
-                audioFileBuffer
-              );
-              const samples = /** @type {void[]} */ (
-                Array(audioBuffer.numberOfChannels)
-              )
-                .fill()
-                .map((_, i) => audioBuffer.getChannelData(i));
-              const wavBuffer = samplesToWav(samples, audioBuffer.sampleRate);
-              callbacks.onRecordFinish(wavBuffer, file);
+              /**
+               * @type {AudioBuffer}
+               */
+              let audioBuffer;
+              try {
+                audioBuffer = await getAudioBufferForAudioFileData(
+                  audioFileBuffer
+                );
+              } catch (err) {
+                alert('Unsupported audio format detected');
+                return;
+              }
+              if (audioBuffer.length > 10 * audioBuffer.sampleRate) {
+                alert(
+                  'Please select an audio file no more than 10 seconds long'
+                );
+                return;
+              }
+              callbacks.onRecordFinish(audioFileBuffer, file);
             });
           }
         }}

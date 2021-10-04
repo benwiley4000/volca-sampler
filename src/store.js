@@ -270,8 +270,14 @@ export class SampleContainer {
       }
     }
     if (sourceFileId.includes('.')) {
+      const res = await fetch(sourceFileId);
+      if (res.status >= 400) {
+        return Promise.reject(
+          new Error(`Failed to fetch source file "${sourceFileId}"`)
+        );
+      }
       // assume it's a URL pointing to a an audio file
-      const buffer = await (await fetch(sourceFileId)).arrayBuffer();
+      const buffer = await res.arrayBuffer();
       const data = new Uint8Array(buffer);
       this.cacheSourceFileData(sourceFileId, data);
       return data;

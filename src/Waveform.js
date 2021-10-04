@@ -11,7 +11,7 @@ import {
   getMonoSamplesFromAudioBuffer,
   findSamplePeak,
   getTrimmedView,
-} from './utils/audioData';
+} from './utils/audioData.js';
 
 /**
  * @param {Float32Array} samples an array of floats from -1 to 1

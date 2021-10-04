@@ -1,8 +1,8 @@
 import localforage from 'localforage';
 import { v4 as uuidv4 } from 'uuid';
 
-import factorySampleParams from './factory-samples.json';
-import { SAMPLE_RATE } from './utils/constants';
+import factorySampleParams from './factory-samples.js';
+import { SAMPLE_RATE } from './utils/constants.js';
 
 /**
  * @typedef {object} SampleContainerParams

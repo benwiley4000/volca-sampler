@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
 
-import SampleList from './SampleList';
-import SampleDetail from './SampleDetail';
-import SampleRecord from './SampleRecord';
-import { factorySamples, SampleContainer, storeAudioSourceFile } from './store';
+import SampleList from './SampleList.js';
+import SampleDetail from './SampleDetail.js';
+import SampleRecord from './SampleRecord.js';
+import { factorySamples, SampleContainer, storeAudioSourceFile } from './store.js';
 
 {
   const css = `

@@ -28,9 +28,9 @@ const factorySamplesIndex = filenames
 const factorySamplesIndexPath = path.join(
   __dirname,
   'src',
-  'factory-samples.json'
+  'factory-samples.js'
 );
 fs.writeFileSync(
   factorySamplesIndexPath,
-  JSON.stringify(factorySamplesIndex, null, 2)
+  `export default ${JSON.stringify(factorySamplesIndex, null, 2)};`
 );

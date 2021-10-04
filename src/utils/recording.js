@@ -1,7 +1,7 @@
 import { WaveFile } from 'wavefile';
 
-import { clampOutOfBoundsValues } from './audioData';
-import { SAMPLE_RATE } from './constants';
+import { clampOutOfBoundsValues } from './audioData.js';
+import { SAMPLE_RATE } from './constants.js';
 
 /**
  * @type {AudioContext | undefined}

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { getAudioBufferForAudioFileData } from './utils/audioData';
 
-import { captureAudio, getAudioInputDevices } from './utils/recording';
+import { getAudioBufferForAudioFileData } from './utils/audioData.js';
+import { captureAudio, getAudioInputDevices } from './utils/recording.js';
 
 /**
  * @typedef {{

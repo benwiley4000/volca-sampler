@@ -1,7 +1,7 @@
 import getWavFileHeaders from 'wav-headers';
 
-import { SampleContainer } from '../store';
-import { SAMPLE_RATE } from './constants';
+import { SampleContainer } from '../store.js';
+import { SAMPLE_RATE } from './constants.js';
 
 /**
  * @param {Float32Array} array

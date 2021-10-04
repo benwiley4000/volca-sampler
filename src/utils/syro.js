@@ -1,5 +1,5 @@
-import { getSyroBindings } from './getSyroBindings';
-import { getTargetWavForSample } from './audioData';
+import { getSyroBindings } from './getSyroBindings.js';
+import { getTargetWavForSample } from './audioData.js';
 
 /**
  * @param {import('../store').SampleContainer} sampleContainer

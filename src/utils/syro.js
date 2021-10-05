@@ -18,7 +18,7 @@ export async function getSampleBuffer(sampleContainer, onProgress) {
   } = await getSyroBindings();
   const { data, sampleRate } = await getTargetWavForSample(sampleContainer);
   const pcmData = data.slice(44);
-  const err = startSampleBufferFrom16BitPcmData(
+  const sampleBufferContainer = startSampleBufferFrom16BitPcmData(
     pcmData,
     pcmData.length,
     sampleRate,
@@ -26,13 +26,13 @@ export async function getSampleBuffer(sampleContainer, onProgress) {
     sampleContainer.metadata.qualityBitDepth,
     sampleContainer.metadata.useCompression ? 1 : 0
   );
-  if (err) {
+  if (!sampleBufferContainer) {
     return Promise.reject('Failed to prepare sample buffer');
   }
-  const bufferPointer = getSampleBufferPointer();
-  const bufferSize = getSampleBufferSize();
+  const bufferPointer = getSampleBufferPointer(sampleBufferContainer);
+  const bufferSize = getSampleBufferSize(sampleBufferContainer);
   const resultView = new Uint8Array(heap8Buffer(), bufferPointer, bufferSize);
-  onProgress(getSampleBufferProgress() / bufferSize);
+  onProgress(getSampleBufferProgress(sampleBufferContainer) / bufferSize);
   await /** @type {Promise<void>} */ (
     new Promise((resolve, reject) => {
       const targetIterationTime = 10;
@@ -41,7 +41,7 @@ export async function getSampleBuffer(sampleContainer, onProgress) {
       let lastIterationInterval = 100_000;
       requestAnimationFrame(iterate);
       function iterate() {
-        if (getSampleBufferProgress() >= bufferSize) {
+        if (getSampleBufferProgress(sampleBufferContainer) >= bufferSize) {
           resolve();
           return;
         }
@@ -52,7 +52,7 @@ export async function getSampleBuffer(sampleContainer, onProgress) {
         );
         const before = performance.now();
         try {
-          iterateSampleBuffer(iterationInterval);
+          iterateSampleBuffer(sampleBufferContainer, iterationInterval);
         } catch (err) {
           reject(err);
           return;
@@ -64,13 +64,13 @@ export async function getSampleBuffer(sampleContainer, onProgress) {
           lastTime = 0.5;
         }
         lastIterationInterval = iterationInterval;
-        onProgress(getSampleBufferProgress() / bufferSize);
+        onProgress(getSampleBufferProgress(sampleBufferContainer) / bufferSize);
         requestAnimationFrame(iterate);
       }
     })
   );
   // save a new copy of the data before freeing the result
   const sampleBuffer = new Uint8Array(resultView);
-  freeSampleBuffer();
+  freeSampleBuffer(sampleBufferContainer);
   return sampleBuffer;
 }

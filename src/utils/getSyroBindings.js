@@ -25,11 +25,14 @@
  *     quality: number,
  *     useCompression: 0 | 1
  *   ) => number;
- *   iterateSampleBuffer: (iterations: number) => void;
- *   getSampleBufferPointer: () => number;
- *   getSampleBufferSize: () => number;
- *   getSampleBufferProgress: () => number;
- *   freeSampleBuffer: () => void;
+ *   iterateSampleBuffer: (
+ *     sampleBufferContainer: number,
+ *     iterations: number
+ *   ) => void;
+ *   getSampleBufferPointer: (sampleBufferContainer: number) => number;
+ *   getSampleBufferSize: (sampleBufferContainer: number) => number;
+ *   getSampleBufferProgress: (sampleBufferContainer: number) => number;
+ *   freeSampleBuffer: (sampleBufferContainer: number) => void;
  *   heap8Buffer: () => ArrayBuffer;
  * }} SyroBindings
  */
@@ -72,23 +75,22 @@ export async function getSyroBindings() {
           ),
           iterateSampleBuffer: Module.cwrap('iterateSampleBuffer', null, [
             'number',
+            'number',
           ]),
           getSampleBufferPointer: Module.cwrap(
             'getSampleBufferPointer',
             'number',
-            []
+            ['number']
           ),
-          getSampleBufferSize: Module.cwrap(
-            'getSampleBufferSize',
+          getSampleBufferSize: Module.cwrap('getSampleBufferSize', 'number', [
             'number',
-            []
-          ),
+          ]),
           getSampleBufferProgress: Module.cwrap(
             'getSampleBufferProgress',
             'number',
-            []
+            ['number']
           ),
-          freeSampleBuffer: Module.cwrap('freeSampleBuffer', null, []),
+          freeSampleBuffer: Module.cwrap('freeSampleBuffer', null, ['number']),
           heap8Buffer() {
             return Module.HEAP8.buffer;
           },

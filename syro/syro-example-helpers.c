@@ -203,8 +203,6 @@ static bool setup_file_sample(uint8_t *src, uint32_t size, SyroData *syro_data)
 	syro_data->Size = chunk_size;
 	syro_data->Fs = wav_fs;
 	syro_data->SampleEndian = LittleEndian;
-		
-	printf ("ok.\n");
 	
 	return true;
 }

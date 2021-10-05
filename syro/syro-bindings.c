@@ -3,168 +3,165 @@
 #endif
 #include "./syro-example-helpers.c"
 
-uint8_t *buf_dest;
-uint32_t size_dest;
-uint32_t progress_dest;
-
-// internal
-SyroData *current_syro_data;
-SyroHandle *current_syro_handle;
+typedef struct SampleBufferContainer
+{
+  uint8_t *buffer;
+  uint32_t size;
+  uint32_t progress;
+  // internal
+  SyroData *syro_data;
+  SyroHandle syro_handle;
+} SampleBufferContainer;
 
 #ifdef __EMSCRIPTEN__
 EMSCRIPTEN_KEEPALIVE
 #endif
-uint8_t *getSampleBufferPointer()
+uint8_t *getSampleBufferPointer(SampleBufferContainer *sampleBuffer)
 {
-  return buf_dest;
+  return sampleBuffer->buffer;
 }
 
 #ifdef __EMSCRIPTEN__
 EMSCRIPTEN_KEEPALIVE
 #endif
-uint32_t getSampleBufferSize()
+uint32_t getSampleBufferSize(SampleBufferContainer *sampleBuffer)
 {
-  return size_dest;
+  return sampleBuffer->size;
 }
 
 #ifdef __EMSCRIPTEN__
 EMSCRIPTEN_KEEPALIVE
 #endif
-uint32_t getSampleBufferProgress()
+uint32_t getSampleBufferProgress(SampleBufferContainer *sampleBuffer)
 {
-  return progress_dest;
+  return sampleBuffer->progress;
 }
 
 #ifdef __EMSCRIPTEN__
 EMSCRIPTEN_KEEPALIVE
 #endif
-void freeSampleBuffer()
+void freeSampleBuffer(SampleBufferContainer *sampleBuffer)
 {
-  free(buf_dest);
-  free(current_syro_data);
-  free(current_syro_handle);
+  free(sampleBuffer->buffer);
+  free(sampleBuffer->syro_data);
 }
 
-int startSampleBuffer()
+/**
+ * Returns a non-zero pointer if successful or 0 if not
+ */
+SampleBufferContainer *startSampleBuffer(SyroData *syro_data)
 {
-  SyroStatus status;
   const int num_of_data = 1;
   uint32_t frame;
+  SampleBufferContainer *sampleBuffer = malloc(sizeof(SampleBufferContainer));
+  sampleBuffer->syro_data = syro_data;
 
   //----- Start ------
-  status = SyroVolcaSample_Start(current_syro_handle, current_syro_data, num_of_data, 0, &frame);
+  SyroStatus status = SyroVolcaSample_Start(&(sampleBuffer->syro_handle), sampleBuffer->syro_data, num_of_data, 0, &frame);
   if (status != Status_Success)
   {
     printf(" Start error, %d \n", status);
-    free_syrodata(current_syro_data, num_of_data);
-    return 1;
+    free_syrodata(sampleBuffer->syro_data, num_of_data);
+    return 0;
   }
 
-  size_dest = (frame * 4) + sizeof(wav_header);
-  progress_dest = 0;
+  sampleBuffer->size = (frame * 4) + sizeof(wav_header);
+  sampleBuffer->progress = 0;
 
-  buf_dest = malloc(size_dest);
-  if (!buf_dest)
+  sampleBuffer->buffer = malloc(sampleBuffer->size);
+  if (!sampleBuffer->buffer)
   {
     printf(" Not enough memory for write file.\n");
-    SyroVolcaSample_End(*current_syro_handle);
-    free_syrodata(current_syro_data, num_of_data);
-    return 1;
+    SyroVolcaSample_End(sampleBuffer->syro_handle);
+    free_syrodata(sampleBuffer->syro_data, num_of_data);
+    return 0;
   }
 
-  memcpy(buf_dest, wav_header, sizeof(wav_header));
-  set_32Bit_value((buf_dest + WAV_POS_RIFF_SIZE), ((frame * 4) + 0x24));
-  set_32Bit_value((buf_dest + WAV_POS_DATA_SIZE), (frame * 4));
+  memcpy(sampleBuffer->buffer, wav_header, sizeof(wav_header));
+  set_32Bit_value((sampleBuffer->buffer + WAV_POS_RIFF_SIZE), ((frame * 4) + 0x24));
+  set_32Bit_value((sampleBuffer->buffer + WAV_POS_DATA_SIZE), (frame * 4));
 
-  progress_dest += sizeof(wav_header);
+  sampleBuffer->progress += sizeof(wav_header);
 
-  return 0;
+  return sampleBuffer;
 }
 
 #ifdef __EMSCRIPTEN__
 EMSCRIPTEN_KEEPALIVE
 #endif
-void iterateSampleBuffer(int32_t iterations)
+void iterateSampleBuffer(SampleBufferContainer *sampleBuffer, int32_t iterations)
 {
   const int num_of_data = 1;
   int16_t left, right;
   int32_t frame = iterations;
-  while (progress_dest < size_dest && frame)
+  while (sampleBuffer->progress < sampleBuffer->size && frame)
   {
-    SyroVolcaSample_GetSample(*current_syro_handle, &left, &right);
-    buf_dest[progress_dest++] = (uint8_t)left;
-    buf_dest[progress_dest++] = (uint8_t)(left >> 8);
-    buf_dest[progress_dest++] = (uint8_t)right;
-    buf_dest[progress_dest++] = (uint8_t)(right >> 8);
+    SyroVolcaSample_GetSample(sampleBuffer->syro_handle, &left, &right);
+    sampleBuffer->buffer[sampleBuffer->progress++] = (uint8_t)left;
+    sampleBuffer->buffer[sampleBuffer->progress++] = (uint8_t)(left >> 8);
+    sampleBuffer->buffer[sampleBuffer->progress++] = (uint8_t)right;
+    sampleBuffer->buffer[sampleBuffer->progress++] = (uint8_t)(right >> 8);
     frame--;
   }
-  if (progress_dest == size_dest)
+  if (sampleBuffer->progress == sampleBuffer->size)
   {
-    SyroVolcaSample_End(*current_syro_handle);
-    free_syrodata(current_syro_data, num_of_data);
+    SyroVolcaSample_End(sampleBuffer->syro_handle);
+    free_syrodata(sampleBuffer->syro_data, num_of_data);
   }
 }
 
 #ifdef __EMSCRIPTEN__
 EMSCRIPTEN_KEEPALIVE
 #endif
-int prepareSampleBufferFrom16BitPcmData(uint8_t *pcmData, uint32_t bytes, uint32_t rate, uint32_t slotNumber, uint32_t quality, uint32_t useCompression)
+SampleBufferContainer *startSampleBufferFrom16BitPcmData(uint8_t *pcmData, uint32_t bytes, uint32_t rate, uint32_t slotNumber, uint32_t quality, uint32_t useCompression)
 {
-  current_syro_data = malloc(sizeof(SyroData));
-  current_syro_data->DataType = useCompression == 0 ? DataType_Sample_Liner : DataType_Sample_Compress;
-  current_syro_data->Number = slotNumber;
-  current_syro_data->Quality = quality;
-  current_syro_data->pData = pcmData;
-  current_syro_data->Size = bytes;
-  current_syro_data->Fs = rate;
-  current_syro_data->SampleEndian = LittleEndian;
-  int error = startSampleBuffer();
-  if (error)
+  SyroData *syro_data = malloc(sizeof(SyroData));
+  syro_data->DataType = useCompression == 0 ? DataType_Sample_Liner : DataType_Sample_Compress;
+  syro_data->Number = slotNumber;
+  syro_data->Quality = quality;
+  syro_data->pData = pcmData;
+  syro_data->Size = bytes;
+  syro_data->Fs = rate;
+  syro_data->SampleEndian = LittleEndian;
+  return startSampleBuffer(syro_data);
+}
+
+#ifdef __EMSCRIPTEN__
+EMSCRIPTEN_KEEPALIVE
+#endif
+SampleBufferContainer *prepareSampleBufferFrom16BitPcmData(uint8_t *pcmData, uint32_t bytes, uint32_t rate, uint32_t slotNumber, uint32_t quality, uint32_t useCompression)
+{
+  SampleBufferContainer *sampleBuffer = startSampleBufferFrom16BitPcmData(pcmData, bytes, rate, slotNumber, quality, useCompression);
+  if (!sampleBuffer)
   {
     printf("Oops!\n");
-    return 1;
+    return 0;
   }
-  iterateSampleBuffer(size_dest);
-  return 0;
+  iterateSampleBuffer(sampleBuffer, sampleBuffer->size);
+  return sampleBuffer;
 }
 
 #ifdef __EMSCRIPTEN__
 EMSCRIPTEN_KEEPALIVE
 #endif
-int startSampleBufferFrom16BitPcmData(uint8_t *pcmData, uint32_t bytes, uint32_t rate, uint32_t slotNumber, uint32_t quality, uint32_t useCompression)
+SampleBufferContainer *prepareSampleBufferFromWavData(uint8_t *wavData, uint32_t bytes, uint32_t slotNumber, uint32_t quality, uint32_t useCompression)
 {
-  current_syro_data = malloc(sizeof(SyroData));
-  current_syro_data->DataType = useCompression == 0 ? DataType_Sample_Liner : DataType_Sample_Compress;
-  current_syro_data->Number = slotNumber;
-  current_syro_data->Quality = quality;
-  current_syro_data->pData = pcmData;
-  current_syro_data->Size = bytes;
-  current_syro_data->Fs = rate;
-  current_syro_data->SampleEndian = LittleEndian;
-  return startSampleBuffer();
-}
-
-#ifdef __EMSCRIPTEN__
-EMSCRIPTEN_KEEPALIVE
-#endif
-int prepareSampleBufferFromWavData(uint8_t *wavData, uint32_t bytes, uint32_t slotNumber, uint32_t quality, uint32_t useCompression)
-{
-  current_syro_data = malloc(sizeof(SyroData));
-  current_syro_data->DataType = useCompression == 0 ? DataType_Sample_Liner : DataType_Sample_Compress;
-  current_syro_data->Number = slotNumber;
-  current_syro_data->Quality = quality;
-  bool ok = setup_file_sample(wavData, bytes, current_syro_data);
+  SyroData *syro_data = malloc(sizeof(SyroData));
+  syro_data->DataType = useCompression == 0 ? DataType_Sample_Liner : DataType_Sample_Compress;
+  syro_data->Number = slotNumber;
+  syro_data->Quality = quality;
+  bool ok = setup_file_sample(wavData, bytes, syro_data);
   if (!ok)
   {
     printf("Oops!\n");
-    return 1;
+    return 0;
   }
-  int error = startSampleBuffer();
-  if (error)
+  SampleBufferContainer *sampleBuffer = startSampleBuffer(syro_data);
+  if (!sampleBuffer)
   {
     printf("Oops!\n");
-    return 1;
+    return 0;
   }
-  iterateSampleBuffer(size_dest);
-  return 0;
+  iterateSampleBuffer(sampleBuffer, sampleBuffer->size);
+  return sampleBuffer;
 }

@@ -18,8 +18,10 @@
     "start": "craco start",
     "build": "craco build",
     "deploy": "gh-pages -d build",
-    "test": "echo 'No tests yet'",
-    "eject": "react-scripts eject"
+    "test": "node test/syro-bindings.test.js | tap-spec-emoji",
+    "eject": "react-scripts eject",
+    "//": "puppeteer installs chromium automatically but we also want firefox",
+    "postinstall": "PUPPETEER_PRODUCT=firefox npm run install --prefix ./node_modules/puppeteer"
   },
   "homepage": ".",
   "eslintConfig": {
@@ -42,7 +44,13 @@
   "devDependencies": {
     "@craco/craco": "^6.3.0",
     "@types/dom-mediacapture-record": "^1.0.10",
+    "cjstoesm": "^1.1.4",
     "craco-esbuild": "^0.4.1",
-    "gh-pages": "^3.2.3"
+    "express": "^4.17.1",
+    "gh-pages": "^3.2.3",
+    "puppeteer": "^10.4.0",
+    "tap-spec-emoji": "^6.1.2",
+    "tape": "^5.3.1",
+    "typescript": "^4.4.3"
   }
 }

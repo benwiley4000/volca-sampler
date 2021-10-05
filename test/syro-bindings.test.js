@@ -222,7 +222,7 @@ test('syroBindings load correctly', async (t) => {
   );
 });
 
-test('getSampleBuffer (uncompressed)', async (t) => {
+test('getSampleBuffer', async (t) => {
   await forEachBrowser(
     {
       scripts: ['syro-bindings.js'],
@@ -247,13 +247,13 @@ test('getSampleBuffer (uncompressed)', async (t) => {
       /**
        * @type {puppeteer.JSHandle<import('../src/store').SampleContainer>}
        */
-      const sampleContainerHandle = await page.evaluateHandle(
+      const sampleContainerUncompressedHandle = await page.evaluateHandle(
         async (sourceFileId, slotNumber) => {
           /**
            * @type {typeof import('../src/store').SampleContainer}
            */
           const SampleContainer = window.SampleContainer;
-          return new SampleContainer({
+          return new SampleContainer.Mutable({
             name: 'textSample',
             sourceFileId,
             slotNumber,
@@ -263,28 +263,19 @@ test('getSampleBuffer (uncompressed)', async (t) => {
         sourceFileId,
         slotNumber
       );
-      const webSampleBufferContents = Buffer.from(
-        await page.evaluate(async (sampleContainer) => {
-          /**
-           * @type {typeof import('../src/utils/syro').getSampleBuffer}
-           */
-          const getSampleBuffer = window.getSampleBuffer;
-          const sampleBuffer = await getSampleBuffer(
-            sampleContainer,
-            () => null
-          );
-          const sampleBufferContents = [...sampleBuffer];
-          return sampleBufferContents;
-        }, sampleContainerHandle)
-      );
-      await fs.writeFile(
-        path.join(
-          __dirname,
-          `${
-            sourceFileId.split('/').pop().split('.wav')[0]
-          } [wasm] (uncompressed).wav`
-        ),
-        webSampleBufferContents
+      /**
+       * @type {puppeteer.JSHandle<import('../src/store').SampleContainer>}
+       */
+      const sampleContainerCompressedHandle = await page.evaluateHandle(
+        /**
+         * @param {SampleContainer} sampleContainerUncompressed
+         */
+        async (sampleContainerUncompressed) =>
+          sampleContainerUncompressed instanceof SampleContainer.Mutable &&
+          sampleContainerUncompressed.update({
+            useCompression: true,
+          }),
+        sampleContainerUncompressedHandle
       );
       const nativeSampleBufferContents = await fs.readFile(
         path.join(
@@ -299,63 +290,99 @@ test('getSampleBuffer (uncompressed)', async (t) => {
           ).uncompressed
         )
       );
-      const webSampleBufferHeader = webSampleBufferContents.slice(0, 44);
-      const nativeSampleBufferHeader = nativeSampleBufferContents.slice(0, 44);
-      t.deepEqual(
-        webSampleBufferHeader,
-        nativeSampleBufferHeader,
-        'WASM and native WAV headers should match'
-      );
-      const webSampleBufferPcmData = webSampleBufferContents.slice(44);
-      const nativeSampleBufferPcmData = nativeSampleBufferContents.slice(44);
-      t.deepEqual(
-        webSampleBufferPcmData,
-        nativeSampleBufferPcmData,
-        'WASM and native PCM data should match'
-      );
-      if (!webSampleBufferPcmData.equals(nativeSampleBufferPcmData)) {
-        {
-          const badRanges = [];
-          // samples are 16-bit stereo-interleaved so 32 bits for one frame
-          const webSamples = new Int32Array(webSampleBufferPcmData.buffer);
-          const nativeSamples = new Int32Array(
-            nativeSampleBufferPcmData.buffer
-          );
-          for (let i = 0; i < webSamples.length; i++) {
-            if (nativeSamples[i] !== webSamples[i]) {
-              const currentRange = badRanges[badRanges.length - 1];
-              if (currentRange && currentRange[1] + 1 === i) {
-                currentRange[1] = i;
-              } else {
-                badRanges.push([i, i]);
+      for (const sampleContainerHandle of [
+        sampleContainerUncompressedHandle,
+        // TODO: enable compressed test if it can work better with wasm
+        // sampleContainerCompressedHandle,
+      ]) {
+        const label =
+          sampleContainerHandle === sampleContainerCompressedHandle
+            ? '(compressed)'
+            : '(uncompressed)';
+        const webSampleBufferContents = Buffer.from(
+          await page.evaluate(async (sampleContainer) => {
+            /**
+             * @type {typeof import('../src/utils/syro').getSampleBuffer}
+             */
+            const getSampleBuffer = window.getSampleBuffer;
+            const sampleBuffer = await getSampleBuffer(
+              sampleContainer,
+              () => null
+            );
+            const sampleBufferContents = [...sampleBuffer];
+            return sampleBufferContents;
+          }, sampleContainerHandle)
+        );
+        await fs.writeFile(
+          path.join(
+            __dirname,
+            `${
+              sourceFileId.split('/').pop().split('.wav')[0]
+            } [wasm] ${label}.wav`
+          ),
+          webSampleBufferContents
+        );
+        const webSampleBufferHeader = webSampleBufferContents.slice(0, 44);
+        const nativeSampleBufferHeader = nativeSampleBufferContents.slice(
+          0,
+          44
+        );
+        t.deepEqual(
+          webSampleBufferHeader,
+          nativeSampleBufferHeader,
+          `WASM and native WAV headers should match ${label}`
+        );
+        const webSampleBufferPcmData = webSampleBufferContents.slice(44);
+        const nativeSampleBufferPcmData = nativeSampleBufferContents.slice(44);
+        t.deepEqual(
+          webSampleBufferPcmData,
+          nativeSampleBufferPcmData,
+          `WASM and native PCM data should match ${label}`
+        );
+        if (!webSampleBufferPcmData.equals(nativeSampleBufferPcmData)) {
+          {
+            const badRanges = [];
+            // samples are 16-bit stereo-interleaved so 32 bits for one frame
+            const webSamples = new Int32Array(webSampleBufferPcmData.buffer);
+            const nativeSamples = new Int32Array(
+              nativeSampleBufferPcmData.buffer
+            );
+            for (let i = 0; i < webSamples.length; i++) {
+              if (nativeSamples[i] !== webSamples[i]) {
+                const currentRange = badRanges[badRanges.length - 1];
+                if (currentRange && currentRange[1] + 1 === i) {
+                  currentRange[1] = i;
+                } else {
+                  badRanges.push([i, i]);
+                }
               }
             }
+            t.comment(
+              `Bad sample indices (of ${webSamples.length}):\n${badRanges
+                // show byte location within file so increment for header size
+                .map(([a, b]) => `${a + 44}-${b + 44}`)
+                .join(', ')}`
+            );
           }
-          t.comment(
-            `Bad sample indices (of ${webSamples.length}):\n${badRanges
-              // show byte location within file so increment for header size
-              .map(([a, b]) => `${a + 44}-${b + 44}`)
-              .join(', ')}`
-          );
-        }
-        {
-          const badRanges = [];
-          for (let i = 0; i < webSampleBufferPcmData.length; i++) {
-            if (nativeSampleBufferPcmData[i] !== webSampleBufferPcmData[i]) {
-              const currentRange = badRanges[badRanges.length - 1];
-              // allow a 4 byte gap to be considered part of the same range
-              if (currentRange && currentRange[1] + 4 >= i) {
-                currentRange[1] = i;
-              } else {
-                badRanges.push([i, i]);
+          {
+            const badRanges = [];
+            for (let i = 0; i < webSampleBufferPcmData.length; i++) {
+              if (nativeSampleBufferPcmData[i] !== webSampleBufferPcmData[i]) {
+                const currentRange = badRanges[badRanges.length - 1];
+                // allow a 4 byte gap to be considered part of the same range
+                if (currentRange && currentRange[1] + 4 >= i) {
+                  currentRange[1] = i;
+                } else {
+                  badRanges.push([i, i]);
+                }
               }
             }
+            t.comment(
+              `Bad byte ranges (of ${
+                webSampleBufferContents.length
+              }):\n${badRanges.map(([a, b]) => `${a}-${b}`).join(', ')}`
+            );
           }
-          t.comment(
-            `Bad byte ranges (of ${
-              webSampleBufferContents.length
-            }):\n${badRanges.map(([a, b]) => `${a}-${b}`).join(', ')}`
-          );
         }
       }
     }

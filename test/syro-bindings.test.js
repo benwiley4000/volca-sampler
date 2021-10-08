@@ -137,6 +137,75 @@ async function forEachBrowser({ scripts, modules }, callback) {
   testServer.close();
 }
 
+/**
+ * @param {test.Test} t
+ * @param {Buffer} receivedBuffer
+ * @param {Buffer} expectedBuffer
+ */
+function printDiffForWavBuffers(t, receivedBuffer, expectedBuffer) {
+  const receivedPcmData = receivedBuffer.slice(44);
+  const expectedPcmData = expectedBuffer.slice(44);
+  {
+    const badRanges = [];
+    // samples are 16-bit stereo-interleaved so 32 bits for one frame
+    const receivedSamples = new Int32Array(receivedPcmData.buffer);
+    const expectedSamples = new Int32Array(expectedPcmData.buffer);
+    for (let i = 0; i < receivedSamples.length; i++) {
+      if (expectedSamples[i] !== receivedSamples[i]) {
+        const currentRange = badRanges[badRanges.length - 1];
+        if (currentRange && currentRange[1] + 1 === i) {
+          currentRange[1] = i;
+        } else {
+          badRanges.push([i, i]);
+        }
+      }
+    }
+    t.comment(
+      `Bad sample indices (of ${receivedSamples.length}):\n${badRanges
+        .map(([a, b]) => `${a}-${b}`)
+        .join(', ')}`
+    );
+  }
+  {
+    const badRanges = [];
+    for (let i = 0; i < receivedPcmData.length; i++) {
+      if (expectedPcmData[i] !== receivedPcmData[i]) {
+        const currentRange = badRanges[badRanges.length - 1];
+        // allow a 4 byte gap to be considered part of the same range
+        if (currentRange && currentRange[1] + 4 >= i) {
+          currentRange[1] = i;
+        } else {
+          badRanges.push([i, i]);
+        }
+      }
+    }
+    t.comment(
+      `Bad byte ranges (of ${receivedBuffer.length}):\n${badRanges
+        // show byte location within file so increment for header size
+        .map(([a, b]) => `${a + 44}-${b + 44}`)
+        .join(', ')}`
+    );
+  }
+}
+
+const sourceFileId = '/factory-samples/02 Kick 3.wav';
+const slotNumber = 2;
+
+/**
+ * @type {Record<'compressed' | 'uncompressed', Buffer>}
+ */
+const snapshots = ['compressed', 'uncompressed']
+  .map((suffix) => {
+    const snapshot = require('fs').readFileSync(
+      path.join(__dirname, 'snapshots', `syro_stream_${suffix}.wav`)
+    );
+    return [suffix, snapshot];
+  })
+  .reduce(
+    (snapshots, [key, snapshot]) => ({ ...snapshots, [key]: snapshot }),
+    {}
+  );
+
 test('syroBindings load correctly', async (t) => {
   await forEachBrowser(
     {
@@ -227,6 +296,44 @@ test('syroBindings load correctly', async (t) => {
   );
 });
 
+test('syro-bindings.c', async (t) => {
+  /**
+   * @type {Record<'compressed' | 'uncompressed', string>}
+   */
+  const nativeSampleBufferFilenames = JSON.parse(
+    child_process
+      .execSync(`./convert-sample "../public${sourceFileId}" ${slotNumber}`, {
+        cwd: __dirname,
+      })
+      .toString()
+  );
+  for (const key of /** @type {('compressed' | 'uncompressed')[]} */ ([
+    'compressed',
+    'uncompressed',
+  ])) {
+    const nativeSampleBufferContents = await fs.readFile(
+      path.join(__dirname, nativeSampleBufferFilenames[key])
+    );
+    const nativeSampleBufferHeader = nativeSampleBufferContents.slice(0, 44);
+    const snapshotSampleBufferHeader = snapshots[key].slice(0, 44);
+    t.deepEqual(
+      nativeSampleBufferHeader,
+      snapshotSampleBufferHeader,
+      `Native WAV headers should match snapshot (${key})`
+    );
+    const nativeSampleBufferPcmData = nativeSampleBufferContents.slice(44);
+    const snapshotSampleBufferPcmData = snapshots[key].slice(44);
+    t.deepEqual(
+      nativeSampleBufferPcmData,
+      snapshotSampleBufferPcmData,
+      `Native PCM data should match snapshot (${key})`
+    );
+    if (!nativeSampleBufferPcmData.equals(snapshotSampleBufferPcmData)) {
+      printDiffForWavBuffers(t, nativeSampleBufferContents, snapshots[key]);
+    }
+  }
+});
+
 test('getSampleBuffer', async (t) => {
   await forEachBrowser(
     {
@@ -247,8 +354,6 @@ test('getSampleBuffer', async (t) => {
         window.SampleContainer = storeModule.SampleContainer;
         window.getSampleBuffer = syroUtilsModule.getSampleBuffer;
       });
-      const sourceFileId = '/factory-samples/02 Kick 3.wav';
-      const slotNumber = 2;
       /**
        * @type {puppeteer.JSHandle<import('../src/store').SampleContainer>}
        */
@@ -282,28 +387,15 @@ test('getSampleBuffer', async (t) => {
           }),
         sampleContainerUncompressedHandle
       );
-      const nativeSampleBufferContents = await fs.readFile(
-        path.join(
-          __dirname,
-          JSON.parse(
-            child_process
-              .execSync(
-                `./convert-sample "../public${sourceFileId}" ${slotNumber}`,
-                { cwd: __dirname }
-              )
-              .toString()
-          ).uncompressed
-        )
-      );
       for (const sampleContainerHandle of [
         sampleContainerUncompressedHandle,
         // TODO: enable compressed test if it can work better with wasm
         // sampleContainerCompressedHandle,
       ]) {
-        const label =
+        const key =
           sampleContainerHandle === sampleContainerCompressedHandle
-            ? '(compressed)'
-            : '(uncompressed)';
+            ? 'compressed'
+            : 'uncompressed';
         const webSampleBufferContents = Buffer.from(
           await page.evaluate(async (sampleContainer) => {
             /**
@@ -323,71 +415,30 @@ test('getSampleBuffer', async (t) => {
             __dirname,
             `${
               sourceFileId.split('/').pop().split('.wav')[0]
-            } [wasm] ${label}.wav`
+            } [wasm] (${key}).wav`
           ),
           webSampleBufferContents
         );
         const webSampleBufferHeader = webSampleBufferContents.slice(0, 44);
-        const nativeSampleBufferHeader = nativeSampleBufferContents.slice(
-          0,
-          44
-        );
+        const snapshotSampleBufferHeader = snapshots[key].slice(0, 44);
         t.deepEqual(
           webSampleBufferHeader,
-          nativeSampleBufferHeader,
-          `WASM and native WAV headers should match ${label}`
+          snapshotSampleBufferHeader,
+          `WASM WAV headers should match snapshot (${key})`
         );
         const webSampleBufferPcmData = webSampleBufferContents.slice(44);
-        const nativeSampleBufferPcmData = nativeSampleBufferContents.slice(44);
+        const snapshotSampleBufferPcmData = snapshots[key].slice(44);
         t.deepEqual(
           webSampleBufferPcmData,
-          nativeSampleBufferPcmData,
-          `WASM and native PCM data should match ${label}`
+          snapshotSampleBufferPcmData,
+          `WASM PCM data should match snapshot (${key})`
         );
-        if (!webSampleBufferPcmData.equals(nativeSampleBufferPcmData)) {
-          {
-            const badRanges = [];
-            // samples are 16-bit stereo-interleaved so 32 bits for one frame
-            const webSamples = new Int32Array(webSampleBufferPcmData.buffer);
-            const nativeSamples = new Int32Array(
-              nativeSampleBufferPcmData.buffer
-            );
-            for (let i = 0; i < webSamples.length; i++) {
-              if (nativeSamples[i] !== webSamples[i]) {
-                const currentRange = badRanges[badRanges.length - 1];
-                if (currentRange && currentRange[1] + 1 === i) {
-                  currentRange[1] = i;
-                } else {
-                  badRanges.push([i, i]);
-                }
-              }
-            }
-            t.comment(
-              `Bad sample indices (of ${webSamples.length}):\n${badRanges
-                // show byte location within file so increment for header size
-                .map(([a, b]) => `${a + 44}-${b + 44}`)
-                .join(', ')}`
-            );
-          }
-          {
-            const badRanges = [];
-            for (let i = 0; i < webSampleBufferPcmData.length; i++) {
-              if (nativeSampleBufferPcmData[i] !== webSampleBufferPcmData[i]) {
-                const currentRange = badRanges[badRanges.length - 1];
-                // allow a 4 byte gap to be considered part of the same range
-                if (currentRange && currentRange[1] + 4 >= i) {
-                  currentRange[1] = i;
-                } else {
-                  badRanges.push([i, i]);
-                }
-              }
-            }
-            t.comment(
-              `Bad byte ranges (of ${
-                webSampleBufferContents.length
-              }):\n${badRanges.map(([a, b]) => `${a}-${b}`).join(', ')}`
-            );
-          }
+        if (!webSampleBufferPcmData.equals(snapshotSampleBufferPcmData)) {
+          printDiffForWavBuffers(
+            t,
+            webSampleBufferContents,
+            snapshots[key]
+          );
         }
       }
     }

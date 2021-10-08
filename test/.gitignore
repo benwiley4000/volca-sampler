@@ -1,2 +1,3 @@
 *.wav
+!snapshots/*.wav
 convert-sample

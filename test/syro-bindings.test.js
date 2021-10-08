@@ -354,48 +354,31 @@ test('getSampleBuffer', async (t) => {
         window.SampleContainer = storeModule.SampleContainer;
         window.getSampleBuffer = syroUtilsModule.getSampleBuffer;
       });
-      /**
-       * @type {puppeteer.JSHandle<import('../src/store').SampleContainer>}
-       */
-      const sampleContainerUncompressedHandle = await page.evaluateHandle(
-        async (sourceFileId, slotNumber) => {
-          /**
-           * @type {typeof import('../src/store').SampleContainer}
-           */
-          const SampleContainer = window.SampleContainer;
-          return new SampleContainer.Mutable({
-            name: 'textSample',
-            sourceFileId,
-            slotNumber,
-            useCompression: false,
-          });
-        },
-        sourceFileId,
-        slotNumber
-      );
-      /**
-       * @type {puppeteer.JSHandle<import('../src/store').SampleContainer>}
-       */
-      const sampleContainerCompressedHandle = await page.evaluateHandle(
-        /**
-         * @param {SampleContainer} sampleContainerUncompressed
-         */
-        async (sampleContainerUncompressed) =>
-          sampleContainerUncompressed instanceof SampleContainer.Mutable &&
-          sampleContainerUncompressed.update({
-            useCompression: true,
-          }),
-        sampleContainerUncompressedHandle
-      );
-      for (const sampleContainerHandle of [
-        sampleContainerUncompressedHandle,
+      for (const key of /** @type {('compressed' | 'uncompressed')[]} */ ([
         // TODO: enable compressed test if it can work better with wasm
-        // sampleContainerCompressedHandle,
-      ]) {
-        const key =
-          sampleContainerHandle === sampleContainerCompressedHandle
-            ? 'compressed'
-            : 'uncompressed';
+        // 'compressed',
+        'uncompressed',
+      ])) {
+        /**
+         * @type {puppeteer.JSHandle<import('../src/store').SampleContainer>}
+         */
+        const sampleContainerHandle = await page.evaluateHandle(
+          async (sourceFileId, slotNumber, useCompression) => {
+            /**
+             * @type {typeof import('../src/store').SampleContainer}
+             */
+            const SampleContainer = window.SampleContainer;
+            return new SampleContainer.Mutable({
+              name: 'textSample',
+              sourceFileId,
+              slotNumber,
+              useCompression,
+            });
+          },
+          sourceFileId,
+          slotNumber,
+          key === 'compressed'
+        );
         const webSampleBufferContents = Buffer.from(
           await page.evaluate(async (sampleContainer) => {
             /**
@@ -434,11 +417,7 @@ test('getSampleBuffer', async (t) => {
           `WASM PCM data should match snapshot (${key})`
         );
         if (!webSampleBufferPcmData.equals(snapshotSampleBufferPcmData)) {
-          printDiffForWavBuffers(
-            t,
-            webSampleBufferContents,
-            snapshots[key]
-          );
+          printDiffForWavBuffers(t, webSampleBufferContents, snapshots[key]);
         }
       }
     }

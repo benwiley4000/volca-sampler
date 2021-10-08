@@ -20,6 +20,7 @@ child_process.execSync(path.join(__dirname, 'build-test-executable.sh'), {
 console.log('Files built.\n');
 
 const testPort = 5432;
+const moduleCache = {};
 function getTestServer() {
   const testServer = express();
   testServer.get('/', (req, res) => {
@@ -56,6 +57,9 @@ function getTestServer() {
               require(path.join(modulePath, 'package.json')).main || 'index.js'
             );
           }
+          if (moduleCache[resolvedPath]) {
+            return moduleCache[resolvedPath];
+          }
           const {
             files: [{ text }],
           } = await transformCjsToEsm({
@@ -63,6 +67,7 @@ function getTestServer() {
             outDir: 'does_not_matter',
             write: false,
           });
+          moduleCache[resolvedPath] = text;
           return text;
         }
       }

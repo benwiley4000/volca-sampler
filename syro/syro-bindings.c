@@ -137,7 +137,7 @@ SampleBufferContainer *prepareSampleBufferFrom16BitPcmData(uint8_t *pcmData, uin
     printf("Oops!\n");
     return 0;
   }
-  iterateSampleBuffer(sampleBuffer, sampleBuffer->size);
+  iterateSampleBuffer(sampleBuffer, INT32_MAX);
   return sampleBuffer;
 }
 
@@ -162,6 +162,6 @@ SampleBufferContainer *prepareSampleBufferFromWavData(uint8_t *wavData, uint32_t
     printf("Oops!\n");
     return 0;
   }
-  iterateSampleBuffer(sampleBuffer, sampleBuffer->size);
+  iterateSampleBuffer(sampleBuffer, INT32_MAX);
   return sampleBuffer;
 }

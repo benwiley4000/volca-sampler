@@ -1,4 +1,4 @@
-#include "../syro/syro-bindings.c"
+#include "../syro/syro-utils.c"
 
 // taken from syro example
 static bool write_file(char *filename, uint8_t *buf, uint32_t size) {
@@ -70,16 +70,16 @@ int lastSlashIndex(char *filename, int length) {
 
 int convertSample(char *filename, uint8_t *inputArray, uint32_t bytes,
                   uint32_t slotNumber, bool useCompression) {
-  SampleBufferContainer *sampleBuffer = prepareSampleBufferFromWavData(
-      inputArray, bytes, slotNumber, 16, useCompression ? 1 : 0);
+  SyroData *syro_data = getSyroDataForWavData(inputArray, bytes, slotNumber, 16,
+                                              useCompression ? 1 : 0);
+  SampleBufferContainer *sampleBuffer = startSampleBuffer(syro_data);
   if (!sampleBuffer) {
-    printf("Oops\n");
+    printf("Oops!\n");
     return 1;
   }
-  uint8_t *bufferPointer = getSampleBufferPointer(sampleBuffer);
-  uint32_t bufferSize = getSampleBufferSize(sampleBuffer);
+  iterateSampleBuffer(sampleBuffer, INT32_MAX);
 
-  if (write_file(filename, bufferPointer, bufferSize)) {
+  if (write_file(filename, sampleBuffer->buffer, sampleBuffer->size)) {
     freeSampleBuffer(sampleBuffer);
   } else {
     printf("Oops\n");

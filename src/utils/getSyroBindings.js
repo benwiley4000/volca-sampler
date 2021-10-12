@@ -7,32 +7,25 @@
  *     bytes: number,
  *     slotNumber: number,
  *     quality: number,
- *     useCompression: 0 | 1
- *   ) => number;
+ *     useCompression: 0 | 1,
+ *     onUpdate: number;
+ *   ) => void;
  *   prepareSampleBufferFrom16BitPcmData(
  *     wavData: Uint8Array,
  *     bytes: number,
  *     rate: number,
  *     slotNumber: number,
  *     quality: number,
- *     useCompression: 0 | 1
- *   ) => number;
- *   startSampleBufferFrom16BitPcmData(
- *     wavData: Uint8Array,
- *     bytes: number,
- *     rate: number,
- *     slotNumber: number,
- *     quality: number,
- *     useCompression: 0 | 1
- *   ) => number;
- *   iterateSampleBuffer: (
- *     sampleBufferContainer: number,
- *     iterations: number
+ *     useCompression: 0 | 1,
+ *     onUpdate: number;
  *   ) => void;
  *   getSampleBufferPointer: (sampleBufferContainer: number) => number;
  *   getSampleBufferSize: (sampleBufferContainer: number) => number;
  *   getSampleBufferProgress: (sampleBufferContainer: number) => number;
- *   freeSampleBuffer: (sampleBufferContainer: number) => void;
+ *   registerUpdateCallback: (
+ *     cb: (sampleBufferContainer: number) => void
+ *   ) => number;
+ *   unregisterUpdateCallback: (pointer: number) => void;
  *   heap8Buffer: () => ArrayBuffer;
  * }} SyroBindings
  */
@@ -60,23 +53,14 @@ export async function getSyroBindings() {
         syroBindings = {
           prepareSampleBufferFromWavData: Module.cwrap(
             'prepareSampleBufferFromWavData',
-            'number',
-            ['array', 'number', 'number', 'number']
+            null,
+            ['array', 'number', 'number', 'number', 'number']
           ),
           prepareSampleBufferFrom16BitPcmData: Module.cwrap(
             'prepareSampleBufferFrom16BitPcmData',
-            'number',
-            ['array', 'number', 'number', 'number', 'number']
+            null,
+            ['array', 'number', 'number', 'number', 'number', 'number']
           ),
-          startSampleBufferFrom16BitPcmData: Module.cwrap(
-            'startSampleBufferFrom16BitPcmData',
-            'number',
-            ['array', 'number', 'number', 'number', 'number']
-          ),
-          iterateSampleBuffer: Module.cwrap('iterateSampleBuffer', null, [
-            'number',
-            'number',
-          ]),
           getSampleBufferPointer: Module.cwrap(
             'getSampleBufferPointer',
             'number',
@@ -90,7 +74,12 @@ export async function getSyroBindings() {
             'number',
             ['number']
           ),
-          freeSampleBuffer: Module.cwrap('freeSampleBuffer', null, ['number']),
+          registerUpdateCallback: (cb) => {
+            return Module.addFunction(cb, 'vi');
+          },
+          unregisterUpdateCallback: (pointer) => {
+            Module.removeFunction(pointer);
+          },
           heap8Buffer() {
             return Module.HEAP8.buffer;
           },

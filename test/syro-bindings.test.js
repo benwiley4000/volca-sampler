@@ -244,22 +244,6 @@ test('syroBindings load correctly', async (t) => {
       );
       t.equal(
         await page.evaluate(
-          (bindings) => typeof bindings.startSampleBufferFrom16BitPcmData,
-          b
-        ),
-        'function',
-        'startSampleBufferFrom16BitPcmData is defined'
-      );
-      t.equal(
-        await page.evaluate(
-          (bindings) => typeof bindings.iterateSampleBuffer,
-          b
-        ),
-        'function',
-        'iterateSampleBuffer is defined'
-      );
-      t.equal(
-        await page.evaluate(
           (bindings) => typeof bindings.getSampleBufferPointer,
           b
         ),
@@ -283,9 +267,20 @@ test('syroBindings load correctly', async (t) => {
         'getSampleBufferProgress is defined'
       );
       t.equal(
-        await page.evaluate((bindings) => typeof bindings.freeSampleBuffer, b),
+        await page.evaluate(
+          (bindings) => typeof bindings.registerUpdateCallback,
+          b
+        ),
         'function',
-        'freeSampleBuffer is defined'
+        'registerUpdateCallback is defined'
+      );
+      t.equal(
+        await page.evaluate(
+          (bindings) => typeof bindings.unregisterUpdateCallback,
+          b
+        ),
+        'function',
+        'unregisterUpdateCallback is defined'
       );
       t.equal(
         await page.evaluate((bindings) => typeof bindings.heap8Buffer, b),
@@ -296,7 +291,7 @@ test('syroBindings load correctly', async (t) => {
   );
 });
 
-test('syro-bindings.c', async (t) => {
+test('syro-utils.c', async (t) => {
   /**
    * @type {Record<'compressed' | 'uncompressed', string>}
    */

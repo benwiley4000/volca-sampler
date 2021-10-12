@@ -8,69 +8,65 @@ import { getTargetWavForSample } from './audioData.js';
  */
 export async function getSampleBuffer(sampleContainer, onProgress) {
   const {
-    startSampleBufferFrom16BitPcmData,
-    iterateSampleBuffer,
+    prepareSampleBufferFrom16BitPcmData,
     getSampleBufferPointer,
     getSampleBufferSize,
     getSampleBufferProgress,
-    freeSampleBuffer,
+    registerUpdateCallback,
+    unregisterUpdateCallback,
     heap8Buffer,
   } = await getSyroBindings();
   const { data, sampleRate } = await getTargetWavForSample(sampleContainer);
   const pcmData = data.slice(44);
-  const sampleBufferContainer = startSampleBufferFrom16BitPcmData(
+  /**
+   * @type {Uint8Array | undefined}
+   */
+  let sampleBuffer;
+  let progress = 0;
+  const onUpdate = registerUpdateCallback((sampleBufferContainerPointer) => {
+    const bufferPointer = getSampleBufferPointer(sampleBufferContainerPointer);
+    const bufferSize = getSampleBufferSize(sampleBufferContainerPointer);
+    if (!sampleBuffer) {
+      sampleBuffer = new Uint8Array(bufferSize);
+    }
+    // save a new copy of the data so it doesn't disappear
+    sampleBuffer.set(new Uint8Array(heap8Buffer(), bufferPointer, bufferSize));
+    progress =
+      getSampleBufferProgress(sampleBufferContainerPointer) / bufferSize;
+  });
+  prepareSampleBufferFrom16BitPcmData(
     pcmData,
     pcmData.length,
     sampleRate,
     sampleContainer.metadata.slotNumber,
     sampleContainer.metadata.qualityBitDepth,
-    sampleContainer.metadata.useCompression ? 1 : 0
+    sampleContainer.metadata.useCompression ? 1 : 0,
+    onUpdate
   );
-  if (!sampleBufferContainer) {
-    return Promise.reject('Failed to prepare sample buffer');
+  onProgress(progress);
+  try {
+    await /** @type {Promise<void>} */ (
+      new Promise((resolve) => {
+        checkProgress();
+        function checkProgress() {
+          // TODO: find a way to detect if the web worker failed to load, in
+          // which case we should reject the promise
+          if (progress) {
+            onProgress(progress);
+            if (progress >= 1) {
+              resolve();
+              return;
+            }
+          }
+          requestAnimationFrame(checkProgress);
+        }
+      })
+    );
+  } finally {
+    unregisterUpdateCallback(onUpdate);
   }
-  const bufferPointer = getSampleBufferPointer(sampleBufferContainer);
-  const bufferSize = getSampleBufferSize(sampleBufferContainer);
-  const resultView = new Uint8Array(heap8Buffer(), bufferPointer, bufferSize);
-  onProgress(getSampleBufferProgress(sampleBufferContainer) / bufferSize);
-  await /** @type {Promise<void>} */ (
-    new Promise((resolve, reject) => {
-      const targetIterationTime = 10;
-      // assume we're behind at the start, to avoid starting with a long frame
-      let lastTime = targetIterationTime * 2;
-      let lastIterationInterval = 100_000;
-      requestAnimationFrame(iterate);
-      function iterate() {
-        if (getSampleBufferProgress(sampleBufferContainer) >= bufferSize) {
-          resolve();
-          return;
-        }
-        const correctionCoefficient = targetIterationTime / lastTime;
-        const iterationInterval = Math.max(
-          Math.round(lastIterationInterval * correctionCoefficient),
-          1
-        );
-        const before = performance.now();
-        try {
-          iterateSampleBuffer(sampleBufferContainer, iterationInterval);
-        } catch (err) {
-          reject(err);
-          return;
-        }
-        lastTime = performance.now() - before;
-        if (lastTime === 0) {
-          // to avoid divide-by-zero due to potential rounding in Firefox
-          // https://developer.mozilla.org/en-US/docs/Web/API/Performance/now#reduced_time_precision
-          lastTime = 0.5;
-        }
-        lastIterationInterval = iterationInterval;
-        onProgress(getSampleBufferProgress(sampleBufferContainer) / bufferSize);
-        requestAnimationFrame(iterate);
-      }
-    })
-  );
-  // save a new copy of the data before freeing the result
-  const sampleBuffer = new Uint8Array(resultView);
-  freeSampleBuffer(sampleBufferContainer);
+  if (!sampleBuffer) {
+    throw new Error('Unexpected condition: sampleBuffer should be defined');
+  }
   return sampleBuffer;
 }

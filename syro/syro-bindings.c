@@ -47,6 +47,8 @@ void prepareSampleBufferFromSyroData(
                          (void *)onUpdate);
 }
 
+// DO NOT USE; broken
+// TODO: fix
 #ifdef __EMSCRIPTEN__
 EMSCRIPTEN_KEEPALIVE
 #endif

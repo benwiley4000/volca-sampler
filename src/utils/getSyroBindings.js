@@ -56,11 +56,17 @@ export async function getSyroBindings() {
             null,
             ['array', 'number', 'number', 'number', 'number']
           ),
-          prepareSampleBufferFrom16BitPcmData: Module.cwrap(
-            'prepareSampleBufferFrom16BitPcmData',
-            null,
-            ['array', 'number', 'number', 'number', 'number', 'number']
-          ),
+          // TODO: put this back when C function works correctly
+          // prepareSampleBufferFrom16BitPcmData: Module.cwrap(
+          //   'prepareSampleBufferFrom16BitPcmData',
+          //   null,
+          //   ['array', 'number', 'number', 'number', 'number', 'number']
+          // ),
+          prepareSampleBufferFrom16BitPcmData: () => {
+            throw new Error(
+              'This function does not work. Use prepareSampleBufferFromWavData.'
+            );
+          },
           getSampleBufferPointer: Module.cwrap(
             'getSampleBufferPointer',
             'number',

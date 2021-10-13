@@ -8,7 +8,7 @@ import { getTargetWavForSample } from './audioData.js';
  */
 export async function getSampleBuffer(sampleContainer, onProgress) {
   const {
-    prepareSampleBufferFrom16BitPcmData,
+    prepareSampleBufferFromWavData,
     getSampleBufferPointer,
     getSampleBufferSize,
     getSampleBufferProgress,
@@ -16,8 +16,7 @@ export async function getSampleBuffer(sampleContainer, onProgress) {
     unregisterUpdateCallback,
     heap8Buffer,
   } = await getSyroBindings();
-  const { data, sampleRate } = await getTargetWavForSample(sampleContainer);
-  const pcmData = data.slice(44);
+  const { data } = await getTargetWavForSample(sampleContainer);
   /**
    * @type {Uint8Array | undefined}
    */
@@ -34,10 +33,9 @@ export async function getSampleBuffer(sampleContainer, onProgress) {
     progress =
       getSampleBufferProgress(sampleBufferContainerPointer) / bufferSize;
   });
-  prepareSampleBufferFrom16BitPcmData(
-    pcmData,
-    pcmData.length,
-    sampleRate,
+  prepareSampleBufferFromWavData(
+    data,
+    data.length,
     sampleContainer.metadata.slotNumber,
     sampleContainer.metadata.qualityBitDepth,
     sampleContainer.metadata.useCompression ? 1 : 0,

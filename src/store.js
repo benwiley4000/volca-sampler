@@ -203,6 +203,14 @@ export class SampleContainer {
      */
     update(update) {
       const { id, metadata } = this;
+      // if the update doesn't change anything, return the existing container
+      if (
+        /** @type {(keyof SampleMetadataUpdate)[]} */ (
+          Object.keys(update)
+        ).every((key) => update[key] === metadata[key])
+      ) {
+        return this;
+      }
       /**
        * @type {SampleMetadata}
        */

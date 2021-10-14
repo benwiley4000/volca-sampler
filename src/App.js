@@ -137,7 +137,10 @@ function App() {
     setSamples((samples) => {
       const sample = samples.get(id);
       if (sample && sample instanceof SampleContainer.Mutable) {
-        return new Map(samples).set(sample.id, sample.update(update));
+        const updated = sample.update(update);
+        if (updated !== sample) {
+          return new Map(samples).set(sample.id, updated);
+        }
       }
       return samples;
     });

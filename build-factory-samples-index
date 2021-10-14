@@ -32,5 +32,8 @@ const factorySamplesIndexPath = path.join(
 );
 fs.writeFileSync(
   factorySamplesIndexPath,
-  `export default ${JSON.stringify(factorySamplesIndex, null, 2)};`
+  `
+/* eslint-disable import/no-anonymous-default-export */
+export default ${JSON.stringify(factorySamplesIndex, null, 2)};
+  `.trim()
 );

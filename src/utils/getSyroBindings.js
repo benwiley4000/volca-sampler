@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 /**
  * @typedef {{
  *   prepareSampleBufferFromWavData(
@@ -8,7 +6,7 @@
  *     slotNumber: number,
  *     quality: number,
  *     useCompression: 0 | 1,
- *     onUpdate: number;
+ *     onUpdate: number
  *   ): void;
  *   prepareSampleBufferFrom16BitPcmData(
  *     wavData: Uint8Array,
@@ -17,7 +15,7 @@
  *     slotNumber: number,
  *     quality: number,
  *     useCompression: 0 | 1,
- *     onUpdate: number;
+ *     onUpdate: number
  *   ): void;
  *   getSampleBufferPointer(sampleBufferContainer: number): number;
  *   getSampleBufferSize(sampleBufferContainer: number): number;

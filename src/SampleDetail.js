@@ -1,7 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
 
 import Waveform from './Waveform.js';
-import { getTargetWavForSample, getSourceAudioBuffer } from './utils/audioData.js';
+import {
+  getTargetWavForSample,
+  getSourceAudioBuffer,
+} from './utils/audioData.js';
 import { getSampleBuffer } from './utils/syro.js';
 import { SampleContainer } from './store.js';
 

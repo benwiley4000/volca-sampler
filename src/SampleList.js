@@ -38,7 +38,13 @@ const classes = ['sampleList', 'sampleListItem'].reduce(
  *   onSampleSelect: (id: string) => void;
  * }} props
  */
-function SampleList({ samples, selectedSampleId, readonly, onNewSample, onSampleSelect }) {
+function SampleList({
+  samples,
+  selectedSampleId,
+  readonly,
+  onNewSample,
+  onSampleSelect,
+}) {
   return (
     <div className={classes.sampleList}>
       <div
@@ -52,7 +58,9 @@ function SampleList({ samples, selectedSampleId, readonly, onNewSample, onSample
         <div
           key={id}
           className={classes.sampleListItem}
-          style={{ backgroundColor: id === selectedSampleId ? '#f3f3f3' : undefined }}
+          style={{
+            backgroundColor: id === selectedSampleId ? '#f3f3f3' : undefined,
+          }}
           data-disabled={readonly}
           onClick={() => !readonly && onSampleSelect(id)}
         >

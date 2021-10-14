@@ -38,7 +38,7 @@ function useMediaRecording({ onRecordStart, onRecordFinish, onRecordError }) {
     }
   }, [captureDevices, selectedCaptureDeviceId]);
   const [recordingError, setRecordingError] = useState(
-    /** @type {Error | null} */ (null)
+    /** @type {unknown} */ (null)
   );
   useEffect(() => {
     if (recordingError) {

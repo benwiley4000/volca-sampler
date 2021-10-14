@@ -2,14 +2,14 @@
 
 /**
  * @typedef {{
- *   prepareSampleBufferFromWavData: (
+ *   prepareSampleBufferFromWavData(
  *     wavData: Uint8Array,
  *     bytes: number,
  *     slotNumber: number,
  *     quality: number,
  *     useCompression: 0 | 1,
  *     onUpdate: number;
- *   ) => void;
+ *   ): void;
  *   prepareSampleBufferFrom16BitPcmData(
  *     wavData: Uint8Array,
  *     bytes: number,
@@ -18,15 +18,15 @@
  *     quality: number,
  *     useCompression: 0 | 1,
  *     onUpdate: number;
- *   ) => void;
- *   getSampleBufferPointer: (sampleBufferContainer: number) => number;
- *   getSampleBufferSize: (sampleBufferContainer: number) => number;
- *   getSampleBufferProgress: (sampleBufferContainer: number) => number;
- *   registerUpdateCallback: (
+ *   ): void;
+ *   getSampleBufferPointer(sampleBufferContainer: number): number;
+ *   getSampleBufferSize(sampleBufferContainer: number): number;
+ *   getSampleBufferProgress(sampleBufferContainer: number): number;
+ *   registerUpdateCallback(
  *     cb: (sampleBufferContainer: number) => void
- *   ) => number;
- *   unregisterUpdateCallback: (pointer: number) => void;
- *   heap8Buffer: () => ArrayBuffer;
+ *   ): number;
+ *   unregisterUpdateCallback(pointer: number): void;
+ *   heap8Buffer(): ArrayBuffer;
  * }} SyroBindings
  */
 
@@ -62,7 +62,7 @@ export async function getSyroBindings() {
           //   null,
           //   ['array', 'number', 'number', 'number', 'number', 'number']
           // ),
-          prepareSampleBufferFrom16BitPcmData: () => {
+          prepareSampleBufferFrom16BitPcmData() {
             throw new Error(
               'This function does not work. Use prepareSampleBufferFromWavData.'
             );
@@ -80,10 +80,10 @@ export async function getSyroBindings() {
             'number',
             ['number']
           ),
-          registerUpdateCallback: (cb) => {
+          registerUpdateCallback(cb) {
             return Module.addFunction(cb, 'vi');
           },
-          unregisterUpdateCallback: (pointer) => {
+          unregisterUpdateCallback(pointer) {
             Module.removeFunction(pointer);
           },
           heap8Buffer() {

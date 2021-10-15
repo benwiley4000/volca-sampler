@@ -5,7 +5,7 @@ import {
   getTargetWavForSample,
   getSourceAudioBuffer,
 } from './utils/audioData.js';
-import { getSampleBuffer } from './utils/syro.js';
+import { getSampleBuffer, playSyroStreamForSampleContainer } from './utils/syro.js';
 import { SampleContainer } from './store.js';
 
 {
@@ -257,8 +257,7 @@ function SampleDetail({
         type="button"
         onClick={async () => {
           try {
-            const sampleBuffer = await getSampleBuffer(sample, console.log);
-            playAudioFile(sampleBuffer);
+            playSyroStreamForSampleContainer(sample, console.log);
           } catch (err) {
             console.error(err);
           }

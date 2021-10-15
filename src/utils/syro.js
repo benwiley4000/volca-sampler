@@ -87,3 +87,83 @@ export async function getSampleBuffer(sampleContainer, onData) {
   }
   return sampleBuffer;
 }
+
+/**
+ * @param {import('../store').SampleContainer} sampleContainer
+ * @param {(progress: number) => void} onProgress
+ */
+export function playSyroStreamForSampleContainer(sampleContainer, onProgress) {
+  const audio = document.createElement('audio');
+  const mediaSource = new MediaSource();
+  audio.src = URL.createObjectURL(mediaSource);
+  onProgress(0);
+  mediaSource.addEventListener(
+    'sourceopen',
+    () => {
+      let sampleBufferSize = Infinity;
+      let duration = Infinity;
+      let bufferProgress = 0;
+      /**
+       * @type {Uint8Array[]}
+       */
+      let chunkQueue = [];
+      let firstChunkProcessed = false;
+      const sourceBuffer = mediaSource.addSourceBuffer('audio/wav');
+      sourceBuffer.addEventListener('updateend', () => {
+        if (audio.paused) {
+          audio.play();
+        }
+        if (bufferProgress >= sampleBufferSize) {
+          mediaSource.endOfStream();
+        }
+      });
+      function handleChunkQueue() {
+        while (chunkQueue.length) {
+          const chunk = chunkQueue[0];
+          try {
+            sourceBuffer.appendBuffer(chunk);
+          } catch (err) {
+            if (
+              /** @type {{ name: string }} */ (err).name ===
+              'QuotaExceededError'
+            ) {
+              break;
+            } else {
+              throw err;
+            }
+          }
+          bufferProgress += chunk.length;
+          chunkQueue = chunkQueue.slice(1);
+        }
+      }
+      audio.addEventListener('timeupdate', () => {
+        const { currentTime } = audio;
+        onProgress(currentTime / duration);
+        if (sourceBuffer.updating) {
+          sourceBuffer.addEventListener('updateend', handleChunkQueue, {
+            once: true,
+          });
+        } else {
+          handleChunkQueue();
+        }
+      });
+      audio.addEventListener('ended', () => {
+        onProgress(1);
+      });
+      getSampleBuffer(sampleContainer, (chunk, size) => {
+        if (!firstChunkProcessed) {
+          sampleBufferSize = size;
+          // we're assuming the first chunk will contain at least
+          // 7 32-bit values, otherwise this won't work
+          const sampleRate = new Int32Array(chunk.buffer)[6];
+          // 2 bytes for each of two channels
+          const bytesPerSample = 4;
+          duration = (sampleBufferSize - 44) / (sampleRate * bytesPerSample);
+        }
+        chunkQueue.push(chunk);
+        handleChunkQueue();
+      });
+    },
+    { once: true }
+  );
+}

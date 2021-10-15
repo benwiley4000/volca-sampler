@@ -45,7 +45,6 @@ import { SAMPLE_RATE } from './utils/constants.js';
  */
 
 const audioFileDataStore = localforage.createInstance({
-  // stores more than wavs but keeping this for now for backwards compatibility
   name: 'audio_file_data',
   driver: localforage.INDEXEDDB,
 });

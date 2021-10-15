@@ -226,6 +226,20 @@ export class SampleContainer {
 
     async remove() {
       await sampleMetadataStore.removeItem(this.id);
+      // if the source file is on the server, don't worry about cleanup
+      if (this.metadata.sourceFileId.includes('.')) {
+        return;
+      }
+      // check if source file is used by other sample containers
+      const allMetadata = await SampleContainer.getAllMetadataFromStore();
+      for (const [, { sourceFileId }] of allMetadata) {
+        if (sourceFileId === this.metadata.sourceFileId) {
+          // still used.. don't do anything
+          return;
+        }
+      }
+      // clean up dangling source file from storage
+      await audioFileDataStore.removeItem(this.metadata.sourceFileId);
     }
   };
 
@@ -302,7 +316,10 @@ export class SampleContainer {
     return Promise.reject('Missing source data');
   }
 
-  static async getAllFromStorage() {
+  /**
+   * @protected
+   */
+  static async getAllMetadataFromStore() {
     /**
      * @type {Map<string, SampleMetadata>}
      */
@@ -313,6 +330,11 @@ export class SampleContainer {
         sampleMetadata.set(id, upgradedMetadata);
       }
     });
+    return sampleMetadata;
+  }
+
+  static async getAllFromStorage() {
+    const sampleMetadata = await this.getAllMetadataFromStore();
     const sourceIds = (await audioFileDataStore.keys()).concat(
       factorySampleParams.map(({ sourceFileId }) => sourceFileId)
     );

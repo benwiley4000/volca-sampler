@@ -3,10 +3,10 @@ import { getTargetWavForSample } from './audioData.js';
 
 /**
  * @param {import('../store').SampleContainer} sampleContainer
- * @param {(progress: number) => void} onProgress
+ * @param {(chunk: Uint8Array, sampleBufferFinalSize: number) => void} onData
  * @returns {Promise<Uint8Array>}
  */
-export async function getSampleBuffer(sampleContainer, onProgress) {
+export async function getSampleBuffer(sampleContainer, onData) {
   const {
     prepareSampleBufferFromWavData,
     getSampleBufferPointer,
@@ -22,16 +22,40 @@ export async function getSampleBuffer(sampleContainer, onProgress) {
    */
   let sampleBuffer;
   let progress = 0;
+  /**
+   * @type {(() => void) | undefined}
+   */
+  let onDone;
+  /**
+   * @type {((err: unknown) => void) | undefined}
+   */
+  let onError;
   const onUpdate = registerUpdateCallback((sampleBufferContainerPointer) => {
-    const bufferPointer = getSampleBufferPointer(sampleBufferContainerPointer);
-    const bufferSize = getSampleBufferSize(sampleBufferContainerPointer);
-    if (!sampleBuffer) {
-      sampleBuffer = new Uint8Array(bufferSize);
+    try {
+      const bufferPointer = getSampleBufferPointer(
+        sampleBufferContainerPointer
+      );
+      const bufferSize = getSampleBufferSize(sampleBufferContainerPointer);
+      const sampleBufferView = new Uint8Array(
+        heap8Buffer(),
+        bufferPointer,
+        bufferSize
+      );
+      // save a new copy of the data so it doesn't disappear
+      if (!sampleBuffer) {
+        sampleBuffer = new Uint8Array(bufferSize);
+      }
+      sampleBuffer.set(sampleBufferView);
+      // also call getData with the most recently loaded chunk
+      const newProgress = getSampleBufferProgress(sampleBufferContainerPointer);
+      onData(sampleBufferView.slice(progress, newProgress), bufferSize);
+      progress = newProgress;
+      if (progress >= bufferSize) {
+        /** @type {NonNullable<typeof onDone>} */ (onDone)();
+      }
+    } catch (err) {
+      /** @type {NonNullable<typeof onError>} */ (onError)(err);
     }
-    // save a new copy of the data so it doesn't disappear
-    sampleBuffer.set(new Uint8Array(heap8Buffer(), bufferPointer, bufferSize));
-    progress =
-      getSampleBufferProgress(sampleBufferContainerPointer) / bufferSize;
   });
   prepareSampleBufferFromWavData(
     data,
@@ -41,30 +65,22 @@ export async function getSampleBuffer(sampleContainer, onProgress) {
     sampleContainer.metadata.useCompression ? 1 : 0,
     onUpdate
   );
-  onProgress(progress);
   try {
     await /** @type {Promise<void>} */ (
-      new Promise((resolve) => {
-        checkProgress();
-        function checkProgress() {
-          // TODO: find a way to detect if the web worker failed to load, in
-          // which case we should reject the promise
-          if (progress) {
-            onProgress(progress);
-            if (progress >= 1) {
-              resolve();
-              return;
-            }
-          }
-          requestAnimationFrame(checkProgress);
-        }
+      new Promise((resolve, reject) => {
+        onDone = resolve;
+        onError = reject;
       })
     );
-  } finally {
+  } catch (err) {
     unregisterUpdateCallback(onUpdate);
+    return Promise.reject(err);
   }
+  unregisterUpdateCallback(onUpdate);
   if (!sampleBuffer) {
-    throw new Error('Unexpected condition: sampleBuffer should be defined');
+    return Promise.reject(
+      new Error('Unexpected condition: sampleBuffer should be defined')
+    );
   }
   return sampleBuffer;
 }

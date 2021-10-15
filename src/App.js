@@ -187,6 +187,8 @@ function App() {
                   (samples) => new Map([[newSample.id, newSample], ...samples])
                 );
                 setShowingFactorySamples(false);
+                // TODO: scroll new sample into view
+                setFocusedSampleId(newSample.id);
               }
             }}
             onSampleDelete={(id) => {

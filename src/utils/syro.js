@@ -48,7 +48,10 @@ export async function getSampleBuffer(sampleContainer, onData) {
       sampleBuffer.set(sampleBufferView);
       // also call getData with the most recently loaded chunk
       const newProgress = getSampleBufferProgress(sampleBufferContainerPointer);
-      onData(sampleBufferView.slice(progress, newProgress), bufferSize);
+      onData(
+        new Uint8Array(sampleBuffer.buffer, progress, newProgress - progress),
+        bufferSize
+      );
       progress = newProgress;
       if (progress >= bufferSize) {
         /** @type {NonNullable<typeof onDone>} */ (onDone)();

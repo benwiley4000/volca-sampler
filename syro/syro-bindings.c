@@ -49,9 +49,7 @@ void prepareSampleBufferFromSyroData(
 
 // DO NOT USE; broken
 // TODO: fix
-#ifdef __EMSCRIPTEN__
 EMSCRIPTEN_KEEPALIVE
-#endif
 void prepareSampleBufferFrom16BitPcmData(
     uint8_t *pcmData, uint32_t bytes, uint32_t rate, uint32_t slotNumber,
     uint32_t quality, uint32_t useCompression,
@@ -61,9 +59,7 @@ void prepareSampleBufferFrom16BitPcmData(
   prepareSampleBufferFromSyroData(syro_data, onUpdate);
 }
 
-#ifdef __EMSCRIPTEN__
 EMSCRIPTEN_KEEPALIVE
-#endif
 void prepareSampleBufferFromWavData(uint8_t *wavData, uint32_t bytes,
                                     uint32_t slotNumber, uint32_t quality,
                                     uint32_t useCompression,

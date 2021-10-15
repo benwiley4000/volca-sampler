@@ -39,6 +39,7 @@ function playAudioFile(audioFileBuffer) {
   audioElement.onended = () => {
     URL.revokeObjectURL(audioElement.src);
   };
+  return audioElement;
 }
 
 /**
@@ -92,6 +93,10 @@ function SampleDetail({
     (scaleCoefficient) =>
       sampleId && onSampleUpdate(sampleId, { scaleCoefficient }),
     [sampleId, onSampleUpdate]
+  );
+  const [syroProgress, setSyroProgress] = useState(0);
+  const [syroTransferState, setSyroTransferState] = useState(
+    /** @type {'loading' | 'transferring' | 'error' | 'idle'} */ ('idle')
   );
   if (!sample) {
     return null;
@@ -257,15 +262,45 @@ function SampleDetail({
         type="button"
         onClick={async () => {
           try {
-            const sampleBuffer = await getSampleBuffer(sample, console.log);
-            playAudioFile(sampleBuffer);
+            setSyroProgress(0);
+            setSyroTransferState('loading');
+            const sampleBuffer = await getSampleBuffer(sample, setSyroProgress);
+            setSyroTransferState('transferring');
+            const audio = playAudioFile(sampleBuffer);
+            setSyroProgress(0);
+            audio.addEventListener('timeupdate', () => {
+              setSyroProgress(audio.currentTime / audio.duration);
+            });
+            audio.addEventListener(
+              'ended',
+              () => {
+                setSyroTransferState('idle');
+              },
+              { once: true }
+            );
           } catch (err) {
             console.error(err);
+            setSyroTransferState('error');
           }
         }}
       >
         transfer to volca sample
       </button>
+      <br />
+      {syroTransferState === 'idle' ? null : syroTransferState === 'error' ? (
+        'Error transferring'
+      ) : (
+        // TODO: add a way to stop the transfer if the user changes their mind
+        <>
+          <p>
+            {syroTransferState === 'loading'
+              ? 'Preparing sample transfer...'
+              : 'Transferring to Volca Sample...'}
+          </p>
+          <progress value={syroProgress} />
+        </>
+      )}
+      <br />
     </div>
   );
 }

@@ -34,4 +34,5 @@ void syroBufferWork(char *data, int size) {
 
   emscripten_worker_respond((char *)messageBuffer, messageBufferSize);
   freeSampleBuffer(sampleBuffer);
+  free(messageBuffer);
 }

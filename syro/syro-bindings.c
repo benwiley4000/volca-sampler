@@ -28,7 +28,6 @@ void onWorkerMessage(char *data, int size, void *onUpdatePointer) {
   sampleBuffer->buffer = (uint8_t *)(data + sizeof(SampleBufferContainer));
   void (*onUpdate)(SampleBufferContainer *) = onUpdatePointer;
   onUpdate(sampleBuffer);
-  freeSampleBuffer(sampleBuffer);
 }
 
 void prepareSampleBufferFromSyroData(
@@ -45,6 +44,7 @@ void prepareSampleBufferFromSyroData(
   emscripten_call_worker(worker, "syroBufferWork", (char *)startMessageBuffer,
                          startMessageBufferSize, onWorkerMessage,
                          (void *)onUpdate);
+  free(startMessageBuffer);
 }
 
 // DO NOT USE; broken

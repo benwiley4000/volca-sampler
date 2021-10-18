@@ -62,3 +62,5 @@ npm test
 ```
 
 Currently this runs tests for validating the functions used to create Syro streams in the app.
+
+If Puppeteer complains about missing system-level dependencies, you might need to install some additional packages: https://github.com/puppeteer/puppeteer/blob/main/docs/troubleshooting.md#chrome-headless-doesnt-launch-on-unix

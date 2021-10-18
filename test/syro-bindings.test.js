@@ -21,6 +21,10 @@ console.log('Files built.\n');
 
 const testPort = 5432;
 const moduleCache = {};
+const moduleMocks = {
+  localforage: 'export default { createInstance: () => ({}) };',
+  uuid: 'export const v4 = () => `id-${Math.random()}`;',
+};
 function getTestServer() {
   const testServer = express();
   testServer.get('/', (req, res) => {
@@ -31,46 +35,43 @@ function getTestServer() {
     const dependencyName = req.params.dependency
       ? `${req.params.namespace}/${req.params.dependency}`
       : req.params.namespace;
-    console.log(`Fetching node module: ${dependencyName}`);
     (async function getModuleContent() {
-      switch (dependencyName) {
-        // mock some modules that won't run well in the browser and don't need
-        // to do much for our tests
-        case 'localforage':
-          return 'export default { createInstance: () => ({}) };';
-        case 'uuid':
-          return 'export const v4 = () => `id-${Math.random()}`;';
-        // for all others we can transform their imports/exports and run them
-        default: {
-          let resolvedPath = require.resolve(dependencyName);
-          // some built-in node modules won't resolve correctly because we
-          // actually need to use the polyfill in the browser (.e.g 'buffer')
-          if (resolvedPath === dependencyName) {
-            const modulePath = path.join(
-              __dirname,
-              '..',
-              'node_modules',
-              dependencyName
-            );
-            resolvedPath = path.join(
-              modulePath,
-              require(path.join(modulePath, 'package.json')).main || 'index.js'
-            );
-          }
-          if (moduleCache[resolvedPath]) {
-            return moduleCache[resolvedPath];
-          }
-          const {
-            files: [{ text }],
-          } = await transformCjsToEsm({
-            input: resolvedPath,
-            outDir: 'does_not_matter',
-            write: false,
-          });
-          moduleCache[resolvedPath] = text;
-          return text;
-        }
+      // mock some modules that won't run well in the browser and don't need to
+      // do much for our tests
+      if (Object.keys(moduleMocks).includes(dependencyName)) {
+        console.log(`Fetching node module [MOCKED]......... ${dependencyName}`);
+        return moduleMocks[dependencyName];
       }
+      // for all others we can transform their imports/exports and run them
+      let resolvedPath = require.resolve(dependencyName);
+      // some built-in node modules won't resolve correctly because we actually
+      // need to use the polyfill in the browser (.e.g 'buffer')
+      if (resolvedPath === dependencyName) {
+        const modulePath = path.join(
+          __dirname,
+          '..',
+          'node_modules',
+          dependencyName
+        );
+        resolvedPath = path.join(
+          modulePath,
+          require(path.join(modulePath, 'package.json')).main || 'index.js'
+        );
+      }
+      if (moduleCache[resolvedPath]) {
+        console.log(`Fetching node module [CACHED]......... ${dependencyName}`);
+        return moduleCache[resolvedPath];
+      }
+      console.log(`Fetching node module [TRANSFORMING]... ${dependencyName}`);
+      const {
+        files: [{ text }],
+      } = await transformCjsToEsm({
+        input: resolvedPath,
+        outDir: 'does_not_matter',
+        write: false,
+      });
+      moduleCache[resolvedPath] = text;
+      return text;
     })()
       .then((content) => {
         res.contentType('application/javascript').end(content);

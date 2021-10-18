@@ -187,6 +187,7 @@ function SampleRecord({ captureState, ...callbacks }) {
           }
         }}
       />
+      {(captureState === 'error' && recordingError) || null}
     </div>
   );
 }

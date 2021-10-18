@@ -160,6 +160,7 @@ function App() {
         <option value="true">Factory Samples</option>
       </select>
       <div className={classes.sampleListContainer}>
+        {loadingSamples ? 'Loading...' : null}
         <SampleList
           samples={selectedSampleBank}
           selectedSampleId={captureState === 'idle' ? focusedSampleId : null}

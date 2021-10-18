@@ -9,15 +9,13 @@ steps:
   - git submodule update --recursive
 
 - name: test
-  image: emscripten/emsdk
+  image: benwiley4000/emsdk-puppeteer
   commands:
-  - apt update -y
-  - apt install -y `cat puppeteer-ubuntu-packages.txt`
   - npm install
   - npm test
 
 - name: build
-  image: emscripten/emsdk
+  image: benwiley4000/emsdk-puppeteer
   commands:
   - npm install
   - ./build-bindings.sh

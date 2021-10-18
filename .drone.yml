@@ -8,16 +8,19 @@ steps:
   - git submodule init
   - git submodule update --recursive
 
-- name: test
+- name: npm-install
   image: benwiley4000/emsdk-puppeteer
   commands:
   - npm install
+
+- name: test
+  image: benwiley4000/emsdk-puppeteer
+  commands:
   - npm test
 
 - name: build
   image: benwiley4000/emsdk-puppeteer
   commands:
-  - npm install
   - ./build-bindings.sh
   - ./build-factory-samples-index
   - npm run build

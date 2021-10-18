@@ -33,6 +33,7 @@ If you prefer to use a Docker container instead of installing dependencies direc
 
 ```console
 # From inside volca-sampler/ directory:
+docker pull benwiley4000/emsdk-puppeteer
 docker run --rm -it -v "$(pwd)":/src benwiley4000/emsdk-puppeteer /bin/bash
 ```
 

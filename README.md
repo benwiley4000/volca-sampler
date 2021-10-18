@@ -4,6 +4,20 @@ This is an app that aims to make it easy to record a sample and transfer it to t
 
 ## Developing locally
 
+### Clone repository
+
+Clone the repository with git, using the `--recursive` flag to grab the Syro code as well (this is Korg's library for encoding audio files for transfer to the Volca Sample):
+
+```console
+git clone --recursive https://github.com/benwiley4000/volca-sampler.git
+```
+
+Then move into the cloned directory:
+
+```console
+cd ./volca-sampler
+```
+
 ### Install dependencies
 
 Before you do anything else you will need to install some dependencies:
@@ -13,18 +27,25 @@ Before you do anything else you will need to install some dependencies:
 
 If you want to run the tests you'll need [GCC](https://gcc.gnu.org/install/). Or you can probably use Clang if you replace the executable name in test/build-test-executable.sh.
 
-### Install and build app
+#### Alternative: Docker container
 
-First clone the repository with git, using the `--recursive` flag to grab the Syro code as well (this is Korg's library for encoding audio files for transfer to the Volca Sample):
+If you prefer to use a Docker container instead of installing dependencies directly on your machine, you can use the image [benwiley4000/emsdk-puppeteer](https://hub.docker.com/r/benwiley4000/emsdk-puppeteer):
 
 ```console
-git clone --recursive https://github.com/benwiley4000/volca-sampler.git
+# From inside volca-sampler/ directory:
+docker run --rm -it -v "$(pwd)":/src benwiley4000/emsdk-puppeteer /bin/bash
 ```
 
-Then move into the cloned directory and install the required node modules:
+Once inside the Docker container, you'll have access to Node.js, npm, Emscripten, GCC and Git (although it's probably better to git-clone the repository before creating the container, and mount the repository as a volume - as shown above).
+
+*Note that this image is the same as [emscripten/emsdk](https://hub.docker.com/r/emscripten/emsdk) except it includes additional runtime dependencies needed for running Puppeteer, which is only used during the tests. If you don't intend to run the tests, you can use emscripten/emsdk, if you prefer.*
+
+### Install and build app
+
+ install the required node modules:
 
 ```console
-cd ./volca-sampler
+# From inside volca-sampler/ directory:
 npm install
 ```
 
@@ -64,3 +85,5 @@ npm test
 Currently this runs tests for validating the functions used to create Syro streams in the app.
 
 If Puppeteer complains about missing system-level dependencies, you might need to install some additional packages: https://github.com/puppeteer/puppeteer/blob/main/docs/troubleshooting.md#chrome-headless-doesnt-launch-on-unix
+
+Note that if you use the Docker image recommended above, you will already have these dependencies installed.

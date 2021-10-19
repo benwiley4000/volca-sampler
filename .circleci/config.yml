@@ -11,13 +11,7 @@ jobs:
       - run: npm test
       - run: npm run build
       - store_artifacts:
-          path: /src/test/02 Kick 3 [native] (compressed).wav
-      - store_artifacts:
-          path: /src/test/02 Kick 3 [wasm] (compressed).wav
-      - store_artifacts:
-          path: /src/test/02 Kick 3 [native] (uncompressed).wav
-      - store_artifacts:
-          path: /src/test/02 Kick 3 [wasm] (uncompressed).wav
+          path: ~/test
 
 workflows:
   build:

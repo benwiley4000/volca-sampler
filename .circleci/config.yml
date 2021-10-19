@@ -4,11 +4,14 @@ jobs:
   pipeline:
     docker:
       - image: benwiley4000/emsdk-puppeteer
+    working_directory: ~/volca-sampler
     steps:
       - checkout
       - run: git submodule init && git submodule update --recursive
       - run: npm install
       - run: npm test
+      - store_artifacts:
+          path: ~/volca-sampler/test/artifacts
       - run: npm run build
 
 workflows:

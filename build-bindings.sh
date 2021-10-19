@@ -1,3 +1,11 @@
+# For debugging memory issues, we can
+# replace -O3 with:
+# -g \
+# -s STACK_OVERFLOW_CHECK=1 \
+# -s DEMANGLE_SUPPORT=1 -s \
+# INITIAL_MEMORY=655360000 \
+# -fsanitize=address \
+
 emcc \
   -s WASM=1 \
   -s EXPORTED_RUNTIME_METHODS='["cwrap", "addFunction", "removeFunction"]' \

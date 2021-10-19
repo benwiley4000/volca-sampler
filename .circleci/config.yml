@@ -11,7 +11,7 @@ jobs:
       - run: npm install
       - run: npm test
       - store_artifacts:
-          path: ~/volca-sampler/test
+          path: ~/volca-sampler/test/artifacts
       - run: npm run build
 
 workflows:

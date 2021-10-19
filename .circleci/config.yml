@@ -1,0 +1,17 @@
+version: 2.1
+
+jobs:
+  pipeline:
+    docker:
+      - image: benwiley4000/emsdk-puppeteer
+    steps:
+      - checkout
+      - run: git submodule init && git submodule update --recursive
+      - run: npm install
+      - run: npm test
+      - run: npm run build
+
+workflows:
+  build:
+    jobs:
+      - pipeline

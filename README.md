@@ -1,5 +1,7 @@
 # volca-sampler
 
+[![CircleCI](https://circleci.com/gh/benwiley4000/volca-sampler/tree/master.svg?style=svg)](https://circleci.com/gh/benwiley4000/volca-sampler/tree/master)
+
 This is an app that aims to make it easy to record a sample and transfer it to the Korg Volca Sample. The functionality is inspired heavily by the Audio Pocket app for iOS, built by Korg. This app runs in any modern web browser, desktop or mobile and allows you to either record audio from one of your input audio devices, or import an existing audio file (WAV, MP3, OGG, etc).
 
 ## Developing locally

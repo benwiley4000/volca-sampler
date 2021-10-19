@@ -5,6 +5,7 @@ const { transform: transformCjsToEsm } = require('cjstoesm');
 const puppeteer = require('puppeteer');
 const child_process = require('child_process');
 const fs = require('fs').promises;
+const mkdirp = require('mkdirp');
 
 console.log('Building necessary files...');
 child_process.execSync(
@@ -209,6 +210,9 @@ const snapshots = ['compressed', 'uncompressed']
     {}
   );
 
+const artifactsDir = path.join(__dirname, 'artifacts');
+mkdirp.sync(artifactsDir);
+
 test('syroBindings load correctly', async (t) => {
   await forEachBrowser(
     {
@@ -300,8 +304,8 @@ test('syro-utils.c', async (t) => {
    */
   const nativeSampleBufferFilenames = JSON.parse(
     child_process
-      .execSync(`./convert-sample "../public${sourceFileId}" ${slotNumber}`, {
-        cwd: __dirname,
+      .execSync(`../convert-sample "../../public${sourceFileId}" ${slotNumber}`, {
+        cwd: artifactsDir,
       })
       .toString()
   );
@@ -310,7 +314,7 @@ test('syro-utils.c', async (t) => {
     'uncompressed',
   ])) {
     const nativeSampleBufferContents = await fs.readFile(
-      path.join(__dirname, nativeSampleBufferFilenames[key])
+      path.join(artifactsDir, nativeSampleBufferFilenames[key])
     );
     const nativeSampleBufferHeader = nativeSampleBufferContents.slice(0, 44);
     const snapshotSampleBufferHeader = snapshots[key].slice(0, 44);
@@ -392,10 +396,10 @@ test('getSampleBuffer', async (t) => {
         );
         await fs.writeFile(
           path.join(
-            __dirname,
+            artifactsDir,
             `${
               sourceFileId.split('/').pop().split('.wav')[0]
-            } [wasm] (${key}).wav`
+            } [wasm] (${key}).syrostream.wav`
           ),
           webSampleBufferContents
         );

@@ -314,7 +314,7 @@ test('syro-utils.c', async (t) => {
     'uncompressed',
   ])) {
     const nativeSampleBufferContents = await fs.readFile(
-      path.join(__dirname, nativeSampleBufferFilenames[key])
+      path.join(artifactsDir, nativeSampleBufferFilenames[key])
     );
     const nativeSampleBufferHeader = nativeSampleBufferContents.slice(0, 44);
     const snapshotSampleBufferHeader = snapshots[key].slice(0, 44);

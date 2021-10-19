@@ -9,9 +9,9 @@ jobs:
       - run: git submodule init && git submodule update --recursive
       - run: npm install
       - run: npm test
-      - run: npm run build
       - store_artifacts:
-          path: ~/test
+          path: /root/src/test
+      - run: npm run build
 
 workflows:
   build:

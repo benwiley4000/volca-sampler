@@ -399,7 +399,7 @@ test('getSampleBuffer', async (t) => {
             artifactsDir,
             `${
               sourceFileId.split('/').pop().split('.wav')[0]
-            } [wasm] (${key}).wav`
+            } [wasm] (${key}).syrostream.wav`
           ),
           webSampleBufferContents
         );

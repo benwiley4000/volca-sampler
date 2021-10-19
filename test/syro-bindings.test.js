@@ -353,8 +353,7 @@ test('getSampleBuffer', async (t) => {
         window.getSampleBuffer = syroUtilsModule.getSampleBuffer;
       });
       for (const key of /** @type {('compressed' | 'uncompressed')[]} */ ([
-        // TODO: enable compressed test if it can work better with wasm
-        // 'compressed',
+        'compressed',
         'uncompressed',
       ])) {
         /**

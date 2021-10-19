@@ -7,8 +7,6 @@
 
 # testing
 /coverage
-/test/*.wav
-!/test/kick.wav
 
 # production
 /build

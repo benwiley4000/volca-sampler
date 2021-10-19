@@ -122,7 +122,7 @@ int main(int argc, char **argv) {
   int err;
   // generate compressed
   {
-    char label[] = " [native] (compressed)";
+    char label[] = " [native] (compressed).syrostream";
     char *filename = malloc(base_name_len + strlen(label));
     strcpy(filename, base_name);
     strcpy(filename + base_name_len - 4, label);
@@ -135,7 +135,7 @@ int main(int argc, char **argv) {
   }
   // generate uncompressed
   {
-    char label[] = " [native] (uncompressed)";
+    char label[] = " [native] (uncompressed).syrostream";
     char *filename = malloc(base_name_len + strlen(label));
     strcpy(filename, base_name);
     strcpy(filename + base_name_len - 4, label);

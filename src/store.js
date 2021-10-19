@@ -136,7 +136,7 @@ export class SampleContainer {
     slotNumber = 0,
     dateSampled = Date.now(),
     dateModified = dateSampled,
-    useCompression = false,
+    useCompression = true,
     qualityBitDepth = 16,
     scaleCoefficient = 1,
     trimFrames = [0, 0],

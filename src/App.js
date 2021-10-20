@@ -172,6 +172,7 @@ function App() {
         <img
           style={{ height: '1.6em', paddingLeft: '1rem' }}
           src="volca_sample.png"
+          alt=""
         />
       </h1>
       <div className={classes.volcaSampler}>

@@ -7,8 +7,8 @@ import {
   getAudioBufferForAudioFileData,
   playAudioBuffer,
 } from './utils/audioData.js';
-import { getSampleBuffer } from './utils/syro.js';
 import { SampleContainer } from './store.js';
+import VolcaTransferControl from './VolcaTransferControl.js';
 
 {
   const css = `
@@ -79,10 +79,6 @@ function SampleDetail({
     (scaleCoefficient) =>
       sampleId && onSampleUpdate(sampleId, { scaleCoefficient }),
     [sampleId, onSampleUpdate]
-  );
-  const [syroProgress, setSyroProgress] = useState(0);
-  const [syroTransferState, setSyroTransferState] = useState(
-    /** @type {'loading' | 'transferring' | 'error' | 'idle'} */ ('idle')
   );
   if (!sample) {
     return null;
@@ -245,45 +241,7 @@ function SampleDetail({
           }}
         />
       </label>
-      <button
-        type="button"
-        onClick={async () => {
-          try {
-            setSyroProgress(0);
-            setSyroTransferState('loading');
-            const sampleBuffer = await getSampleBuffer(sample, setSyroProgress);
-            setSyroTransferState('transferring');
-            const audioBuffer = await getAudioBufferForAudioFileData(
-              sampleBuffer
-            );
-            playAudioBuffer(audioBuffer, {
-              onTimeUpdate: (currentTime) =>
-                setSyroProgress(currentTime / audioBuffer.duration),
-              onEnded: () => setSyroTransferState('idle'),
-            });
-          } catch (err) {
-            console.error(err);
-            setSyroTransferState('error');
-          }
-        }}
-      >
-        transfer to volca sample
-      </button>
-      <br />
-      {syroTransferState === 'idle' ? null : syroTransferState === 'error' ? (
-        'Error transferring'
-      ) : (
-        // TODO: add a way to stop the transfer if the user changes their mind
-        <>
-          <p>
-            {syroTransferState === 'loading'
-              ? 'Preparing sample transfer...'
-              : 'Transferring to Volca Sample...'}
-          </p>
-          <progress value={syroProgress} />
-        </>
-      )}
-      <br />
+      <VolcaTransferControl sample={sample} />
     </div>
   );
 }

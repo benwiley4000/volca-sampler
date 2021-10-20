@@ -155,7 +155,7 @@ export async function getSourceAudioBuffer(sourceFileId, shouldClampValues) {
  *   onTimeUpdate?: (currentTime: number) => void;
  *   onEnded?: () => void;
  * }} [opts]
- * @returns {AudioBufferSourceNode}
+ * @returns {() => void} stop
  */
 export function playAudioBuffer(
   audioBuffer,
@@ -168,17 +168,23 @@ export function playAudioBuffer(
   source.start();
   const startTime = audioContext.currentTime;
   onTimeUpdate(0);
-  let frame = requestAnimationFrame(cycle);
-  function cycle() {
+  let frame = requestAnimationFrame(updateCurrentTime);
+  function updateCurrentTime() {
     onTimeUpdate(audioContext.currentTime - startTime);
-    frame = requestAnimationFrame(cycle);
+    frame = requestAnimationFrame(updateCurrentTime);
   }
-  source.onended = () => {
-    onTimeUpdate(audioBuffer.duration);
-    onEnded();
+  let stopped = false;
+  source.addEventListener('ended', () => {
+    if (!stopped) {
+      onTimeUpdate(audioBuffer.duration);
+      onEnded();
+    }
     cancelAnimationFrame(frame);
+  });
+  return function stop() {
+    source.stop();
+    stopped = true;
   };
-  return source;
 }
 
 /**

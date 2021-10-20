@@ -150,6 +150,38 @@ export async function getSourceAudioBuffer(sourceFileId, shouldClampValues) {
 }
 
 /**
+ * @param {AudioBuffer} audioBuffer buffer to play
+ * @param {{
+ *   onTimeUpdate?: (currentTime: number) => void;
+ *   onEnded?: () => void;
+ * }} [opts]
+ * @returns {AudioBufferSourceNode}
+ */
+export function playAudioBuffer(
+  audioBuffer,
+  { onTimeUpdate = () => null, onEnded = () => null } = {}
+) {
+  const audioContext = getTargetAudioContext();
+  const source = audioContext.createBufferSource();
+  source.buffer = audioBuffer;
+  source.connect(audioContext.destination);
+  source.start();
+  const startTime = audioContext.currentTime;
+  onTimeUpdate(0);
+  let frame = requestAnimationFrame(cycle);
+  function cycle() {
+    onTimeUpdate(audioContext.currentTime - startTime);
+    frame = requestAnimationFrame(cycle);
+  }
+  source.onended = () => {
+    onTimeUpdate(audioBuffer.duration);
+    onEnded();
+    cancelAnimationFrame(frame);
+  };
+  return source;
+}
+
+/**
  * Given sample container, returns a 16-bit mono wav file with the sample's
  * metadata parameters applied
  * @param {import('../store').SampleContainer} sampleContainer

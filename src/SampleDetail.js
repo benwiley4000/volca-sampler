@@ -4,6 +4,8 @@ import Waveform from './Waveform.js';
 import {
   getTargetWavForSample,
   getSourceAudioBuffer,
+  getAudioBufferForAudioFileData,
+  playAudioBuffer,
 } from './utils/audioData.js';
 import { getSampleBuffer } from './utils/syro.js';
 import { SampleContainer } from './store.js';
@@ -25,22 +27,6 @@ const classes = ['sampleDetail'].reduce(
   (classes, className) => ({ ...classes, [className]: className }),
   {}
 );
-
-/**
- * @param {Uint8Array} audioFileBuffer audio file to transform into audio buffer
- */
-function playAudioFile(audioFileBuffer) {
-  const blob = new Blob([audioFileBuffer], {
-    type: 'audio/x-wav',
-  });
-  const audioElement = document.createElement('audio');
-  audioElement.src = URL.createObjectURL(blob);
-  audioElement.play();
-  audioElement.onended = () => {
-    URL.revokeObjectURL(audioElement.src);
-  };
-  return audioElement;
-}
 
 /**
  * @param {Blob} blob
@@ -196,7 +182,8 @@ function SampleDetail({
           type="button"
           onClick={async () => {
             const { data } = await getTargetWavForSample(sample);
-            playAudioFile(data);
+            const audioBuffer = await getAudioBufferForAudioFileData(data);
+            playAudioBuffer(audioBuffer);
           }}
         >
           play
@@ -266,18 +253,14 @@ function SampleDetail({
             setSyroTransferState('loading');
             const sampleBuffer = await getSampleBuffer(sample, setSyroProgress);
             setSyroTransferState('transferring');
-            const audio = playAudioFile(sampleBuffer);
-            setSyroProgress(0);
-            audio.addEventListener('timeupdate', () => {
-              setSyroProgress(audio.currentTime / audio.duration);
-            });
-            audio.addEventListener(
-              'ended',
-              () => {
-                setSyroTransferState('idle');
-              },
-              { once: true }
+            const audioBuffer = await getAudioBufferForAudioFileData(
+              sampleBuffer
             );
+            playAudioBuffer(audioBuffer, {
+              onTimeUpdate: (currentTime) =>
+                setSyroProgress(currentTime / audioBuffer.duration),
+              onEnded: () => setSyroTransferState('idle'),
+            });
           } catch (err) {
             console.error(err);
             setSyroTransferState('error');

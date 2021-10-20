@@ -17,7 +17,7 @@
   "scripts": {
     "start": "craco start",
     "build": "craco build",
-    "deploy": "gh-pages -d build",
+    "deploy": "gh-pages -m 'Updates [ci skip]' -d build",
     "test": "node test/syro-bindings.test.js | tap-spec-emoji",
     "eject": "react-scripts eject",
     "//": "puppeteer installs chromium automatically but we also want firefox",

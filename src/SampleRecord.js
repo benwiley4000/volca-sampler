@@ -21,18 +21,41 @@ let cachedCaptureDevices = null;
  */
 function useMediaRecording({ onRecordStart, onRecordFinish, onRecordError }) {
   const [captureDevices, setCaptureDevices] = useState(cachedCaptureDevices);
-  useEffect(() => {
-    cachedCaptureDevices = captureDevices;
-  }, [captureDevices]);
+  const [accessState, setAccessState] = useState(
+    /** @type {'pending' | 'ok' | 'denied' | 'unavailable'} */ (
+      captureDevices ? 'ok' : 'pending'
+    )
+  );
   const [selectedCaptureDeviceId, setSelectedCaptureDeviceId] = useState('');
   useEffect(() => {
-    getAudioInputDevices().then((devices) => {
-      if (devices.length) {
-        setCaptureDevices(new Map(devices.map((d) => [d.device.deviceId, d])));
-        setSelectedCaptureDeviceId((id) => id || devices[0].device.deviceId);
-      }
-    });
+    cachedCaptureDevices = captureDevices;
+    setAccessState('ok');
+  }, [captureDevices]);
+  const refreshCaptureDevices = useCallback(() => {
+    getAudioInputDevices()
+      .then((devices) => {
+        if (devices.length) {
+          setCaptureDevices(
+            new Map(devices.map((d) => [d.device.deviceId, d]))
+          );
+          setSelectedCaptureDeviceId((id) => id || devices[0].device.deviceId);
+        }
+      })
+      .catch((err) => {
+        if (err instanceof DOMException) {
+          if (err.name === 'NotAllowedError') {
+            setAccessState('denied');
+            return;
+          }
+          if (err.name === 'NotFoundError') {
+            setAccessState('unavailable');
+            return;
+          }
+        }
+        throw err;
+      });
   }, []);
+  useEffect(refreshCaptureDevices, [refreshCaptureDevices]);
   const [selectedChannelCount, setSelectedChannelCount] = useState(1);
   useEffect(() => {
     const selectedDeviceInfo =
@@ -77,9 +100,11 @@ function useMediaRecording({ onRecordStart, onRecordFinish, onRecordError }) {
   ]);
   return {
     captureDevices,
+    accessState,
     selectedCaptureDeviceId,
     selectedChannelCount,
     recordingError,
+    refreshCaptureDevices,
     setSelectedCaptureDeviceId,
     setSelectedChannelCount,
     beginRecording: handleBeginRecording,
@@ -97,9 +122,11 @@ function useMediaRecording({ onRecordStart, onRecordFinish, onRecordError }) {
 function SampleRecord({ captureState, ...callbacks }) {
   const {
     captureDevices,
+    accessState,
     selectedCaptureDeviceId,
     selectedChannelCount,
     recordingError,
+    refreshCaptureDevices,
     setSelectedCaptureDeviceId,
     setSelectedChannelCount,
     beginRecording,
@@ -108,50 +135,68 @@ function SampleRecord({ captureState, ...callbacks }) {
 
   return (
     <div style={{ paddingLeft: '2rem' }}>
-      <div>
-        <label>
-          Capture Device
-          <select
-            value={selectedCaptureDeviceId}
-            onChange={(e) => setSelectedCaptureDeviceId(e.target.value)}
-          >
-            {captureDevices ? (
-              [...captureDevices].map(([id, { device }]) => (
-                <option key={id} value={id}>
-                  {device.label || id}
+      {accessState === 'denied' ? (
+        <p>
+          Looks like you didn't grant access to your audio input device. Please
+          give Volca Sampler access, then{' '}
+          <button type="button" onClick={refreshCaptureDevices}>
+            try again
+          </button>
+        </p>
+      ) : accessState === 'unavailable' ? (
+        <p>
+          Volca Sampler couldn't find any audio input devices. Please connect
+          one, then{' '}
+          <button type="button" onClick={refreshCaptureDevices}>
+            try again
+          </button>
+        </p>
+      ) : (
+        <div>
+          <label>
+            Capture Device
+            <select
+              value={selectedCaptureDeviceId}
+              onChange={(e) => setSelectedCaptureDeviceId(e.target.value)}
+            >
+              {captureDevices && accessState === 'ok' ? (
+                [...captureDevices].map(([id, { device }]) => (
+                  <option key={id} value={id}>
+                    {device.label || id}
+                  </option>
+                ))
+              ) : (
+                <option value="" disabled>
+                  Loading devices...
                 </option>
-              ))
-            ) : (
-              <option value="" disabled>
-                Loading devices...
-              </option>
-            )}
-          </select>
-        </label>
-        <label>
-          Channel count
-          <select
-            value={selectedChannelCount}
-            onChange={(e) => setSelectedChannelCount(Number(e.target.value))}
-          >
-            {[1, 2].map((count) => (
-              <option
-                key={count}
-                value={count}
-                disabled={
-                  !captureDevices ||
-                  !captureDevices.has(selectedCaptureDeviceId) ||
-                  /** @type {import('./utils/recording').AudioDeviceInfoContainer} */ (
-                    captureDevices.get(selectedCaptureDeviceId)
-                  ).channelsAvailable < count
-                }
-              >
-                {count}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
+              )}
+            </select>
+          </label>
+          <label>
+            Channel count
+            <select
+              value={selectedChannelCount}
+              onChange={(e) => setSelectedChannelCount(Number(e.target.value))}
+            >
+              {[1, 2].map((count) => (
+                <option
+                  key={count}
+                  value={count}
+                  disabled={
+                    !captureDevices ||
+                    !captureDevices.has(selectedCaptureDeviceId) ||
+                    /** @type {import('./utils/recording').AudioDeviceInfoContainer} */ (
+                      captureDevices.get(selectedCaptureDeviceId)
+                    ).channelsAvailable < count
+                  }
+                >
+                  {count}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      )}
       <button
         type="button"
         onClick={captureState === 'capturing' ? stopRecording : beginRecording}

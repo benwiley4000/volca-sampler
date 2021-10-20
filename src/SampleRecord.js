@@ -4,6 +4,11 @@ import { getAudioBufferForAudioFileData } from './utils/audioData.js';
 import { captureAudio, getAudioInputDevices } from './utils/recording.js';
 
 /**
+ * @type {Map<string, import('./utils/recording').AudioDeviceInfoContainer> | null}
+ */
+let cachedCaptureDevices = null;
+
+/**
  * @typedef {{
  *   onRecordStart: () => void;
  *   onRecordFinish: (audioFileBuffer: Uint8Array, userFile?: File) => void;
@@ -15,11 +20,10 @@ import { captureAudio, getAudioInputDevices } from './utils/recording.js';
  * @param {MediaRecordingCallbacks} callbacks
  */
 function useMediaRecording({ onRecordStart, onRecordFinish, onRecordError }) {
-  const [captureDevices, setCaptureDevices] = useState(
-    /** @type {Map<string, import('./utils/recording').AudioDeviceInfoContainer> | null} */ (
-      null
-    )
-  );
+  const [captureDevices, setCaptureDevices] = useState(cachedCaptureDevices);
+  useEffect(() => {
+    cachedCaptureDevices = captureDevices;
+  }, [captureDevices]);
   const [selectedCaptureDeviceId, setSelectedCaptureDeviceId] = useState('');
   useEffect(() => {
     getAudioInputDevices().then((devices) => {
@@ -102,53 +106,52 @@ function SampleRecord({ captureState, ...callbacks }) {
     stopRecording,
   } = useMediaRecording(callbacks);
 
-  if (captureState === 'idle') {
-    return null;
-  }
-
   return (
     <div style={{ paddingLeft: '2rem' }}>
-      {captureDevices ? (
-        <div>
-          <label>
-            Capture Device
-            <select
-              value={selectedCaptureDeviceId}
-              onChange={(e) => setSelectedCaptureDeviceId(e.target.value)}
-            >
-              {[...captureDevices].map(([id, { device }]) => (
+      <div>
+        <label>
+          Capture Device
+          <select
+            value={selectedCaptureDeviceId}
+            onChange={(e) => setSelectedCaptureDeviceId(e.target.value)}
+          >
+            {captureDevices ? (
+              [...captureDevices].map(([id, { device }]) => (
                 <option key={id} value={id}>
                   {device.label || id}
                 </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Channel count
-            <select
-              value={selectedChannelCount}
-              onChange={(e) => setSelectedChannelCount(Number(e.target.value))}
-            >
-              {[1, 2].map((count) => (
-                <option
-                  key={count}
-                  value={count}
-                  disabled={
-                    !captureDevices.has(selectedCaptureDeviceId) ||
-                    /** @type {import('./utils/recording').AudioDeviceInfoContainer} */ (
-                      captureDevices.get(selectedCaptureDeviceId)
-                    ).channelsAvailable < count
-                  }
-                >
-                  {count}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-      ) : (
-        'Loading capture devices...'
-      )}
+              ))
+            ) : (
+              <option value="" disabled>
+                Loading devices...
+              </option>
+            )}
+          </select>
+        </label>
+        <label>
+          Channel count
+          <select
+            value={selectedChannelCount}
+            onChange={(e) => setSelectedChannelCount(Number(e.target.value))}
+          >
+            {[1, 2].map((count) => (
+              <option
+                key={count}
+                value={count}
+                disabled={
+                  !captureDevices ||
+                  !captureDevices.has(selectedCaptureDeviceId) ||
+                  /** @type {import('./utils/recording').AudioDeviceInfoContainer} */ (
+                    captureDevices.get(selectedCaptureDeviceId)
+                  ).channelsAvailable < count
+                }
+              >
+                {count}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
       <button
         type="button"
         onClick={captureState === 'capturing' ? stopRecording : beginRecording}

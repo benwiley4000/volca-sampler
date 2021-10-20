@@ -205,12 +205,14 @@ function App() {
             }}
           />
         )}
-        <SampleRecord
-          captureState={captureState}
-          onRecordStart={handleRecordStart}
-          onRecordFinish={handleRecordFinish}
-          onRecordError={handleRecordError}
-        />
+        {captureState !== 'idle' && (
+          <SampleRecord
+            captureState={captureState}
+            onRecordStart={handleRecordStart}
+            onRecordFinish={handleRecordFinish}
+            onRecordError={handleRecordError}
+          />
+        )}
       </div>
     </div>
   );

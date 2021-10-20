@@ -151,68 +151,93 @@ function App() {
   }, []);
 
   return (
-    <div className={classes.volcaSampler}>
-      <select
-        value={JSON.stringify(showingFactorySamples)}
-        onChange={(e) => setShowingFactorySamples(JSON.parse(e.target.value))}
+    <div>
+      <h1
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          padding: '2rem',
+          paddingBottom: 0,
+          marginBottom: 0,
+        }}
       >
-        <option value="false">Your Samples</option>
-        <option value="true">Factory Samples</option>
-      </select>
-      <div className={classes.sampleListContainer}>
-        {loadingSamples ? 'Loading...' : null}
-        <SampleList
-          samples={selectedSampleBank}
-          selectedSampleId={captureState === 'idle' ? focusedSampleId : null}
-          readonly={['capturing', 'preparing'].includes(captureState)}
-          onNewSample={() => setCaptureState('ready')}
-          onSampleSelect={(id) => {
-            setFocusedSampleId(id);
-            setCaptureState('idle');
-          }}
+        <span style={{ color: 'red' }}>
+          Volca Sample
+          <span
+            style={{ textDecoration: 'underline', textTransform: 'uppercase' }}
+          >
+            r
+          </span>
+        </span>
+        <img
+          style={{ height: '1.6em', paddingLeft: '1rem' }}
+          src="volca_sample.png"
         />
-      </div>
-      <div className={classes.focusedSampleContainer}>
-        {captureState === 'idle' && (
-          <SampleDetail
-            sample={
-              (focusedSampleId && selectedSampleBank.get(focusedSampleId)) ||
-              null
-            }
-            onSampleUpdate={handleSampleUpdate}
-            onSampleDuplicate={(id) => {
-              const sample = selectedSampleBank.get(id);
-              if (sample) {
-                const newSample = sample.duplicate();
-                setSamples(
-                  (samples) => new Map([[newSample.id, newSample], ...samples])
-                );
-                setShowingFactorySamples(false);
-                // TODO: scroll new sample into view
-                setFocusedSampleId(newSample.id);
-              }
-            }}
-            onSampleDelete={(id) => {
-              const sample = selectedSampleBank.get(id);
-              if (sample && sample instanceof SampleContainer.Mutable) {
-                sample.remove();
-                setSamples((samples) => {
-                  const newSamples = new Map(samples);
-                  newSamples.delete(sample.id);
-                  return newSamples;
-                });
-              }
+      </h1>
+      <div className={classes.volcaSampler}>
+        <select
+          value={JSON.stringify(showingFactorySamples)}
+          onChange={(e) => setShowingFactorySamples(JSON.parse(e.target.value))}
+        >
+          <option value="false">Your Samples</option>
+          <option value="true">Factory Samples</option>
+        </select>
+        <div className={classes.sampleListContainer}>
+          {loadingSamples ? 'Loading...' : null}
+          <SampleList
+            samples={selectedSampleBank}
+            selectedSampleId={captureState === 'idle' ? focusedSampleId : null}
+            readonly={['capturing', 'preparing'].includes(captureState)}
+            onNewSample={() => setCaptureState('ready')}
+            onSampleSelect={(id) => {
+              setFocusedSampleId(id);
+              setCaptureState('idle');
             }}
           />
-        )}
-        {captureState !== 'idle' && (
-          <SampleRecord
-            captureState={captureState}
-            onRecordStart={handleRecordStart}
-            onRecordFinish={handleRecordFinish}
-            onRecordError={handleRecordError}
-          />
-        )}
+        </div>
+        <div className={classes.focusedSampleContainer}>
+          {captureState === 'idle' && (
+            <SampleDetail
+              sample={
+                (focusedSampleId && selectedSampleBank.get(focusedSampleId)) ||
+                null
+              }
+              onSampleUpdate={handleSampleUpdate}
+              onSampleDuplicate={(id) => {
+                const sample = selectedSampleBank.get(id);
+                if (sample) {
+                  const newSample = sample.duplicate();
+                  setSamples(
+                    (samples) =>
+                      new Map([[newSample.id, newSample], ...samples])
+                  );
+                  setShowingFactorySamples(false);
+                  // TODO: scroll new sample into view
+                  setFocusedSampleId(newSample.id);
+                }
+              }}
+              onSampleDelete={(id) => {
+                const sample = selectedSampleBank.get(id);
+                if (sample && sample instanceof SampleContainer.Mutable) {
+                  sample.remove();
+                  setSamples((samples) => {
+                    const newSamples = new Map(samples);
+                    newSamples.delete(sample.id);
+                    return newSamples;
+                  });
+                }
+              }}
+            />
+          )}
+          {captureState !== 'idle' && (
+            <SampleRecord
+              captureState={captureState}
+              onRecordStart={handleRecordStart}
+              onRecordFinish={handleRecordFinish}
+              onRecordError={handleRecordError}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

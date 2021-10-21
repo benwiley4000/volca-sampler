@@ -5,7 +5,7 @@ import {
   getTargetWavForSample,
   getSourceAudioBuffer,
   getAudioBufferForAudioFileData,
-  playAudioBuffer,
+  useAudioPlaybackContext,
 } from './utils/audioData.js';
 import { SampleContainer } from './store.js';
 import VolcaTransferControl from './VolcaTransferControl.js';
@@ -80,6 +80,7 @@ function SampleDetail({
       sampleId && onSampleUpdate(sampleId, { scaleCoefficient }),
     [sampleId, onSampleUpdate]
   );
+  const { playAudioBuffer, isAudioBusy } = useAudioPlaybackContext();
   if (!sample) {
     return null;
   }
@@ -181,6 +182,7 @@ function SampleDetail({
             const audioBuffer = await getAudioBufferForAudioFileData(data);
             playAudioBuffer(audioBuffer);
           }}
+          disabled={isAudioBusy}
         >
           play
         </button>

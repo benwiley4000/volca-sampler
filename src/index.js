@@ -3,10 +3,13 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import App from './App.js';
 import reportWebVitals from './reportWebVitals.js';
+import { AudioPlaybackContextProvider } from './utils/audioData';
 
 ReactDOM.render(
   <React.StrictMode>
-    <App />
+    <AudioPlaybackContextProvider>
+      <App />
+    </AudioPlaybackContextProvider>
   </React.StrictMode>,
   document.getElementById('root')
 );

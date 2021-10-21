@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 
 import {
   getAudioBufferForAudioFileData,
-  playAudioBuffer,
+  useAudioPlaybackContext,
 } from './utils/audioData.js';
 import { getSampleBuffer } from './utils/syro.js';
 
@@ -21,6 +21,7 @@ function VolcaTransferControl({ sample }) {
   useEffect(() => {
     return () => stop.current();
   }, [sample]);
+  const { playAudioBuffer, isAudioBusy } = useAudioPlaybackContext();
   return (
     <>
       <button
@@ -34,7 +35,11 @@ function VolcaTransferControl({ sample }) {
             };
             setSyroProgress(0);
             setSyroTransferState('loading');
-            const sampleBuffer = await getSampleBuffer(sample, setSyroProgress);
+            const sampleBuffer = await getSampleBuffer(sample, (progress) => {
+              if (!cancelled) {
+                setSyroProgress(progress);
+              }
+            });
             if (cancelled) {
               return;
             }
@@ -59,6 +64,11 @@ function VolcaTransferControl({ sample }) {
             setSyroTransferState('error');
           }
         }}
+        disabled={
+          isAudioBusy ||
+          syroTransferState === 'loading' ||
+          syroTransferState === 'transferring'
+        }
       >
         transfer to volca sample
       </button>

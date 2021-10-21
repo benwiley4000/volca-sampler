@@ -24,6 +24,14 @@ const testPort = 5432;
 const moduleCache = {};
 const moduleMocks = {
   localforage: 'export default { createInstance: () => ({}) };',
+  react: `
+export const createContext = () => {};
+export const createElement = () => {};
+export const useCallback = () => {};
+export const useContext = () => {};
+export const useMemo = () => {};
+export const useState = () => {};
+  `,
   uuid: 'export const v4 = () => `id-${Math.random()}`;',
 };
 function getTestServer() {

@@ -1,3 +1,11 @@
+import {
+  createContext,
+  createElement,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+} from 'react';
 import getWavFileHeaders from 'wav-headers';
 
 import { SampleContainer } from '../store.js';
@@ -150,44 +158,6 @@ export async function getSourceAudioBuffer(sourceFileId, shouldClampValues) {
 }
 
 /**
- * @param {AudioBuffer} audioBuffer buffer to play
- * @param {{
- *   onTimeUpdate?: (currentTime: number) => void;
- *   onEnded?: () => void;
- * }} [opts]
- * @returns {() => void} stop
- */
-export function playAudioBuffer(
-  audioBuffer,
-  { onTimeUpdate = () => null, onEnded = () => null } = {}
-) {
-  const audioContext = getTargetAudioContext();
-  const source = audioContext.createBufferSource();
-  source.buffer = audioBuffer;
-  source.connect(audioContext.destination);
-  source.start();
-  const startTime = audioContext.currentTime;
-  onTimeUpdate(0);
-  let frame = requestAnimationFrame(updateCurrentTime);
-  function updateCurrentTime() {
-    onTimeUpdate(audioContext.currentTime - startTime);
-    frame = requestAnimationFrame(updateCurrentTime);
-  }
-  let stopped = false;
-  source.addEventListener('ended', () => {
-    if (!stopped) {
-      onTimeUpdate(audioBuffer.duration);
-      onEnded();
-    }
-    cancelAnimationFrame(frame);
-  });
-  return function stop() {
-    source.stop();
-    stopped = true;
-  };
-}
-
-/**
  * Given sample container, returns a 16-bit mono wav file with the sample's
  * metadata parameters applied
  * @param {import('../store').SampleContainer} sampleContainer
@@ -242,4 +212,100 @@ export async function getTargetWavForSample(sampleContainer) {
     data: wavBuffer,
     sampleRate: 16,
   };
+}
+
+const audioPlaybackContextDefaultValue = {
+  /**
+   * @param {AudioBuffer} audioBuffer buffer to play
+   * @param {{
+   *   onTimeUpdate?: (currentTime: number) => void;
+   *   onEnded?: () => void;
+   * }} [opts]
+   * @returns {() => void} stop
+   */
+  playAudioBuffer(audioBuffer, opts) {
+    throw new Error('Must render AudioPlaybackContextProvider');
+  },
+  isAudioBusy: false,
+};
+
+const AudioPlaybackContext = createContext(audioPlaybackContextDefaultValue);
+
+/**
+ * @param {React.PropsWithChildren<{}>} props
+ * @returns
+ */
+export function AudioPlaybackContextProvider({ children }) {
+  const [isAudioBusy, setIsAudioBusy] = useState(false);
+
+  const playAudioBuffer = useCallback(
+    /**
+     * @type {(typeof audioPlaybackContextDefaultValue.playAudioBuffer)}
+     */
+    (audioBuffer, { onTimeUpdate = () => null, onEnded = () => null } = {}) => {
+      if (isAudioBusy) {
+        throw new Error(
+          'Wait until audio playback has finished to start new playback'
+        );
+      }
+      setIsAudioBusy(true);
+      /**
+       * @type {AudioContext}
+       */
+      let audioContext;
+      /**
+       * @type {AudioBufferSourceNode}
+       */
+      let source;
+      try {
+        audioContext = getTargetAudioContext();
+        source = audioContext.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(audioContext.destination);
+        source.start();
+      } catch (err) {
+        setIsAudioBusy(false);
+        throw err;
+      }
+      const startTime = audioContext.currentTime;
+      onTimeUpdate(0);
+      let frame = requestAnimationFrame(updateCurrentTime);
+      function updateCurrentTime() {
+        onTimeUpdate(audioContext.currentTime - startTime);
+        frame = requestAnimationFrame(updateCurrentTime);
+      }
+      let stopped = false;
+      source.addEventListener('ended', () => {
+        if (!stopped) {
+          onTimeUpdate(audioBuffer.duration);
+          onEnded();
+        }
+        setIsAudioBusy(false);
+        cancelAnimationFrame(frame);
+      });
+      return function stop() {
+        source.stop();
+        stopped = true;
+      };
+    },
+    [isAudioBusy]
+  );
+
+  const contextValue = useMemo(
+    () => ({
+      playAudioBuffer,
+      isAudioBusy,
+    }),
+    [playAudioBuffer, isAudioBusy]
+  );
+
+  return createElement(
+    AudioPlaybackContext.Provider,
+    { value: contextValue },
+    children
+  );
+}
+
+export function useAudioPlaybackContext() {
+  return useContext(AudioPlaybackContext);
 }

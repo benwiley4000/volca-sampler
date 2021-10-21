@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { styled } from 'tonami';
 
 import SampleList from './SampleList.js';
 import SampleDetail from './SampleDetail.js';
@@ -9,44 +10,44 @@ import {
   storeAudioSourceFile,
 } from './store.js';
 
-{
-  const css = `
-.volcaSampler {
-  padding: 2rem;
-  display: flex;
-  height: 100%;
-}
+const Title = styled.h1({
+  display: 'flex',
+  alignItems: 'center',
+  padding: '2rem',
+  paddingBottom: '0px',
+  marginBottom: '0px',
+});
 
-.sampleListContainer {
-  width: 200px;
-  flex-shrink: 0;
-  padding-right: 0.5rem;
-  height: 100%;
-}
+const TitleText = styled.span({
+  color: 'red',
+});
 
-.focusedSampleContainer {
-  flex-grow: 1;
-}
+const TitleR = styled.span({
+  textTransform: 'uppercase',
+  textDecoration: 'underline',
+});
 
-.focusedSample {
-  padding-left: 2rem;
-}
-  `;
-  const style = document.createElement('style');
-  style.innerHTML = css;
-  document.body.appendChild(style);
-}
-/**
- * @type {Record<string, string>}
- */
-const classes = [
-  'volcaSampler',
-  'sampleListContainer',
-  'sampleList',
-  'sampleListItem',
-  'focusedSampleContainer',
-  'focusedSample',
-].reduce((classes, className) => ({ ...classes, [className]: className }), {});
+const TitleGraphic = styled.img({
+  height: '1.6em',
+  paddingLeft: '1rem',
+});
+
+const MainLayout = styled.div({
+  padding: '2rem',
+  display: 'flex',
+  height: '100%',
+});
+
+const SampleListContainer = styled.div({
+  width: '200px',
+  flexShrink: 0,
+  paddingRight: '0.5rem',
+  height: '100%',
+});
+
+const FocusedSampleContainer = styled.div({
+  flexGrow: 1,
+});
 
 function App() {
   const [showingFactorySamples, setShowingFactorySamples] = useState(false);
@@ -152,30 +153,14 @@ function App() {
 
   return (
     <div>
-      <h1
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          padding: '2rem',
-          paddingBottom: 0,
-          marginBottom: 0,
-        }}
-      >
-        <span style={{ color: 'red' }}>
+      <Title>
+        <TitleText>
           Volca Sample
-          <span
-            style={{ textDecoration: 'underline', textTransform: 'uppercase' }}
-          >
-            r
-          </span>
-        </span>
-        <img
-          style={{ height: '1.6em', paddingLeft: '1rem' }}
-          src="volca_sample.png"
-          alt=""
-        />
-      </h1>
-      <div className={classes.volcaSampler}>
+          <TitleR>r</TitleR>
+        </TitleText>
+        <TitleGraphic src="volca_sample.png" alt="" />
+      </Title>
+      <MainLayout>
         <select
           value={JSON.stringify(showingFactorySamples)}
           onChange={(e) => setShowingFactorySamples(JSON.parse(e.target.value))}
@@ -183,7 +168,7 @@ function App() {
           <option value="false">Your Samples</option>
           <option value="true">Factory Samples</option>
         </select>
-        <div className={classes.sampleListContainer}>
+        <SampleListContainer>
           {loadingSamples ? 'Loading...' : null}
           <SampleList
             samples={selectedSampleBank}
@@ -195,8 +180,8 @@ function App() {
               setCaptureState('idle');
             }}
           />
-        </div>
-        <div className={classes.focusedSampleContainer}>
+        </SampleListContainer>
+        <FocusedSampleContainer>
           {captureState === 'idle' && (
             <SampleDetail
               sample={
@@ -238,8 +223,8 @@ function App() {
               onRecordError={handleRecordError}
             />
           )}
-        </div>
-      </div>
+        </FocusedSampleContainer>
+      </MainLayout>
     </div>
   );
 }

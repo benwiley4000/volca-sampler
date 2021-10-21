@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { styled } from 'tonami';
 
 import Waveform from './Waveform.js';
 import {
@@ -10,23 +11,15 @@ import {
 import { SampleContainer } from './store.js';
 import VolcaTransferControl from './VolcaTransferControl.js';
 
-{
-  const css = `
-.sampleDetail {
-  padding-left: 2rem;
-}
-  `;
-  const style = document.createElement('style');
-  style.innerHTML = css;
-  document.body.appendChild(style);
-}
-/**
- * @type {Record<string, string>}
- */
-const classes = ['sampleDetail'].reduce(
-  (classes, className) => ({ ...classes, [className]: className }),
-  {}
-);
+const SampleDetailContainer = styled.div({
+  paddingLeft: '2rem',
+});
+
+const WaveformContainer = styled.div({
+  height: '200px',
+  backgroundColor: '#f3f3f3',
+  maxWidth: '400px',
+});
 
 /**
  * @param {Blob} blob
@@ -90,7 +83,7 @@ function SampleDetail({
   );
   const maxTrimEnd = Math.max(0, sampleLength - sample.metadata.trimFrames[0]);
   return (
-    <div className={classes.sampleDetail}>
+    <SampleDetailContainer>
       <h3>{sample.metadata.name}</h3>
       <button type="button" onClick={() => onSampleDuplicate(sample.id)}>
         Duplicate
@@ -163,13 +156,7 @@ function SampleDetail({
           }}
         />
       </label>
-      <div
-        style={{
-          height: 200,
-          backgroundColor: '#f3f3f3',
-          maxWidth: 400,
-        }}
-      >
+      <WaveformContainer>
         <Waveform
           onSetTrimFrames={() => null}
           onSetScaleCoefficient={handleSetScaleCoefficient}
@@ -216,7 +203,7 @@ function SampleDetail({
         >
           download (orig)
         </button>
-      </div>
+      </WaveformContainer>
       <h4>Quality bit depth: {sample.metadata.qualityBitDepth}</h4>
       <input
         type="range"
@@ -244,7 +231,7 @@ function SampleDetail({
         />
       </label>
       <VolcaTransferControl sample={sample} />
-    </div>
+    </SampleDetailContainer>
   );
 }
 

@@ -5,6 +5,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { styled } from 'tonami';
 
 import {
   getSourceAudioBuffer,
@@ -12,6 +13,51 @@ import {
   findSamplePeak,
   getTrimmedView,
 } from './utils/audioData.js';
+
+const groupWidth = 6;
+
+const WaveformDiv = styled.div({
+  width: '100%',
+  height: '100%',
+  position: 'relative',
+  overflow: 'hidden',
+});
+
+const WaveformSection = styled.div({
+  width: '100%',
+  height: ({ $positive }) => ($positive ? '67%' : '33%'),
+  display: 'flex',
+  alignItems: ({ $positive }) => ($positive ? 'flex-end' : 'flex-start'),
+});
+
+const Scaled = styled.div({
+  width: '100%',
+  height: ({ $scaleCoefficient }) => `${100 * $scaleCoefficient}%`,
+  willChange: 'height',
+  display: 'flex',
+  alignItems: ({ $positive }) => ($positive ? 'flex-end' : 'flex-start'),
+});
+
+const Bar = styled.div({
+  width: `${groupWidth}px`,
+  height: ({ $amplitude, $positive }) =>
+    `${100 * ($positive ? 1 : -1) * $amplitude}%`,
+  paddingRight: '1px',
+});
+
+const BarInner = styled.div({
+  backgroundColor: ({ $positive }) => ($positive ? 'red' : 'darkred'),
+  height: '100%',
+});
+
+/**
+ * @type {React.FC<React.InputHTMLAttributes<HTMLInputElement>>}
+ */
+const ScaleInput = styled.input({
+  position: 'absolute',
+  top: 0,
+  left: 0,
+});
 
 /**
  * @param {Float32Array} samples an array of floats from -1 to 1
@@ -79,8 +125,6 @@ function Waveform({
    */
   const waveformRef = useRef(null);
 
-  const groupWidth = 6;
-
   const peaks = useMemo(() => {
     const pixelWidth = waveformRef.current && waveformRef.current.offsetWidth;
     if (!pixelWidth || !monoSamples.length) {
@@ -117,92 +161,22 @@ function Waveform({
 
   return (
     <>
-      <div
-        className="waveform"
-        style={{
-          width: '100%',
-          height: '100%',
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-        ref={waveformRef}
-      >
-        <div
-          className="positive"
-          style={{
-            width: '100%',
-            height: '67%',
-            display: 'flex',
-            alignItems: 'flex-end',
-          }}
-        >
-          <div
-            className="scaled"
-            style={{
-              width: '100%',
-              height: `${100 * scaleCoefficient}%`,
-              willChange: 'height',
-              display: 'flex',
-              alignItems: 'flex-end',
-            }}
-          >
-            {[].map.call(peaks.positive, (amplitude, index) => (
-              <div
-                key={index}
-                className="bar"
-                style={{
-                  width: groupWidth,
-                  height: `${100 * amplitude}%`,
-                  paddingRight: 1,
-                }}
-              >
-                <div
-                  className="bar_inner"
-                  style={{ backgroundColor: 'red', height: '100%' }}
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-        <div
-          className="negative"
-          style={{
-            width: '100%',
-            height: '33%',
-            display: 'flex',
-            alignItems: 'flex-start',
-          }}
-        >
-          <div
-            className="scaled"
-            style={{
-              width: '100%',
-              height: `${100 * scaleCoefficient}%`,
-              willChange: 'height',
-              display: 'flex',
-              alignItems: 'flex-start',
-            }}
-          >
-            {[].map.call(peaks.negative, (amplitude, index) => (
-              <div
-                key={index}
-                className="bar"
-                style={{
-                  width: groupWidth,
-                  height: `${100 * -amplitude}%`,
-                  paddingRight: 1,
-                }}
-              >
-                <div
-                  className="bar_inner"
-                  style={{ backgroundColor: 'darkred', height: '100%' }}
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-        <input
-          style={{ position: 'absolute', top: 0, left: 0 }}
+      <WaveformDiv ref={waveformRef}>
+        {[true, false].map((positive) => {
+          const key = positive ? 'positive' : 'negative';
+          return (
+            <WaveformSection key={key} $positive={positive}>
+              <Scaled $scaleCoefficient={scaleCoefficient} $positive={positive}>
+                {[].map.call(peaks[key], (amplitude, index) => (
+                  <Bar key={index} $amplitude={amplitude} $positive={positive}>
+                    <BarInner $positive={positive} />
+                  </Bar>
+                ))}
+              </Scaled>
+            </WaveformSection>
+          );
+        })}
+        <ScaleInput
           type="range"
           disabled={trimmedSamplePeak === 0}
           value={peakTarget}
@@ -216,7 +190,7 @@ function Waveform({
             onSetScaleCoefficient(Number(e.target.value) / trimmedSamplePeak);
           }}
         />
-      </div>
+      </WaveformDiv>
       <button
         type="button"
         disabled={scaleCoefficient === maxCoefficient}

@@ -15,7 +15,7 @@ const factorySamplesIndex = filenames
     return {
       // chop off track number and .wav
       name: filename.slice(3, -4),
-      sourceFileId: `/${pathPrefix}/${filename}`,
+      sourceFileId: `${pathPrefix}/${filename}`,
       id: uuidv4(),
       // track number should be stored in first two characters
       slotNumber: Number(filename.slice(0, 2)),

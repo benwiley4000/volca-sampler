@@ -312,9 +312,12 @@ test('syro-utils.c', async (t) => {
    */
   const nativeSampleBufferFilenames = JSON.parse(
     child_process
-      .execSync(`../convert-sample "../../public${sourceFileId}" ${slotNumber}`, {
-        cwd: artifactsDir,
-      })
+      .execSync(
+        `../convert-sample "../../public${sourceFileId}" ${slotNumber}`,
+        {
+          cwd: artifactsDir,
+        }
+      )
       .toString()
   );
   for (const key of /** @type {('compressed' | 'uncompressed')[]} */ ([

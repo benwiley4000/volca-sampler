@@ -141,7 +141,7 @@ function Waveform({
 
   const trimmedSamplePeak = useMemo(() => {
     if (!sourceAudioBuffer) {
-      return 1;
+      return 0;
     }
     const trimmedView = getTrimmedView(monoSamples, trimFrames);
     const samplePeak = findSamplePeak(trimmedView);

@@ -1,7 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { styled } from 'tonami';
 
 import { getAudioBufferForAudioFileData } from './utils/audioData.js';
 import { captureAudio, getAudioInputDevices } from './utils/recording.js';
+
+const SampleRecordDiv = styled.div({
+  padding: '2rem',
+});
 
 /**
  * @type {Map<string, import('./utils/recording').AudioDeviceInfoContainer> | null}
@@ -134,7 +139,7 @@ function SampleRecord({ captureState, ...callbacks }) {
   } = useMediaRecording(callbacks);
 
   return (
-    <div style={{ paddingLeft: '2rem' }}>
+    <SampleRecordDiv>
       {accessState === 'denied' ? (
         <p>
           Looks like you didn't grant access to your audio input device. Please
@@ -236,7 +241,7 @@ function SampleRecord({ captureState, ...callbacks }) {
         }}
       />
       {(captureState === 'error' && recordingError) || null}
-    </div>
+    </SampleRecordDiv>
   );
 }
 

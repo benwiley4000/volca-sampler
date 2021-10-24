@@ -29,6 +29,7 @@ const Bar = styled.div({
   width: `${GROUP_PIXEL_WIDTH}px`,
   height: ({ $amplitude, $positive }) =>
     `${100 * ($positive ? 1 : -1) * $amplitude}%`,
+  minHeight: ({ $positive }) => ($positive ? '1px' : 0),
   paddingRight: '1px',
 });
 

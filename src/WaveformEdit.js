@@ -13,42 +13,8 @@ import {
   findSamplePeak,
   getTrimmedView,
 } from './utils/audioData.js';
-
-const groupWidth = 6;
-
-const WaveformDiv = styled.div({
-  width: '100%',
-  height: '100%',
-  position: 'relative',
-  overflow: 'hidden',
-});
-
-const WaveformSection = styled.div({
-  width: '100%',
-  height: ({ $positive }) => ($positive ? '67%' : '33%'),
-  display: 'flex',
-  alignItems: ({ $positive }) => ($positive ? 'flex-end' : 'flex-start'),
-});
-
-const Scaled = styled.div({
-  width: '100%',
-  height: ({ $scaleCoefficient }) => `${100 * $scaleCoefficient}%`,
-  willChange: 'height',
-  display: 'flex',
-  alignItems: ({ $positive }) => ($positive ? 'flex-end' : 'flex-start'),
-});
-
-const Bar = styled.div({
-  width: `${groupWidth}px`,
-  height: ({ $amplitude, $positive }) =>
-    `${100 * ($positive ? 1 : -1) * $amplitude}%`,
-  paddingRight: '1px',
-});
-
-const BarInner = styled.div({
-  backgroundColor: ({ $positive }) => ($positive ? 'red' : 'darkred'),
-  height: '100%',
-});
+import { getPeaksForSamples } from './utils/waveform.js';
+import WaveformDisplay from './WaveformDisplay.js';
 
 /**
  * @type {React.FC<React.InputHTMLAttributes<HTMLInputElement>>}
@@ -60,54 +26,23 @@ const ScaleInput = styled.input({
 });
 
 /**
- * @param {Float32Array} samples an array of floats from -1 to 1
- * @param {number} groupSize the number of samples represented for each peak
- * @returns {{
- *   positive: Float32Array;
- *   negative: Float32Array;
- * }} arrays of peak positive and negative values
- */
-function getPeaksForSamples(samples, groupSize) {
-  // Cut off whatever's left after dividing into blocks of length [groupSize]
-  const positive = new Float32Array(Math.floor(samples.length / groupSize));
-  const negative = new Float32Array(Math.floor(samples.length / groupSize));
-  for (let i = 0; i < positive.length; i++) {
-    const group = new Float32Array(
-      samples.buffer,
-      i * groupSize * 4,
-      groupSize
-    );
-    let max = 0;
-    let min = 0;
-    for (const sample of group) {
-      if (sample > max) {
-        max = sample;
-      }
-      if (sample < min) {
-        min = sample;
-      }
-    }
-    positive[i] = max;
-    negative[i] = min;
-  }
-  return { positive, negative };
-}
-
-/**
  * @typedef {{
  *   sample: import('./store').SampleContainer;
  *   onSetTrimFrames: (trimFrames: [number, number]) => void;
  *   onSetScaleCoefficient: (scaleCoefficient: number) => void;
- * }} WaveformProps
+ * }} WaveformEditProps
  */
 
 /**
- * @param {WaveformProps & { sourceAudioBuffer: AudioBuffer | null }} props
+ * @param {WaveformEditProps & { sourceAudioBuffer: AudioBuffer | null }} props
  */
-function Waveform({
+function WaveformEdit({
   sourceAudioBuffer,
   sample: {
-    metadata: { trimFrames, scaleCoefficient },
+    metadata: {
+      trim: { frames: trimFrames },
+      scaleCoefficient,
+    },
   },
   onSetTrimFrames,
   onSetScaleCoefficient,
@@ -133,10 +68,7 @@ function Waveform({
         negative: new Float32Array(),
       };
     }
-    const groupSize = Math.floor(
-      (groupWidth * monoSamples.length) / pixelWidth
-    );
-    return getPeaksForSamples(monoSamples, groupSize);
+    return getPeaksForSamples(monoSamples, pixelWidth);
   }, [monoSamples]);
 
   const trimmedSamplePeak = useMemo(() => {
@@ -161,21 +93,11 @@ function Waveform({
 
   return (
     <>
-      <WaveformDiv ref={waveformRef}>
-        {[true, false].map((positive) => {
-          const key = positive ? 'positive' : 'negative';
-          return (
-            <WaveformSection key={key} $positive={positive}>
-              <Scaled $scaleCoefficient={scaleCoefficient} $positive={positive}>
-                {[].map.call(peaks[key], (amplitude, index) => (
-                  <Bar key={index} $amplitude={amplitude} $positive={positive}>
-                    <BarInner $positive={positive} />
-                  </Bar>
-                ))}
-              </Scaled>
-            </WaveformSection>
-          );
-        })}
+      <WaveformDisplay
+        waveformRef={waveformRef}
+        peaks={peaks}
+        scaleCoefficient={scaleCoefficient}
+      >
         <ScaleInput
           type="range"
           disabled={trimmedSamplePeak === 0}
@@ -190,7 +112,7 @@ function Waveform({
             onSetScaleCoefficient(Number(e.target.value) / trimmedSamplePeak);
           }}
         />
-      </WaveformDiv>
+      </WaveformDisplay>
       <button
         type="button"
         disabled={scaleCoefficient === maxCoefficient}
@@ -211,9 +133,9 @@ function Waveform({
 
 /**
  *
- * @param {WaveformProps} props
+ * @param {WaveformEditProps} props
  */
-function AsyncWaveform({ sample, ...rest }) {
+function AsyncWaveformEdit({ sample, ...rest }) {
   const [loadedAudioBuffer, setSourceAudioBuffer] = useState(
     /** @type {[string, AudioBuffer] | null} */ (null)
   );
@@ -245,7 +167,7 @@ function AsyncWaveform({ sample, ...rest }) {
   }
 
   return (
-    <Waveform
+    <WaveformEdit
       {...rest}
       sample={displayedSample.current}
       sourceAudioBuffer={loadedAudioBuffer && loadedAudioBuffer[1]}
@@ -253,4 +175,4 @@ function AsyncWaveform({ sample, ...rest }) {
   );
 }
 
-export default AsyncWaveform;
+export default AsyncWaveformEdit;

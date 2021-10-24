@@ -29,4 +29,4 @@ public/syro-bindings.wasm
 public/syro-worker.js
 public/syro-worker.wasm
 
-src/factory-samples.js
+public/factory-samples.json

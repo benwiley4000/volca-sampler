@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { styled } from 'tonami';
 
-import Waveform from './Waveform.js';
+import WaveformEdit from './WaveformEdit.js';
 import {
   getTargetWavForSample,
   getSourceAudioBuffer,
@@ -10,6 +10,7 @@ import {
 } from './utils/audioData.js';
 import { SampleContainer } from './store.js';
 import VolcaTransferControl from './VolcaTransferControl.js';
+import { getSamplePeaksForSourceFile } from './utils/waveform.js';
 
 const SampleDetailContainer = styled.div({
   paddingLeft: '2rem',
@@ -79,9 +80,9 @@ function SampleDetail({
   }
   const maxTrimStart = Math.max(
     0,
-    sampleLength - sample.metadata.trimFrames[1]
+    sampleLength - sample.metadata.trim.frames[1]
   );
-  const maxTrimEnd = Math.max(0, sampleLength - sample.metadata.trimFrames[0]);
+  const maxTrimEnd = Math.max(0, sampleLength - sample.metadata.trim.frames[0]);
   return (
     <SampleDetailContainer>
       <h3>{sample.metadata.name}</h3>
@@ -110,22 +111,33 @@ function SampleDetail({
         <h4>Trim start</h4>
         <input
           type="number"
-          value={sample.metadata.trimFrames[0]}
+          value={sample.metadata.trim.frames[0]}
           step={1}
           min={0}
           max={maxTrimStart}
-          onChange={(e) => {
+          onChange={async (e) => {
             if (sampleLength) {
               const trimStart = Number(e.target.value);
+              /**
+               * @type {[number, number]}
+               */
+              const trimFrames = [
+                Math.min(trimStart, maxTrimStart),
+                sample.metadata.trim.frames[1],
+              ];
+              const waveformPeaks = await getSamplePeaksForSourceFile(
+                sample.metadata.sourceFileId,
+                trimFrames
+              );
               onSampleUpdate(sample.id, {
-                trimFrames: [
-                  Math.min(trimStart, maxTrimStart),
-                  sample.metadata.trimFrames[1],
-                ],
+                trim: {
+                  frames: trimFrames,
+                  waveformPeaks,
+                },
               });
             } else {
               onSampleUpdate(sample.id, {
-                trimFrames: [...sample.metadata.trimFrames],
+                trim: { ...sample.metadata.trim },
               });
             }
           }}
@@ -135,29 +147,40 @@ function SampleDetail({
         <h4>Trim end</h4>
         <input
           type="number"
-          value={sample.metadata.trimFrames[1]}
+          value={sample.metadata.trim.frames[1]}
           step={1}
           min={0}
           max={maxTrimEnd}
-          onChange={(e) => {
+          onChange={async (e) => {
             if (sampleLength) {
               const trimEnd = Number(e.target.value);
+              /**
+               * @type {[number, number]}
+               */
+              const trimFrames = [
+                sample.metadata.trim.frames[0],
+                Math.min(trimEnd, maxTrimEnd),
+              ];
+              const waveformPeaks = await getSamplePeaksForSourceFile(
+                sample.metadata.sourceFileId,
+                trimFrames
+              );
               onSampleUpdate(sample.id, {
-                trimFrames: [
-                  sample.metadata.trimFrames[0],
-                  Math.min(trimEnd, maxTrimEnd),
-                ],
+                trim: {
+                  frames: trimFrames,
+                  waveformPeaks,
+                },
               });
             } else {
               onSampleUpdate(sample.id, {
-                trimFrames: [...sample.metadata.trimFrames],
+                trim: { ...sample.metadata.trim },
               });
             }
           }}
         />
       </label>
       <WaveformContainer>
-        <Waveform
+        <WaveformEdit
           onSetTrimFrames={() => null}
           onSetScaleCoefficient={handleSetScaleCoefficient}
           sample={sample}

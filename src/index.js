@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import App from './App.js';
 import reportWebVitals from './reportWebVitals.js';
-import { AudioPlaybackContextProvider } from './utils/audioData';
+import { AudioPlaybackContextProvider } from './utils/audioData.js';
 
 ReactDOM.render(
   <React.StrictMode>

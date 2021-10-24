@@ -33,6 +33,10 @@ export const useMemo = () => {};
 export const useState = () => {};
   `,
   uuid: 'export const v4 = () => `id-${Math.random()}`;',
+  'base64-arraybuffer': `
+export const encode = () => {};
+export const decode = () => {};
+  `,
 };
 function getTestServer() {
   const testServer = express();
@@ -385,6 +389,14 @@ test('getSampleBuffer', async (t) => {
               sourceFileId,
               slotNumber,
               useCompression,
+              trim: {
+                frames: [0, 0],
+                // for render only; irrelevant for test but required
+                waveformPeaks: {
+                  positive: new Float32Array(),
+                  negative: new Float32Array(),
+                },
+              },
             });
           },
           sourceFileId,

@@ -1,13 +1,22 @@
 import localforage from 'localforage';
 import { v4 as uuidv4 } from 'uuid';
+import { decode as decodeBase64 } from 'base64-arraybuffer';
 
-import factorySampleParams from './factory-samples.js';
 import { SAMPLE_RATE } from './utils/constants.js';
+import { getSamplePeaksForSourceFile } from './utils/waveform.js';
+
+/**
+ * @typedef {{
+ *   frames: [number, number];
+ *   waveformPeaks: import('./utils/waveform').SamplePeaks;
+ * }} TrimInfo
+ */
 
 /**
  * @typedef {object} SampleContainerParams
  * @property {string} name
  * @property {string} sourceFileId
+ * @property {TrimInfo} trim
  * @property {string} [id]
  * @property {{ type: string; ext: string } | null} [userFileInfo]
  * @property {number} [slotNumber]
@@ -16,13 +25,13 @@ import { SAMPLE_RATE } from './utils/constants.js';
  * @property {boolean} [useCompression]
  * @property {number} [qualityBitDepth]
  * @property {number} [scaleCoefficient]
- * @property {[number, number]} [trimFrames]
  */
 
 /**
  * @typedef {object} SampleMetadata
  * @property {string} name
  * @property {string} sourceFileId
+ * @property {TrimInfo} trim
  * @property {{ type: string; ext: string } | null} userFileInfo
  * @property {number} slotNumber
  * @property {number} dateSampled
@@ -30,18 +39,17 @@ import { SAMPLE_RATE } from './utils/constants.js';
  * @property {boolean} useCompression
  * @property {number} qualityBitDepth
  * @property {number} scaleCoefficient
- * @property {[number, number]} trimFrames
  * @property {string} metadataVersion
  */
 
 /**
  * @typedef {object} SampleMetadataUpdate
  * @property {string} [name]
+ * @property {TrimInfo} [trim]
  * @property {number} [slotNumber]
  * @property {boolean} [useCompression]
  * @property {number} [qualityBitDepth]
  * @property {number} [scaleCoefficient]
- * @property {[number, number]} [trimFrames]
  */
 
 const audioFileDataStore = localforage.createInstance({
@@ -64,7 +72,7 @@ export async function storeAudioSourceFile(audioFileData) {
   return id;
 }
 
-const METADATA_VERSION = '0.2.0';
+const METADATA_VERSION = '0.3.0';
 
 // These properties are considered fundamental and should never break
 /**
@@ -77,7 +85,7 @@ const METADATA_VERSION = '0.2.0';
  */
 
 /**
- * @type {Record<string, (oldMetadata: OldMetadata) => OldMetadata>}
+ * @type {Record<string, (oldMetadata: OldMetadata) => OldMetadata | Promise<OldMetadata>>}
  */
 const metadataUpgrades = {
   '0.1.0': (oldMetadata) => {
@@ -94,13 +102,38 @@ const metadataUpgrades = {
     };
     return newMetadata;
   },
+  '0.2.0': async (oldMetadata) => {
+    /**
+     * @typedef {OldMetadata & { trimFrames: [number, number] }} PrevMetadata
+     */
+    const { trimFrames, ...prevMetadata } = /** @type {PrevMetadata} */ (
+      oldMetadata
+    );
+    const waveformPeaks = await getSamplePeaksForSourceFile(
+      prevMetadata.sourceFileId,
+      trimFrames
+    );
+    /**
+     * @type {TrimInfo}
+     */
+    const trim = {
+      frames: trimFrames,
+      waveformPeaks,
+    };
+    const newMetadata = {
+      ...prevMetadata,
+      trim,
+      metadataVersion: '0.3.0',
+    };
+    return newMetadata;
+  },
 };
 
 /**
  * @param {OldMetadata} oldMetadata
- * @returns {SampleMetadata}
+ * @returns {Promise<SampleMetadata>}
  */
-function upgradeMetadata(oldMetadata) {
+async function upgradeMetadata(oldMetadata) {
   let prevMetadata = oldMetadata;
   while (prevMetadata.metadataVersion !== METADATA_VERSION) {
     /**
@@ -119,7 +152,7 @@ function upgradeMetadata(oldMetadata) {
       };
       break;
     }
-    prevMetadata = matchedUpgrade(prevMetadata);
+    prevMetadata = await matchedUpgrade(prevMetadata);
   }
   return /** @type {SampleMetadata} */ (/** @type {unknown} */ (prevMetadata));
 }
@@ -131,6 +164,7 @@ export class SampleContainer {
   constructor({
     name,
     sourceFileId,
+    trim,
     id = uuidv4(),
     userFileInfo = null,
     slotNumber = 0,
@@ -139,7 +173,6 @@ export class SampleContainer {
     useCompression = true,
     qualityBitDepth = 16,
     scaleCoefficient = 1,
-    trimFrames = [0, 0],
   }) {
     /** @readonly */
     this.id = id;
@@ -150,6 +183,7 @@ export class SampleContainer {
     this.metadata = {
       name,
       sourceFileId,
+      trim,
       userFileInfo,
       slotNumber,
       dateSampled,
@@ -157,7 +191,6 @@ export class SampleContainer {
       useCompression,
       qualityBitDepth,
       scaleCoefficient,
-      trimFrames,
       metadataVersion: METADATA_VERSION,
     };
   }
@@ -321,20 +354,26 @@ export class SampleContainer {
    */
   static async getAllMetadataFromStore() {
     /**
-     * @type {Map<string, SampleMetadata>}
+     * @type {Promise<[string, SampleMetadata]>[]}
      */
-    const sampleMetadata = new Map();
+    const upgradePromises = [];
     await sampleMetadataStore.iterate((metadata, id) => {
       if (metadata) {
-        const upgradedMetadata = upgradeMetadata(metadata);
-        sampleMetadata.set(id, upgradedMetadata);
+        upgradePromises.push(
+          upgradeMetadata(metadata).then((upgradedMetadata) => [
+            id,
+            upgradedMetadata,
+          ])
+        );
       }
     });
+    const sampleMetadata = new Map(await Promise.all(upgradePromises));
     return sampleMetadata;
   }
 
   static async getAllFromStorage() {
     const sampleMetadata = await this.getAllMetadataFromStore();
+    const factorySampleParams = await getFactorySampleParams();
     const sourceIds = (await audioFileDataStore.keys()).concat(
       factorySampleParams.map(({ sourceFileId }) => sourceFileId)
     );
@@ -358,6 +397,38 @@ export class SampleContainer {
   }
 }
 
-export const factorySamples = new Map(
-  factorySampleParams.map((params) => [params.id, new SampleContainer(params)])
-);
+/**
+ * @type {Promise<import('../public/factory-samples.json')> | undefined}
+ */
+let factorySampleParamsPromise;
+function getFactorySampleParams() {
+  if (!factorySampleParamsPromise) {
+    factorySampleParamsPromise = fetch('factory-samples.json').then((res) =>
+      res.json()
+    );
+  }
+  return factorySampleParamsPromise;
+}
+
+export async function getFactorySamples() {
+  const factorySampleParams = await getFactorySampleParams();
+  return new Map(
+    factorySampleParams.map((params) => [
+      params.id,
+      new SampleContainer({
+        ...params,
+        trim: {
+          frames: [params.trim.frames[0], params.trim.frames[1]],
+          waveformPeaks: {
+            positive: new Float32Array(
+              decodeBase64(params.trim.waveformPeaks.positive)
+            ),
+            negative: new Float32Array(
+              decodeBase64(params.trim.waveformPeaks.negative)
+            ),
+          },
+        },
+      }),
+    ])
+  );
+}

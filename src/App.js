@@ -5,10 +5,11 @@ import SampleList from './SampleList.js';
 import SampleDetail from './SampleDetail.js';
 import SampleRecord from './SampleRecord.js';
 import {
-  factorySamples,
+  getFactorySamples,
   SampleContainer,
   storeAudioSourceFile,
 } from './store.js';
+import { getSamplePeaksForSourceFile } from './utils/waveform.js';
 
 const Title = styled.h1({
   display: 'flex',
@@ -39,7 +40,7 @@ const MainLayout = styled.div({
 });
 
 const SampleListContainer = styled.div({
-  width: '200px',
+  width: '300px',
   flexShrink: 0,
   paddingRight: '0.5rem',
   height: '100%',
@@ -54,6 +55,12 @@ function App() {
   const [samples, setSamples] = useState(
     /** @type {Map<string, SampleContainer>} */ (new Map())
   );
+  const [factorySamples, setFactorySamples] = useState(
+    /** @type {Map<string, SampleContainer>} */ (new Map())
+  );
+  useEffect(() => {
+    getFactorySamples().then(setFactorySamples).catch(console.error);
+  }, []);
   const [focusedSampleId, setFocusedSampleId] = useState(
     /** @type {string | null} */ (null)
   );
@@ -115,9 +122,18 @@ function App() {
     } else {
       name = 'New one';
     }
+    /**
+     * @type {[number, number]}
+     */
+    const trimFrames = [0, 0];
+    const waveformPeaks = await getSamplePeaksForSourceFile(sourceFileId, trimFrames);
     const sample = new SampleContainer.Mutable({
       name,
       sourceFileId,
+      trim: {
+        frames: trimFrames,
+        waveformPeaks,
+      },
       userFileInfo: userFile && {
         type: userFile.type,
         ext: userFileExtension,

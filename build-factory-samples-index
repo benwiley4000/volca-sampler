@@ -1,39 +1,65 @@
 #!/usr/bin/env node
 
 const path = require('path');
-const fs = require('fs');
+const fs = require('fs').promises;
 const { v4: uuidv4 } = require('uuid');
+const pcmConvert = require('pcm-convert');
+/** @type {import('./src/utils/waveform.js')} */
+const { getPeaksForSamples, WAVEFORM_CACHED_WIDTH } = require('esm')(module)(
+  './src/utils/waveform.js'
+);
+const { encode: encodeBase64 } = require('base64-arraybuffer');
 
 const pathPrefix = 'factory-samples';
 const factorySamplesDirLocalPath = path.join(__dirname, 'public', pathPrefix);
 
-/** @type {string[]} */
-const filenames = fs.readdirSync(factorySamplesDirLocalPath);
-const factorySamplesIndex = filenames
-  .filter((filename) => filename.endsWith('.wav'))
-  .map((filename) => {
-    return {
-      // chop off track number and .wav
-      name: filename.slice(3, -4),
-      sourceFileId: `${pathPrefix}/${filename}`,
-      id: uuidv4(),
-      // track number should be stored in first two characters
-      slotNumber: Number(filename.slice(0, 2)),
-      // approximate date Volca Sample was released
-      dateSampled: new Date('2014-10-01').getTime(),
-    };
-  })
-  .sort((a, b) => a.slotNumber - b.slotNumber);
+(async () => {
+  /** @type {string[]} */
+  const filenames = await fs.readdir(factorySamplesDirLocalPath);
+  const factorySamplesIndex = (
+    await Promise.all(
+      filenames
+        .filter((filename) => filename.endsWith('.wav'))
+        .map(async (filename) => {
+          const fileContent = await fs.readFile(
+            path.join(factorySamplesDirLocalPath, filename)
+          );
+          // We're assuming all the factory samples are 16-bit mono sequences.
+          // 44-byte offset to skip WAV header.
+          const pcmData = new Int16Array(fileContent.buffer, 44);
+          const float32Data = pcmConvert(pcmData, 'float32');
+          const waveformPeaks = getPeaksForSamples(
+            float32Data,
+            WAVEFORM_CACHED_WIDTH
+          );
+          return {
+            // chop off track number and .wav
+            name: filename.slice(3, -4),
+            sourceFileId: `${pathPrefix}/${filename}`,
+            trim: {
+              frames: [0, 0],
+              waveformPeaks: {
+                positive: encodeBase64(waveformPeaks.positive.buffer),
+                negative: encodeBase64(waveformPeaks.negative.buffer),
+              },
+            },
+            id: uuidv4(),
+            // track number should be stored in first two characters
+            slotNumber: Number(filename.slice(0, 2)),
+            // approximate date Volca Sample was released
+            dateSampled: new Date('2014-10-01').getTime(),
+          };
+        })
+    )
+  ).sort((a, b) => a.slotNumber - b.slotNumber);
 
-const factorySamplesIndexPath = path.join(
-  __dirname,
-  'src',
-  'factory-samples.js'
-);
-fs.writeFileSync(
-  factorySamplesIndexPath,
-  `
-/* eslint-disable import/no-anonymous-default-export */
-export default ${JSON.stringify(factorySamplesIndex, null, 2)};
-  `.trim()
-);
+  const factorySamplesIndexPath = path.join(
+    __dirname,
+    'public',
+    'factory-samples.json'
+  );
+  await fs.writeFile(
+    factorySamplesIndexPath,
+    JSON.stringify(factorySamplesIndex, null, 2)
+  );
+})();

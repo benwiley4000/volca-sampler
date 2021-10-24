@@ -169,7 +169,7 @@ export async function getTargetWavForSample(sampleContainer) {
     sourceFileId,
     userFileInfo,
     scaleCoefficient,
-    trimFrames,
+    trim: { frames: trimFrames },
   } = sampleContainer.metadata;
   if (
     qualityBitDepth < 8 ||

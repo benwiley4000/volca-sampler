@@ -21,8 +21,6 @@ import WaveformDisplay from './WaveformDisplay.js';
  */
 const ScaleInput = styled.input({
   position: 'absolute',
-  top: 0,
-  left: 0,
 });
 
 /**
@@ -56,7 +54,7 @@ function WaveformEdit({
   );
 
   /**
-   * @type {React.RefObject<HTMLDivElement>}
+   * @type {React.RefObject<HTMLElement>}
    */
   const waveformRef = useRef(null);
 
@@ -93,26 +91,25 @@ function WaveformEdit({
 
   return (
     <>
+      <ScaleInput
+        type="range"
+        disabled={trimmedSamplePeak === 0}
+        value={peakTarget}
+        min={0.1}
+        max={1}
+        step={0.01}
+        onChange={(e) => {
+          if (trimmedSamplePeak === 0) {
+            return;
+          }
+          onSetScaleCoefficient(Number(e.target.value) / trimmedSamplePeak);
+        }}
+      />
       <WaveformDisplay
         waveformRef={waveformRef}
         peaks={peaks}
         scaleCoefficient={scaleCoefficient}
-      >
-        <ScaleInput
-          type="range"
-          disabled={trimmedSamplePeak === 0}
-          value={peakTarget}
-          min={0.1}
-          max={1}
-          step={0.01}
-          onChange={(e) => {
-            if (trimmedSamplePeak === 0) {
-              return;
-            }
-            onSetScaleCoefficient(Number(e.target.value) / trimmedSamplePeak);
-          }}
-        />
-      </WaveformDisplay>
+      />
       <button
         type="button"
         disabled={scaleCoefficient === maxCoefficient}

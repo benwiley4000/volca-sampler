@@ -1,6 +1,9 @@
 import { WaveFile } from 'wavefile';
 
-import { clampOutOfBoundsValues } from './audioData.js';
+import {
+  clampOutOfBoundsValues,
+  getAudioContextConstructor,
+} from './audioData.js';
 import { SAMPLE_RATE } from './constants.js';
 
 /**
@@ -9,6 +12,7 @@ import { SAMPLE_RATE } from './constants.js';
 let recordingAudioContext;
 
 function getRecordingAudioContext() {
+  const AudioContext = getAudioContextConstructor();
   return (recordingAudioContext =
     recordingAudioContext ||
     new AudioContext(
@@ -26,6 +30,18 @@ function getRecordingAudioContext() {
  * @returns {Promise<AudioDeviceInfoContainer[]>}
  */
 export async function getAudioInputDevices() {
+  {
+    // request dummy stream first on the first available input device. this is
+    // because some platforms (like iOS) don't allow any kind of device
+    // inspection until access has been given to a media stream.
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: true,
+      video: false,
+    });
+    for (const track of stream.getTracks()) {
+      track.stop();
+    }
+  }
   const devices = await navigator.mediaDevices.enumerateDevices();
   const audioInputDevices = devices.filter(
     (device) => device.kind === 'audioinput'

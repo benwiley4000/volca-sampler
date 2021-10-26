@@ -1,4 +1,9 @@
-import React, { useImperativeHandle, useLayoutEffect, useRef } from 'react';
+import React, {
+  useImperativeHandle,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import { styled } from 'tonami';
 import ResizeObserver from 'resize-observer-polyfill';
 
@@ -12,8 +17,9 @@ const WaveformCanvas = styled.canvas({
 
 /**
  * @param {HTMLCanvasElement} canvas
+ * @param {(size: {width: number; height: number}) => void} onResize
  */
-function observeCanvas(canvas) {
+function observeCanvas(canvas, onResize) {
   /**
    * @param {number} width
    * @param {number} height
@@ -23,9 +29,12 @@ function observeCanvas(canvas) {
     canvas.height = height;
   }
   setCanvasSize(canvas.offsetWidth, canvas.offsetHeight);
-  const observer = new ResizeObserver(([entry]) =>
-    setCanvasSize(entry.contentRect.width, entry.contentRect.height)
-  );
+  onResize({ width: canvas.offsetWidth, height: canvas.offsetHeight });
+  const observer = new ResizeObserver(([entry]) => {
+    const { width, height } = entry.contentRect;
+    setCanvasSize(width, height);
+    onResize({ width, height });
+  });
   observer.observe(canvas);
   return () => observer.disconnect();
 }
@@ -86,11 +95,26 @@ function WaveformDisplayCanvas({ peaks, scaleCoefficient, waveformRef }) {
    */
   const canvasRef = useRef(null);
   useImperativeHandle(waveformRef, () => canvasRef.current);
+  const [lastResize, setLastResize] = useState(Symbol());
+  const sizeRef = useRef({ width: 0, height: 0 });
   useLayoutEffect(() => {
     if (!canvasRef.current) {
       throw new Error('Canvas should be defined');
     }
-    return observeCanvas(canvasRef.current);
+    // set sizeRef before setting up observer to avoid triggering
+    // the initial render multiple times
+    sizeRef.current.width = canvasRef.current.offsetWidth;
+    sizeRef.current.height = canvasRef.current.offsetHeight;
+    return observeCanvas(canvasRef.current, ({ width, height }) => {
+      if (
+        width !== sizeRef.current.width ||
+        height !== sizeRef.current.height
+      ) {
+        setLastResize(Symbol());
+        sizeRef.current.width = width;
+        sizeRef.current.height = height;
+      }
+    });
   }, []);
   useLayoutEffect(() => {
     const canvas = canvasRef.current;
@@ -107,7 +131,7 @@ function WaveformDisplayCanvas({ peaks, scaleCoefficient, waveformRef }) {
       });
     });
     return () => cancelAnimationFrame(frame);
-  }, [peaks, scaleCoefficient]);
+  }, [peaks, scaleCoefficient, lastResize]);
   return <WaveformCanvas ref={canvasRef} />;
 }
 

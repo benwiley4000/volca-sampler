@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { styled } from 'tonami';
 
 import WaveformEdit from './WaveformEdit.js';
@@ -75,6 +75,11 @@ function SampleDetail({
     [sampleId, onSampleUpdate]
   );
   const { playAudioBuffer, isAudioBusy } = useAudioPlaybackContext();
+  // to be set when playback is started
+  const stopPreviewPlayback = useRef(() => {});
+  useEffect(() => {
+    return () => stopPreviewPlayback.current();
+  }, [sample]);
   if (!sample) {
     return null;
   }
@@ -190,7 +195,7 @@ function SampleDetail({
           onClick={async () => {
             const { data } = await getTargetWavForSample(sample);
             const audioBuffer = await getAudioBufferForAudioFileData(data);
-            playAudioBuffer(audioBuffer);
+            stopPreviewPlayback.current = playAudioBuffer(audioBuffer);
           }}
           disabled={isAudioBusy}
         >

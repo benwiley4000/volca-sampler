@@ -115,12 +115,27 @@ function convertSamplesTo16Bit(samples) {
   return samples16;
 }
 
+export function getAudioContextConstructor() {
+  /**
+   * @typedef {typeof window.AudioContext} AudioContextConstructor
+   */
+  const AudioContext =
+    window.AudioContext ||
+    /**
+     * @type {typeof window & {
+     *   webkitAudioContext: AudioContextConstructor;
+     * }}
+     */ (window).webkitAudioContext;
+  return AudioContext;
+}
+
 /**
  * @type {AudioContext | undefined}
  */
 let targetAudioContext;
 
 function getTargetAudioContext() {
+  const AudioContext = getAudioContextConstructor();
   return (targetAudioContext =
     targetAudioContext || new AudioContext({ sampleRate: SAMPLE_RATE }));
 }

@@ -287,6 +287,14 @@ test('syroBindings load correctly', async (t) => {
       );
       t.equal(
         await page.evaluate(
+          (bindings) => typeof bindings.cancelSampleBufferWork,
+          b
+        ),
+        'function',
+        'cancelSampleBufferWork is defined'
+      );
+      t.equal(
+        await page.evaluate(
           (bindings) => typeof bindings.registerUpdateCallback,
           b
         ),
@@ -412,7 +420,7 @@ test('getSampleBuffer', async (t) => {
             const sampleBuffer = await getSampleBuffer(
               sampleContainer,
               () => null
-            );
+            ).sampleBufferPromise;
             const sampleBufferContents = [...sampleBuffer];
             return sampleBufferContents;
           }, sampleContainerHandle)

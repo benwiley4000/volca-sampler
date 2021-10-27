@@ -7,7 +7,7 @@
  *     quality: number,
  *     useCompression: 0 | 1,
  *     onUpdate: number
- *   ): void;
+ *   ): number;
  *   prepareSampleBufferFrom16BitPcmData(
  *     wavData: Uint8Array,
  *     bytes: number,
@@ -16,10 +16,11 @@
  *     quality: number,
  *     useCompression: 0 | 1,
  *     onUpdate: number
- *   ): void;
+ *   ): number;
  *   getSampleBufferPointer(sampleBufferContainer: number): number;
  *   getSampleBufferSize(sampleBufferContainer: number): number;
  *   getSampleBufferProgress(sampleBufferContainer: number): number;
+ *   cancelSampleBufferWork(workHandle: number): void;
  *   registerUpdateCallback(
  *     cb: (sampleBufferContainer: number) => void
  *   ): number;
@@ -51,13 +52,13 @@ export async function getSyroBindings() {
         syroBindings = {
           prepareSampleBufferFromWavData: Module.cwrap(
             'prepareSampleBufferFromWavData',
-            null,
+            'number',
             ['array', 'number', 'number', 'number', 'number']
           ),
           // TODO: put this back when C function works correctly
           // prepareSampleBufferFrom16BitPcmData: Module.cwrap(
           //   'prepareSampleBufferFrom16BitPcmData',
-          //   null,
+          //   'number',
           //   ['array', 'number', 'number', 'number', 'number', 'number']
           // ),
           prepareSampleBufferFrom16BitPcmData() {
@@ -78,6 +79,9 @@ export async function getSyroBindings() {
             'number',
             ['number']
           ),
+          cancelSampleBufferWork: Module.cwrap('cancelSampleBufferWork', null, [
+            'number',
+          ]),
           registerUpdateCallback(cb) {
             return Module.addFunction(cb, 'vi');
           },

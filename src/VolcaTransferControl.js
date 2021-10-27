@@ -35,11 +35,20 @@ function VolcaTransferControl({ sample }) {
             };
             setSyroProgress(0);
             setSyroTransferState('loading');
-            const sampleBuffer = await getSampleBuffer(sample, (progress) => {
-              if (!cancelled) {
-                setSyroProgress(progress);
+            const { sampleBufferPromise, cancelWork } = getSampleBuffer(
+              sample,
+              (progress) => {
+                if (!cancelled) {
+                  setSyroProgress(progress);
+                }
               }
-            });
+            );
+            stop.current = () => {
+              cancelWork();
+              setSyroTransferState('idle');
+              cancelled = true;
+            };
+            const sampleBuffer = await sampleBufferPromise;
             if (cancelled) {
               return;
             }

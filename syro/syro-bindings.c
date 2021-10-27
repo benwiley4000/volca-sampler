@@ -1,6 +1,14 @@
 #include "./syro-utils.c"
 #include <emscripten.h>
 
+typedef uint8_t *SyroBufferWorkHandle;
+
+typedef struct WorkerUpdateArg {
+  worker_handle worker;
+  void (*onUpdate)(SampleBufferContainer *);
+  bool cancelled;
+} WorkerUpdateArg;
+
 EMSCRIPTEN_KEEPALIVE
 uint8_t *getSampleBufferPointer(SampleBufferContainer *sampleBuffer) {
   return sampleBuffer->buffer;
@@ -16,8 +24,21 @@ uint32_t getSampleBufferProgress(SampleBufferContainer *sampleBuffer) {
   return sampleBuffer->progress;
 }
 
-void onWorkerMessage(char *data, int size, void *onUpdatePointer) {
-  SampleBufferContainer *sampleBuffer = (SampleBufferContainer *)data;
+EMSCRIPTEN_KEEPALIVE
+void cancelSampleBufferWork(WorkerUpdateArg *updateArg) {
+  updateArg->cancelled = true;
+}
+
+void onWorkerMessage(char *data, int size, void *updateArgPointer) {
+  WorkerUpdateArg *updateArg = (WorkerUpdateArg *)updateArgPointer;
+  if (updateArg->cancelled) {
+    emscripten_destroy_worker(updateArg->worker);
+    free(updateArg);
+    return;
+  }
+  SyroBufferWorkHandle *handle = (SyroBufferWorkHandle *)data;
+  SampleBufferContainer *sampleBuffer =
+      (SampleBufferContainer *)(data + sizeof(SyroBufferWorkHandle));
   if (size - sizeof(SampleBufferContainer) != sampleBuffer->size) {
     // TODO: error case... maybe handle it?
   }
@@ -25,13 +46,22 @@ void onWorkerMessage(char *data, int size, void *onUpdatePointer) {
   // main thread. We pass the actual buffer as part of the input buffer so
   // we can replace the buffer pointer with one that references memory in the
   // main thread.
-  sampleBuffer->buffer = (uint8_t *)(data + sizeof(SampleBufferContainer));
-  void (*onUpdate)(SampleBufferContainer *) = onUpdatePointer;
-  onUpdate(sampleBuffer);
+  sampleBuffer->buffer = (uint8_t *)(data + sizeof(SyroBufferWorkHandle) +
+                                     sizeof(SampleBufferContainer));
+  updateArg->onUpdate(sampleBuffer);
+  if (sampleBuffer->progress < sampleBuffer->size) {
+    emscripten_call_worker(updateArg->worker, "iterateSyroBufferWork",
+                           (char *)handle, sizeof(SyroBufferWorkHandle),
+                           onWorkerMessage, updateArgPointer);
+  } else {
+    emscripten_destroy_worker(updateArg->worker);
+    free(updateArg);
+  }
 }
 
-void prepareSampleBufferFromSyroData(
-    SyroData *syro_data, void (*onUpdate)(SampleBufferContainer *)) {
+WorkerUpdateArg *
+prepareSampleBufferFromSyroData(SyroData *syro_data,
+                                void (*onUpdate)(SampleBufferContainer *)) {
   int startMessageBufferSize = sizeof(SyroData) + syro_data->Size;
   uint8_t *startMessageBuffer = malloc(startMessageBufferSize);
   SyroData *syroDataCopy = (SyroData *)startMessageBuffer;
@@ -41,29 +71,34 @@ void prepareSampleBufferFromSyroData(
   free_syrodata(syro_data, 1);
   free(syro_data);
   worker_handle worker = emscripten_create_worker("syro-worker.js");
-  emscripten_call_worker(worker, "syroBufferWork", (char *)startMessageBuffer,
-                         startMessageBufferSize, onWorkerMessage,
-                         (void *)onUpdate);
+  WorkerUpdateArg *updateArg = malloc(sizeof(WorkerUpdateArg));
+  updateArg->worker = worker;
+  updateArg->onUpdate = onUpdate;
+  updateArg->cancelled = false;
+  emscripten_call_worker(worker, "startSyroBufferWork",
+                         (char *)startMessageBuffer, startMessageBufferSize,
+                         onWorkerMessage, (void *)updateArg);
   free(startMessageBuffer);
+  return updateArg;
 }
 
 // DO NOT USE; broken
 // TODO: fix
 EMSCRIPTEN_KEEPALIVE
-void prepareSampleBufferFrom16BitPcmData(
-    uint8_t *pcmData, uint32_t bytes, uint32_t rate, uint32_t slotNumber,
-    uint32_t quality, uint32_t useCompression,
-    void (*onUpdate)(SampleBufferContainer *)) {
+WorkerUpdateArg *
+prepareSampleBufferFrom16BitPcmData(uint8_t *pcmData, uint32_t bytes,
+                                    uint32_t rate, uint32_t slotNumber,
+                                    uint32_t quality, uint32_t useCompression,
+                                    void (*onUpdate)(SampleBufferContainer *)) {
   SyroData *syro_data = getSyroDataFor16BitPcmData(
       pcmData, bytes, rate, slotNumber, quality, useCompression);
-  prepareSampleBufferFromSyroData(syro_data, onUpdate);
+  return prepareSampleBufferFromSyroData(syro_data, onUpdate);
 }
 
 EMSCRIPTEN_KEEPALIVE
-void prepareSampleBufferFromWavData(uint8_t *wavData, uint32_t bytes,
-                                    uint32_t slotNumber, uint32_t quality,
-                                    uint32_t useCompression,
-                                    void (*onUpdate)(SampleBufferContainer *)) {
+WorkerUpdateArg *prepareSampleBufferFromWavData(
+    uint8_t *wavData, uint32_t bytes, uint32_t slotNumber, uint32_t quality,
+    uint32_t useCompression, void (*onUpdate)(SampleBufferContainer *)) {
   SyroData *syro_data = malloc(sizeof(SyroData));
   syro_data->DataType =
       useCompression == 0 ? DataType_Sample_Liner : DataType_Sample_Compress;
@@ -74,5 +109,5 @@ void prepareSampleBufferFromWavData(uint8_t *wavData, uint32_t bytes,
     printf("Oops!\n");
     exit(1);
   }
-  prepareSampleBufferFromSyroData(syro_data, onUpdate);
+  return prepareSampleBufferFromSyroData(syro_data, onUpdate);
 }

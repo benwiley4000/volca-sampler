@@ -6,6 +6,7 @@ typedef uint8_t *SyroBufferWorkHandle;
 typedef struct WorkerUpdateArg {
   worker_handle worker;
   void (*onUpdate)(SampleBufferContainer *);
+  bool secondJobStarted;
   bool cancelled;
 } WorkerUpdateArg;
 
@@ -50,9 +51,17 @@ void onWorkerMessage(char *data, int size, void *updateArgPointer) {
                                      sizeof(SampleBufferContainer));
   updateArg->onUpdate(sampleBuffer);
   if (sampleBuffer->progress < sampleBuffer->size) {
-    emscripten_call_worker(updateArg->worker, "iterateSyroBufferWork",
-                           (char *)handle, sizeof(SyroBufferWorkHandle),
-                           onWorkerMessage, updateArgPointer);
+    // Queue two jobs at a time to reduce idle time on the worker thread
+    // (only one job will run at a time but this means the worker thread should
+    // normally have something to do next while we're processing the update
+    // in the main thread)
+    int numberOfJobs = updateArg->secondJobStarted ? 1 : 2;
+    for (int i = 0; i < numberOfJobs; i++) {
+      emscripten_call_worker(updateArg->worker, "iterateSyroBufferWork",
+                             (char *)handle, sizeof(SyroBufferWorkHandle),
+                             onWorkerMessage, updateArgPointer);
+    }
+    updateArg->secondJobStarted = true;
   } else {
     emscripten_destroy_worker(updateArg->worker);
     free(updateArg);
@@ -74,6 +83,7 @@ prepareSampleBufferFromSyroData(SyroData *syro_data,
   WorkerUpdateArg *updateArg = malloc(sizeof(WorkerUpdateArg));
   updateArg->worker = worker;
   updateArg->onUpdate = onUpdate;
+  updateArg->secondJobStarted = false;
   updateArg->cancelled = false;
   emscripten_call_worker(worker, "startSyroBufferWork",
                          (char *)startMessageBuffer, startMessageBufferSize,

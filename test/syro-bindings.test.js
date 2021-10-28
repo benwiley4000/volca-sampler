@@ -263,19 +263,19 @@ test('syroBindings load correctly', async (t) => {
       );
       t.equal(
         await page.evaluate(
-          (bindings) => typeof bindings.getSampleBufferPointer,
+          (bindings) => typeof bindings.getSampleBufferChunkPointer,
           b
         ),
         'function',
-        'getSampleBufferPointer is defined'
+        'getSampleBufferChunkPointer is defined'
       );
       t.equal(
         await page.evaluate(
-          (bindings) => typeof bindings.getSampleBufferSize,
+          (bindings) => typeof bindings.getSampleBufferChunkSize,
           b
         ),
         'function',
-        'getSampleBufferSize is defined'
+        'getSampleBufferChunkSize is defined'
       );
       t.equal(
         await page.evaluate(
@@ -284,6 +284,14 @@ test('syroBindings load correctly', async (t) => {
         ),
         'function',
         'getSampleBufferProgress is defined'
+      );
+      t.equal(
+        await page.evaluate(
+          (bindings) => typeof bindings.getSampleBufferTotalSize,
+          b
+        ),
+        'function',
+        'getSampleBufferTotalSize is defined'
       );
       t.equal(
         await page.evaluate(

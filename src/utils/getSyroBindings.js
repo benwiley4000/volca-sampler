@@ -17,9 +17,10 @@
  *     useCompression: 0 | 1,
  *     onUpdate: number
  *   ): number;
- *   getSampleBufferPointer(sampleBufferContainer: number): number;
- *   getSampleBufferSize(sampleBufferContainer: number): number;
- *   getSampleBufferProgress(sampleBufferContainer: number): number;
+ *   getSampleBufferChunkPointer(sampleBufferUpdate: number): number;
+ *   getSampleBufferChunkSize(sampleBufferUpdate: number): number;
+ *   getSampleBufferProgress(sampleBufferUpdate: number): number;
+ *   getSampleBufferTotalSize(sampleBufferUpdate: number): number;
  *   cancelSampleBufferWork(workHandle: number): void;
  *   registerUpdateCallback(
  *     cb: (sampleBufferContainer: number) => void
@@ -66,16 +67,23 @@ export async function getSyroBindings() {
               'This function does not work. Use prepareSampleBufferFromWavData.'
             );
           },
-          getSampleBufferPointer: Module.cwrap(
-            'getSampleBufferPointer',
+          getSampleBufferChunkPointer: Module.cwrap(
+            'getSampleBufferChunkPointer',
             'number',
             ['number']
           ),
-          getSampleBufferSize: Module.cwrap('getSampleBufferSize', 'number', [
+          getSampleBufferChunkSize: Module.cwrap(
+            'getSampleBufferChunkSize',
             'number',
-          ]),
+            ['number']
+          ),
           getSampleBufferProgress: Module.cwrap(
             'getSampleBufferProgress',
+            'number',
+            ['number']
+          ),
+          getSampleBufferTotalSize: Module.cwrap(
+            'getSampleBufferTotalSize',
             'number',
             ['number']
           ),

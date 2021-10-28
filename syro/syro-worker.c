@@ -1,21 +1,35 @@
+#include "./shared-worker-types.h"
 #include "./syro-utils.c"
 #include <emscripten.h>
 
-typedef uint8_t *SyroBufferWorkHandle;
-
 EMSCRIPTEN_KEEPALIVE
 void iterateSyroBufferWork(char *data, int size) {
-  SyroBufferWorkHandle *handle = (SyroBufferWorkHandle *)data;
-  SyroBufferWorkHandle messageBuffer = *handle;
-  SampleBufferContainer *sampleBuffer =
-      (SampleBufferContainer *)(messageBuffer + sizeof(SyroBufferWorkHandle));
+  SampleBufferContainer *sampleBuffer = *(SampleBufferContainer **)data;
+
+  uint32_t chunkStartIndex = sampleBuffer->progress;
+  // if we just started iterating we won't have sent an update for the wav
+  // header data so we should make sure we send it
+  if (chunkStartIndex == 44) {
+    chunkStartIndex = 0;
+  }
 
   // TODO: adapt this iteration count based on observed speed?
-  iterateSampleBuffer(sampleBuffer, 100000);
+  iterateSampleBuffer(sampleBuffer, ITERATION_INTERVAL);
 
-  int messageBufferSize = sizeof(SyroBufferWorkHandle) +
-                          sizeof(SampleBufferContainer) + sampleBuffer->size;
+  uint32_t chunkSize = sampleBuffer->progress - chunkStartIndex;
+
+  int messageBufferSize = sizeof(SampleBufferUpdate) + chunkSize;
+  uint8_t *messageBuffer = malloc(messageBufferSize);
+  SampleBufferUpdate *sampleBufferUpdate = (SampleBufferUpdate *)messageBuffer;
+  sampleBufferUpdate->sampleBufferPointer = (void *)sampleBuffer;
+  sampleBufferUpdate->chunk = NULL; // to be defined in main thread
+  sampleBufferUpdate->chunkSize = sampleBuffer->progress - chunkStartIndex;
+  sampleBufferUpdate->progress = sampleBuffer->progress;
+  sampleBufferUpdate->totalSize = sampleBuffer->size;
+  uint8_t *chunk = messageBuffer + sizeof(SampleBufferUpdate);
+  memcpy(chunk, sampleBuffer->buffer + chunkStartIndex, chunkSize);
   emscripten_worker_respond((char *)messageBuffer, messageBufferSize);
+  free(messageBuffer);
 }
 
 EMSCRIPTEN_KEEPALIVE
@@ -32,29 +46,5 @@ void startSyroBufferWork(char *data, int size) {
 
   SampleBufferContainer *sampleBuffer = startSampleBuffer(syro_data);
 
-  // Prepare our message buffer which contains three pieces of data
-  int messageBufferSize = sizeof(SyroBufferWorkHandle) +
-                          sizeof(SampleBufferContainer) + sampleBuffer->size;
-  SyroBufferWorkHandle messageBuffer = malloc(messageBufferSize);
-  // The first pointer in message buffer is pointing circularly to itself...
-  // This is so we can pass the pointer back and forth with the main thread for
-  // future jobs working on the same buffer
-  SyroBufferWorkHandle *handle = (SyroBufferWorkHandle *)messageBuffer;
-  *handle = messageBuffer;
-  // After that we have our sample buffer container
-  SampleBufferContainer *sampleBufferCopy =
-      (SampleBufferContainer *)(messageBuffer + sizeof(SyroBufferWorkHandle));
-  *sampleBufferCopy = *sampleBuffer;
-  free(sampleBuffer);
-  // And finally the actual wav data which needs to be copied over since the
-  // sample buffer container's pointer won't be valid in the main thread
-  uint8_t *buffer = messageBuffer + sizeof(SyroBufferWorkHandle) +
-                    sizeof(SampleBufferContainer);
-  memcpy(buffer, sampleBufferCopy->buffer, sampleBufferCopy->size);
-  // Make buffer pointer point to the copy so we can free the other buffer
-  uint8_t *oldBuffer = sampleBufferCopy->buffer;
-  sampleBufferCopy->buffer = buffer;
-  free(oldBuffer);
-
-  iterateSyroBufferWork((char *)handle, sizeof(SyroBufferWorkHandle));
+  iterateSyroBufferWork((char *)&sampleBuffer, sizeof(SampleBufferContainer *));
 }

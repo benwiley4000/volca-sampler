@@ -20,9 +20,10 @@ export function getSampleBuffer(sampleContainer, onProgress) {
     sampleBufferPromise: (async () => {
       const {
         prepareSampleBufferFromWavData,
-        getSampleBufferPointer,
-        getSampleBufferSize,
+        getSampleBufferChunkPointer,
+        getSampleBufferChunkSize,
         getSampleBufferProgress,
+        getSampleBufferTotalSize,
         cancelSampleBufferWork,
         registerUpdateCallback,
         unregisterUpdateCallback,
@@ -40,26 +41,28 @@ export function getSampleBuffer(sampleContainer, onProgress) {
        */
       let sampleBuffer;
       let progress = 0;
-      const onUpdate = registerUpdateCallback(
-        (sampleBufferContainerPointer) => {
-          if (cancelled) {
-            return;
-          }
-          const bufferPointer = getSampleBufferPointer(
-            sampleBufferContainerPointer
-          );
-          const bufferSize = getSampleBufferSize(sampleBufferContainerPointer);
-          if (!sampleBuffer) {
-            sampleBuffer = new Uint8Array(bufferSize);
-          }
-          // save a new copy of the data so it doesn't disappear
-          sampleBuffer.set(
-            new Uint8Array(heap8Buffer(), bufferPointer, bufferSize)
-          );
-          progress =
-            getSampleBufferProgress(sampleBufferContainerPointer) / bufferSize;
+      const onUpdate = registerUpdateCallback((sampleBufferUpdatePointer) => {
+        if (cancelled) {
+          return;
         }
-      );
+        const totalSize = getSampleBufferTotalSize(sampleBufferUpdatePointer);
+        if (!sampleBuffer) {
+          sampleBuffer = new Uint8Array(totalSize);
+        }
+        const chunkPointer = getSampleBufferChunkPointer(
+          sampleBufferUpdatePointer
+        );
+        const chunkSize = getSampleBufferChunkSize(sampleBufferUpdatePointer);
+        const bytesProgress = getSampleBufferProgress(
+          sampleBufferUpdatePointer
+        );
+        // save a new copy of the data so it doesn't disappear
+        sampleBuffer.set(
+          new Uint8Array(heap8Buffer(), chunkPointer, chunkSize),
+          bytesProgress - chunkSize
+        );
+        progress = bytesProgress / totalSize;
+      });
       const workHandle = prepareSampleBufferFromWavData(
         data,
         data.length,

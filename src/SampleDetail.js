@@ -74,6 +74,33 @@ function SampleDetail({
       sampleId && onSampleUpdate(sampleId, { scaleCoefficient }),
     [sampleId, onSampleUpdate]
   );
+  const [targetWav, setTargetWav] = useState(
+    /** @type {Uint8Array | null} */ (null)
+  );
+  useEffect(() => {
+    setTargetWav(null);
+    if (sample) {
+      let cancelled = false;
+      getTargetWavForSample(sample).then(({ data }) => {
+        if (!cancelled) {
+          setTargetWav(data);
+        }
+      });
+    }
+  }, [sample]);
+  const [audioBufferForAudioFileData, setAudioBufferForAudioFileData] =
+    useState(/** @type {AudioBuffer | null} */ (null));
+  useEffect(() => {
+    setAudioBufferForAudioFileData(null);
+    if (targetWav) {
+      let cancelled = false;
+      getAudioBufferForAudioFileData(targetWav).then((audioBuffer) => {
+        if (!cancelled) {
+          setAudioBufferForAudioFileData(audioBuffer);
+        }
+      });
+    }
+  }, [targetWav]);
   const { playAudioBuffer, isAudioBusy } = useAudioPlaybackContext();
   // to be set when playback is started
   const stopPreviewPlayback = useRef(() => {});
@@ -192,24 +219,28 @@ function SampleDetail({
         />
         <button
           type="button"
-          onClick={async () => {
-            const { data } = await getTargetWavForSample(sample);
-            const audioBuffer = await getAudioBufferForAudioFileData(data);
-            stopPreviewPlayback.current = playAudioBuffer(audioBuffer);
+          onClick={() => {
+            if (audioBufferForAudioFileData) {
+              stopPreviewPlayback.current = playAudioBuffer(
+                audioBufferForAudioFileData
+              );
+            }
           }}
-          disabled={isAudioBusy}
+          disabled={isAudioBusy || !audioBufferForAudioFileData}
         >
           play
         </button>
         <button
           type="button"
           onClick={async () => {
-            const { data } = await getTargetWavForSample(sample);
-            const blob = new Blob([data], {
-              type: 'audio/x-wav',
-            });
-            downloadBlob(blob, `${sample.metadata.name}.wav`);
+            if (targetWav) {
+              const blob = new Blob([targetWav], {
+                type: 'audio/x-wav',
+              });
+              downloadBlob(blob, `${sample.metadata.name}.wav`);
+            }
           }}
+          disabled={!targetWav}
         >
           download
         </button>

@@ -1,4 +1,4 @@
-declare function CREATE_SYRO_BINDINGS() {
+declare async function CREATE_SYRO_BINDINGS() {
   const Module: {
     cwrap(name: string, returnType: string | null, paramTypes: string[]): any;
     addFunction(fn: Function, typeString: string): number;

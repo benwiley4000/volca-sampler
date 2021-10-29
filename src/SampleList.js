@@ -89,19 +89,16 @@ const SampleListItem = React.memo(
  * @param {{
  *   samples: Map<string, import('./store').SampleContainer>;
  *   selectedSampleId: string | null;
- *   onNewSample: () => void;
  *   onSampleSelect: (id: string) => void;
  * }} props
  */
 function SampleList({
   samples,
   selectedSampleId,
-  onNewSample,
   onSampleSelect,
 }) {
   return (
     <SampleListContainer>
-      <SampleListItemDiv onClick={onNewSample}>New Sample</SampleListItemDiv>
       {[...samples].map(([id, sample]) => (
         <SampleListItem
           key={id}

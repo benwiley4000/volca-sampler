@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { styled } from 'tonami';
 
 import Header from './Header.js';
@@ -30,13 +30,15 @@ const FocusedSampleContainer = styled.div({
 });
 
 function App() {
-  const [showingFactorySamples, setShowingFactorySamples] = useState(false);
-  const [samples, setSamples] = useState(
+  const [userSamples, setUserSamples] = useState(
     /** @type {Map<string, SampleContainer>} */ (new Map())
   );
   const [factorySamples, setFactorySamples] = useState(
     /** @type {Map<string, SampleContainer>} */ (new Map())
   );
+  const allSamples = useMemo(() => {
+    return new Map([...userSamples, ...factorySamples]);
+  }, [userSamples, factorySamples]);
   useEffect(() => {
     getFactorySamples().then(setFactorySamples).catch(console.error);
   }, []);
@@ -44,12 +46,11 @@ function App() {
     /** @type {string | null} */ (null)
   );
   const [loadingSamples, setLoadingSamples] = useState(true);
-  const selectedSampleBank = showingFactorySamples ? factorySamples : samples;
   useEffect(() => {
     // TODO: error handling
     SampleContainer.getAllFromStorage()
       .then((storedSamples) => {
-        setSamples(
+        setUserSamples(
           (samples) =>
             new Map([
               ...samples,
@@ -65,17 +66,6 @@ function App() {
         setLoadingSamples(false);
       });
   }, []);
-  useEffect(() => {
-    setFocusedSampleId((focusedSampleId) => {
-      if (focusedSampleId && selectedSampleBank.has(focusedSampleId)) {
-        return focusedSampleId;
-      }
-      if (!selectedSampleBank.size) {
-        return null;
-      }
-      return [...selectedSampleBank.values()][0].id;
-    });
-  }, [selectedSampleBank]);
 
   /**
    * @type {(audioFileBuffer: Uint8Array, userFile?: File) => void}
@@ -119,13 +109,12 @@ function App() {
       },
     });
     await sample.persist();
-    setSamples((samples) => new Map([[sample.id, sample], ...samples]));
-    setShowingFactorySamples(false);
+    setUserSamples((samples) => new Map([[sample.id, sample], ...samples]));
     setFocusedSampleId(sample.id);
   }, []);
 
   const handleSampleUpdate = useCallback((id, update) => {
-    setSamples((samples) => {
+    setUserSamples((samples) => {
       const sample = samples.get(id);
       if (sample && sample instanceof SampleContainer.Mutable) {
         const updated = sample.update(update);
@@ -141,47 +130,52 @@ function App() {
     <div>
       <Header />
       <MainLayout>
-        <select
-          value={JSON.stringify(showingFactorySamples)}
-          onChange={(e) => setShowingFactorySamples(JSON.parse(e.target.value))}
-        >
-          <option value="false">Your Samples</option>
-          <option value="true">Factory Samples</option>
-        </select>
         <SampleListContainer>
           {loadingSamples ? 'Loading...' : null}
-          <SampleList
-            samples={selectedSampleBank}
-            selectedSampleId={focusedSampleId}
-            onNewSample={() => setFocusedSampleId(null)}
-            onSampleSelect={(id) => {
-              setFocusedSampleId(id);
-            }}
-          />
+          {!loadingSamples && (
+            <>
+              <button onClick={() => setFocusedSampleId(null)}>
+                New Sample
+              </button>
+              {[userSamples, factorySamples].map((sampleBank, i) => (
+                <React.Fragment key={i}>
+                  <h3>
+                    {sampleBank === userSamples
+                      ? 'Your Samples'
+                      : 'Factory Samples'}
+                  </h3>
+                  <SampleList
+                    samples={sampleBank}
+                    selectedSampleId={focusedSampleId}
+                    onSampleSelect={setFocusedSampleId}
+                  />
+                </React.Fragment>
+              ))}
+            </>
+          )}
         </SampleListContainer>
         <FocusedSampleContainer>
           {focusedSampleId && (
             <SampleDetail
-              sample={selectedSampleBank.get(focusedSampleId) || null}
+              sample={allSamples.get(focusedSampleId) || null}
               onSampleUpdate={handleSampleUpdate}
               onSampleDuplicate={(id) => {
-                const sample = selectedSampleBank.get(id);
+                const sample = allSamples.get(id);
                 if (sample) {
                   const newSample = sample.duplicate();
-                  setSamples(
+                  setUserSamples(
                     (samples) =>
                       new Map([[newSample.id, newSample], ...samples])
                   );
-                  setShowingFactorySamples(false);
                   // TODO: scroll new sample into view
                   setFocusedSampleId(newSample.id);
                 }
               }}
               onSampleDelete={(id) => {
-                const sample = selectedSampleBank.get(id);
+                const sample = allSamples.get(id);
                 if (sample && sample instanceof SampleContainer.Mutable) {
                   sample.remove();
-                  setSamples((samples) => {
+                  setUserSamples((samples) => {
                     const newSamples = new Map(samples);
                     newSamples.delete(sample.id);
                     return newSamples;

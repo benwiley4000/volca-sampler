@@ -1,19 +1,8 @@
 import React, { useLayoutEffect, useRef, useState } from 'react';
+import { ListGroup } from 'react-bootstrap';
 import { styled } from 'tonami';
 import { WAVEFORM_CACHED_WIDTH } from './utils/waveform';
 import WaveformDisplay from './WaveformDisplay';
-
-const SampleListContainer = styled.div({
-  height: '100%',
-  overflow: 'auto',
-});
-
-const SampleListItemDiv = styled.div({
-  padding: '0.5rem',
-  border: '1px solid grey',
-  cursor: 'pointer',
-  backgroundColor: ({ $selected }) => ($selected ? '#f3f3f3' : 'unset'),
-});
 
 const WaveformContainer = styled.div({
   width: `${WAVEFORM_CACHED_WIDTH}px`,
@@ -67,8 +56,8 @@ const SampleListItem = React.memo(
       return () => observer.disconnect();
     }, []);
     return (
-      <SampleListItemDiv
-        selected={selected}
+      <ListGroup.Item
+        active={selected}
         onClick={() => onSampleSelect(sample.id)}
       >
         <div>{sample.metadata.name}</div>
@@ -80,7 +69,7 @@ const SampleListItem = React.memo(
             />
           )}
         </WaveformContainer>
-      </SampleListItemDiv>
+      </ListGroup.Item>
     );
   }
 );
@@ -98,7 +87,7 @@ function SampleList({
   onSampleSelect,
 }) {
   return (
-    <SampleListContainer>
+    <ListGroup variant="flush">
       {[...samples].map(([id, sample]) => (
         <SampleListItem
           key={id}
@@ -107,7 +96,7 @@ function SampleList({
           onSampleSelect={onSampleSelect}
         />
       ))}
-    </SampleListContainer>
+    </ListGroup>
   );
 }
 

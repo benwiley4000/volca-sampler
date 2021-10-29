@@ -4,13 +4,22 @@ import { styled } from 'tonami';
 const Title = styled.h1({
   display: 'flex',
   alignItems: 'center',
-  padding: '2rem',
-  paddingBottom: '0px',
+  padding: '2rem 1rem 1rem',
   marginBottom: '0px',
+  backgroundColor: '#f3f3f3',
+  borderBottom: '1px solid #ccc',
+  position: 'sticky',
+  top: 0
+});
+
+const MenuIcon = styled.span({
+  marginRight: '1rem',
+  cursor: 'pointer'
 });
 
 const TitleText = styled.span({
   color: 'red',
+  whiteSpace: 'nowrap',
 });
 
 const TitleR = styled.span({
@@ -23,9 +32,14 @@ const TitleGraphic = styled.img({
   paddingLeft: '1rem',
 });
 
-function Header() {
+/**
+ * @param {{ onMenuOpen: () => void }} props
+ * @returns
+ */
+function Header({ onMenuOpen }) {
   return (
     <Title>
+      <MenuIcon onClick={onMenuOpen}>☰</MenuIcon>
       <TitleText>
         Volca Sample
         <TitleR>r</TitleR>

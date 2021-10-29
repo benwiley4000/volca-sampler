@@ -164,17 +164,25 @@ function SampleRecord({ onRecordFinish }) {
         <p>
           Looks like you didn't grant access to your audio input device. Please
           give Volca Sampler access, then{' '}
-          <button type="button" onClick={refreshCaptureDevices}>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={refreshCaptureDevices}
+          >
             try again
-          </button>
+          </Button>
         </p>
       ) : accessState === 'unavailable' ? (
         <p>
           Volca Sampler couldn't find any audio input devices. Please connect
           one, then{' '}
-          <button type="button" onClick={refreshCaptureDevices}>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={refreshCaptureDevices}
+          >
             try again
-          </button>
+          </Button>
         </p>
       ) : (
         <div>

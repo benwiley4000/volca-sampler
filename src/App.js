@@ -80,7 +80,7 @@ function App() {
         name = userFile.name;
       }
     } else {
-      name = 'New one';
+      name = 'New sample';
     }
     /**
      * @type {[number, number]}
@@ -107,11 +107,12 @@ function App() {
     setFocusedSampleId(sample.id);
   }, []);
 
+
   const handleSampleUpdate = useCallback((id, update) => {
     setUserSamples((samples) => {
       const sample = samples.get(id);
       if (sample && sample instanceof SampleContainer.Mutable) {
-        const updated = sample.update(update);
+        const updated = sample.update(typeof update === 'function' ? update(sample.metadata) : update);
         if (updated !== sample) {
           return new Map(samples).set(sample.id, updated);
         }
@@ -135,45 +136,47 @@ function App() {
   return (
     <div>
       <Header onMenuOpen={() => setSidebarOpen(true)} />
-      <MainLayout>
-        <Offcanvas show={sidebarOpen} onHide={() => setSidebarOpen(false)}>
-          <Offcanvas.Header closeButton />
-          <Offcanvas.Body>
-            <ListGroup>
-              <ListGroup.Item
-                as="button"
-                onClick={() => handleSampleSelect(null)}
+      <Offcanvas show={sidebarOpen} onHide={() => setSidebarOpen(false)}>
+        <Offcanvas.Header closeButton />
+        <Offcanvas.Body>
+          <ListGroup>
+            <ListGroup.Item
+              as="button"
+              onClick={() => handleSampleSelect(null)}
+            >
+              New Sample
+            </ListGroup.Item>
+            {loadingSamples ? 'Loading...' : null}
+            {!loadingSamples && (
+              <Accordion
+                defaultActiveKey={userSamples.size ? 'user' : 'factory'}
               >
-                New Sample
-              </ListGroup.Item>
-              {loadingSamples ? 'Loading...' : null}
-              {!loadingSamples && (
-                <Accordion defaultActiveKey="user">
-                  <Accordion.Item eventKey="user">
-                    <Accordion.Header>Your Samples</Accordion.Header>
-                    <Accordion.Body style={{ padding: 0 }}>
-                      <SampleList
-                        samples={userSamples}
-                        selectedSampleId={focusedSampleId}
-                        onSampleSelect={handleSampleSelect}
-                      />
-                    </Accordion.Body>
-                  </Accordion.Item>
-                  <Accordion.Item eventKey="factory">
-                    <Accordion.Header>Factory Samples</Accordion.Header>
-                    <Accordion.Body style={{ padding: 0 }}>
-                      <SampleList
-                        samples={factorySamples}
-                        selectedSampleId={focusedSampleId}
-                        onSampleSelect={handleSampleSelect}
-                      />
-                    </Accordion.Body>
-                  </Accordion.Item>
-                </Accordion>
-              )}
-            </ListGroup>
-          </Offcanvas.Body>
-        </Offcanvas>
+                <Accordion.Item eventKey="user">
+                  <Accordion.Header>Your Samples</Accordion.Header>
+                  <Accordion.Body style={{ padding: 0 }}>
+                    <SampleList
+                      samples={userSamples}
+                      selectedSampleId={focusedSampleId}
+                      onSampleSelect={handleSampleSelect}
+                    />
+                  </Accordion.Body>
+                </Accordion.Item>
+                <Accordion.Item eventKey="factory">
+                  <Accordion.Header>Factory Samples</Accordion.Header>
+                  <Accordion.Body style={{ padding: 0 }}>
+                    <SampleList
+                      samples={factorySamples}
+                      selectedSampleId={focusedSampleId}
+                      onSampleSelect={handleSampleSelect}
+                    />
+                  </Accordion.Body>
+                </Accordion.Item>
+              </Accordion>
+            )}
+          </ListGroup>
+        </Offcanvas.Body>
+      </Offcanvas>
+      <MainLayout>
         <FocusedSampleContainer>
           {focusedSampleId && (
             <SampleDetail

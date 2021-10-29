@@ -11,17 +11,11 @@ import {
   storeAudioSourceFile,
 } from './store.js';
 import { getSamplePeaksForSourceFile } from './utils/waveform.js';
+import { Accordion, ListGroup, Offcanvas } from 'react-bootstrap';
 
 const MainLayout = styled.div({
   padding: '2rem',
   display: 'flex',
-  height: '100%',
-});
-
-const SampleListContainer = styled.div({
-  width: '300px',
-  flexShrink: 0,
-  paddingRight: '0.5rem',
   height: '100%',
 });
 
@@ -126,34 +120,60 @@ function App() {
     });
   }, []);
 
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const handleSampleSelect = useCallback(
+    /**
+     * @param {string | null} sampleId
+     */
+    (sampleId) => {
+      setFocusedSampleId(sampleId);
+      setSidebarOpen(false);
+    },
+    []
+  );
+
   return (
     <div>
-      <Header />
+      <Header onMenuOpen={() => setSidebarOpen(true)} />
       <MainLayout>
-        <SampleListContainer>
-          {loadingSamples ? 'Loading...' : null}
-          {!loadingSamples && (
-            <>
-              <button onClick={() => setFocusedSampleId(null)}>
+        <Offcanvas show={sidebarOpen} onHide={() => setSidebarOpen(false)}>
+          <Offcanvas.Header closeButton />
+          <Offcanvas.Body>
+            <ListGroup>
+              <ListGroup.Item
+                as="button"
+                onClick={() => handleSampleSelect(null)}
+              >
                 New Sample
-              </button>
-              {[userSamples, factorySamples].map((sampleBank, i) => (
-                <React.Fragment key={i}>
-                  <h3>
-                    {sampleBank === userSamples
-                      ? 'Your Samples'
-                      : 'Factory Samples'}
-                  </h3>
-                  <SampleList
-                    samples={sampleBank}
-                    selectedSampleId={focusedSampleId}
-                    onSampleSelect={setFocusedSampleId}
-                  />
-                </React.Fragment>
-              ))}
-            </>
-          )}
-        </SampleListContainer>
+              </ListGroup.Item>
+              {loadingSamples ? 'Loading...' : null}
+              {!loadingSamples && (
+                <Accordion defaultActiveKey="user">
+                  <Accordion.Item eventKey="user">
+                    <Accordion.Header>Your Samples</Accordion.Header>
+                    <Accordion.Body style={{ padding: 0 }}>
+                      <SampleList
+                        samples={userSamples}
+                        selectedSampleId={focusedSampleId}
+                        onSampleSelect={handleSampleSelect}
+                      />
+                    </Accordion.Body>
+                  </Accordion.Item>
+                  <Accordion.Item eventKey="factory">
+                    <Accordion.Header>Factory Samples</Accordion.Header>
+                    <Accordion.Body style={{ padding: 0 }}>
+                      <SampleList
+                        samples={factorySamples}
+                        selectedSampleId={focusedSampleId}
+                        onSampleSelect={handleSampleSelect}
+                      />
+                    </Accordion.Body>
+                  </Accordion.Item>
+                </Accordion>
+              )}
+            </ListGroup>
+          </Offcanvas.Body>
+        </Offcanvas>
         <FocusedSampleContainer>
           {focusedSampleId && (
             <SampleDetail

@@ -1,12 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { Form, Button, Collapse } from 'react-bootstrap';
 import { styled } from 'tonami';
 
 import { getAudioBufferForAudioFileData } from './utils/audioData.js';
 import { captureAudio, getAudioInputDevices } from './utils/recording.js';
 
-const SampleRecordDiv = styled.div({
-  padding: '2rem',
-});
+const SampleRecordDiv = styled.div({});
 
 /**
  * @type {Map<string, import('./utils/recording').AudioDeviceInfoContainer> | null}
@@ -85,14 +84,27 @@ function useMediaRecording(onRecordFinish) {
     /** @type {unknown} */ (null)
   );
   // to be set when recording is started
-  const [stop, setStop] = useState({ fn: () => {} });
+  const [stop, setStop] = useState({
+    /**
+     * @param {boolean} [cancel]
+     */
+    fn(cancel) {},
+  });
   const handleBeginRecording = useCallback(async () => {
+    let cancelled = false;
     const { mediaRecording, stop } = await captureAudio({
       deviceId: selectedCaptureDeviceId,
       channelCount: selectedChannelCount,
       onStart: () => setCaptureState('capturing'),
     });
-    setStop({ fn: stop });
+    setStop({
+      fn(cancel) {
+        stop();
+        if (cancel) {
+          cancelled = true;
+        }
+      },
+    });
     /**
      * @type {Uint8Array}
      */
@@ -104,8 +116,12 @@ function useMediaRecording(onRecordFinish) {
       setCaptureState('error');
       return;
     }
-    setCaptureState('finalizing');
-    onRecordFinish(wavBuffer);
+    if (cancelled) {
+      setCaptureState('ready');
+    } else {
+      setCaptureState('finalizing');
+      onRecordFinish(wavBuffer);
+    }
   }, [selectedCaptureDeviceId, selectedChannelCount, onRecordFinish]);
   return {
     captureDevices,
@@ -140,6 +156,8 @@ function SampleRecord({ onRecordFinish }) {
     stopRecording,
   } = useMediaRecording(onRecordFinish);
 
+  const [showingCaptureConfig, setShowingCaptureConfig] = useState(false);
+
   return (
     <SampleRecordDiv>
       {accessState === 'denied' ? (
@@ -160,88 +178,152 @@ function SampleRecord({ onRecordFinish }) {
         </p>
       ) : (
         <div>
-          <label>
-            Capture Device
-            <select
-              value={selectedCaptureDeviceId}
-              onChange={(e) => setSelectedCaptureDeviceId(e.target.value)}
-            >
-              {captureDevices && accessState === 'ok' ? (
-                [...captureDevices].map(([id, { device }]) => (
-                  <option key={id} value={id}>
-                    {device.label || id}
-                  </option>
-                ))
-              ) : (
-                <option value="" disabled>
-                  Loading devices...
-                </option>
-              )}
-            </select>
-          </label>
-          <label>
-            Channel count
-            <select
-              value={selectedChannelCount}
-              onChange={(e) => setSelectedChannelCount(Number(e.target.value))}
-            >
-              {[1, 2].map((count) => (
-                <option
-                  key={count}
-                  value={count}
-                  disabled={
-                    !captureDevices ||
-                    !captureDevices.has(selectedCaptureDeviceId) ||
-                    /** @type {import('./utils/recording').AudioDeviceInfoContainer} */ (
-                      captureDevices.get(selectedCaptureDeviceId)
-                    ).channelsAvailable < count
+          <h2>Send a new sound to your Volca Sample!</h2>
+          <Button
+            type="button"
+            variant={captureState === 'capturing' ? 'danger' : 'primary'}
+            size="lg"
+            style={{ width: 250 }}
+            onClick={
+              captureState === 'capturing'
+                ? () => stopRecording()
+                : beginRecording
+            }
+            disabled={captureState === 'finalizing'}
+          >
+            {['capturing', 'finalizing'].includes(captureState)
+              ? 'Finished recording'
+              : 'Start recording'}
+          </Button>
+          {['capturing', 'finalizing'].includes(captureState) ? (
+            <>
+              <br />
+              <br />
+              <Button
+                style={{ width: 250 }}
+                size="sm"
+                type="button"
+                variant="secondary"
+                onClick={() => stopRecording(true)}
+              >
+                Cancel
+              </Button>
+            </>
+          ) : (
+            <>
+              <br />
+              <Button
+                style={{ width: 250 }}
+                type="button"
+                variant="light"
+                size="sm"
+                onClick={() => setShowingCaptureConfig((showing) => !showing)}
+              >
+                Audio input settings {showingCaptureConfig ? '▲' : '▼'}
+              </Button>
+              <Collapse in={showingCaptureConfig}>
+                <div>
+                  <Form.Group>
+                    <Form.Label>Capture Device</Form.Label>
+                    <Form.Select
+                      style={{ width: 250 }}
+                      value={selectedCaptureDeviceId}
+                      onChange={(e) =>
+                        setSelectedCaptureDeviceId(e.target.value)
+                      }
+                    >
+                      {captureDevices && accessState === 'ok' ? (
+                        [...captureDevices].map(([id, { device }]) => (
+                          <option key={id} value={id}>
+                            {device.label || id}
+                          </option>
+                        ))
+                      ) : (
+                        <option value="" disabled>
+                          Loading devices...
+                        </option>
+                      )}
+                    </Form.Select>
+                  </Form.Group>
+                  <Form.Group>
+                    <Form.Label>Input channels</Form.Label>
+                    <Form.Select
+                      style={{ width: 250 }}
+                      value={selectedChannelCount}
+                      onChange={(e) =>
+                        setSelectedChannelCount(Number(e.target.value))
+                      }
+                    >
+                      {[1, 2].map((count) => (
+                        <option
+                          key={count}
+                          value={count}
+                          disabled={
+                            !captureDevices ||
+                            !captureDevices.has(selectedCaptureDeviceId) ||
+                            /** @type {import('./utils/recording').AudioDeviceInfoContainer} */ (
+                              captureDevices.get(selectedCaptureDeviceId)
+                            ).channelsAvailable < count
+                          }
+                        >
+                          {count === 1 ? 'Mono' : 'Stereo (summed to mono)'}
+                        </option>
+                      ))}
+                    </Form.Select>
+                  </Form.Group>
+                  <br />
+                </div>
+              </Collapse>
+              <br />
+              <Button
+                style={{ width: 250 }}
+                type="button"
+                variant="secondary"
+                onClick={(e) => {
+                  const input = e.currentTarget.querySelector('input');
+                  if (input && e.target !== input) {
+                    input.click();
                   }
-                >
-                  {count}
-                </option>
-              ))}
-            </select>
-          </label>
+                }}
+              >
+                Or import an audio file
+                <input
+                  hidden
+                  type="file"
+                  accept="audio/*,.wav,.mp3,.ogg"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files.length) {
+                      const file = e.target.files[0];
+                      file.arrayBuffer().then(async (arrayBuffer) => {
+                        const audioFileBuffer = new Uint8Array(arrayBuffer);
+                        /**
+                         * @type {AudioBuffer}
+                         */
+                        let audioBuffer;
+                        try {
+                          audioBuffer = await getAudioBufferForAudioFileData(
+                            audioFileBuffer
+                          );
+                        } catch (err) {
+                          alert('Unsupported audio format detected');
+                          return;
+                        }
+                        if (audioBuffer.length > 10 * audioBuffer.sampleRate) {
+                          alert(
+                            'Please select an audio file no more than 10 seconds long'
+                          );
+                          return;
+                        }
+                        onRecordFinish(audioFileBuffer, file);
+                      });
+                    }
+                  }}
+                />
+              </Button>
+            </>
+          )}
         </div>
       )}
-      <button
-        type="button"
-        onClick={captureState === 'capturing' ? stopRecording : beginRecording}
-        disabled={captureState === 'finalizing'}
-      >
-        {['capturing', 'finalizing'].includes(captureState) ? 'Stop' : 'Record'}
-      </button>
-      <input
-        type="file"
-        accept="audio/*,.wav,.mp3,.ogg"
-        onChange={(e) => {
-          if (e.target.files && e.target.files.length) {
-            const file = e.target.files[0];
-            file.arrayBuffer().then(async (arrayBuffer) => {
-              const audioFileBuffer = new Uint8Array(arrayBuffer);
-              /**
-               * @type {AudioBuffer}
-               */
-              let audioBuffer;
-              try {
-                audioBuffer = await getAudioBufferForAudioFileData(
-                  audioFileBuffer
-                );
-              } catch (err) {
-                alert('Unsupported audio format detected');
-                return;
-              }
-              if (audioBuffer.length > 10 * audioBuffer.sampleRate) {
-                alert(
-                  'Please select an audio file no more than 10 seconds long'
-                );
-                return;
-              }
-              onRecordFinish(audioFileBuffer, file);
-            });
-          }
-        }}
-      />
       {(captureState === 'error' && recordingError) || null}
     </SampleRecordDiv>
   );

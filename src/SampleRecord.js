@@ -14,17 +14,13 @@ const SampleRecordDiv = styled.div({
 let cachedCaptureDevices = null;
 
 /**
- * @typedef {{
- *   onRecordStart: () => void;
- *   onRecordFinish: (audioFileBuffer: Uint8Array, userFile?: File) => void;
- *   onRecordError: (err: unknown) => void;
- * }} MediaRecordingCallbacks
+ * @typedef {(audioFileBuffer: Uint8Array, userFile?: File) => void} RecordingCallback
  */
 
 /**
- * @param {MediaRecordingCallbacks} callbacks
+ * @param {RecordingCallback} onRecordFinish
  */
-function useMediaRecording({ onRecordStart, onRecordFinish, onRecordError }) {
+function useMediaRecording(onRecordFinish) {
   const [captureDevices, setCaptureDevices] = useState(cachedCaptureDevices);
   const [accessState, setAccessState] = useState(
     /** @type {'pending' | 'ok' | 'denied' | 'unavailable'} */ (
@@ -37,8 +33,12 @@ function useMediaRecording({ onRecordStart, onRecordFinish, onRecordError }) {
     setAccessState('ok');
   }, [captureDevices]);
   const refreshCaptureDevices = useCallback(() => {
+    let cancelled = false;
     getAudioInputDevices()
       .then((devices) => {
+        if (cancelled) {
+          return;
+        }
         if (devices.length) {
           setCaptureDevices(
             new Map(devices.map((d) => [d.device.deviceId, d]))
@@ -47,6 +47,9 @@ function useMediaRecording({ onRecordStart, onRecordFinish, onRecordError }) {
         }
       })
       .catch((err) => {
+        if (cancelled) {
+          return;
+        }
         if (err instanceof DOMException) {
           if (err.name === 'NotAllowedError') {
             setAccessState('denied');
@@ -59,6 +62,9 @@ function useMediaRecording({ onRecordStart, onRecordFinish, onRecordError }) {
         }
         throw err;
       });
+    return () => {
+      cancelled = true;
+    };
   }, []);
   useEffect(refreshCaptureDevices, [refreshCaptureDevices]);
   const [selectedChannelCount, setSelectedChannelCount] = useState(1);
@@ -69,21 +75,22 @@ function useMediaRecording({ onRecordStart, onRecordFinish, onRecordError }) {
       setSelectedChannelCount(selectedDeviceInfo.channelsAvailable);
     }
   }, [captureDevices, selectedCaptureDeviceId]);
+  /**
+   * @typedef {'ready' | 'capturing' | 'finalizing' | 'error'} CaptureState
+   */
+  const [captureState, setCaptureState] = useState(
+    /** @type {CaptureState} */ ('ready')
+  );
   const [recordingError, setRecordingError] = useState(
     /** @type {unknown} */ (null)
   );
-  useEffect(() => {
-    if (recordingError) {
-      onRecordError(recordingError);
-    }
-  }, [recordingError, onRecordError]);
   // to be set when recording is started
   const [stop, setStop] = useState({ fn: () => {} });
   const handleBeginRecording = useCallback(async () => {
     const { mediaRecording, stop } = await captureAudio({
       deviceId: selectedCaptureDeviceId,
       channelCount: selectedChannelCount,
-      onStart: onRecordStart,
+      onStart: () => setCaptureState('capturing'),
     });
     setStop({ fn: stop });
     /**
@@ -94,20 +101,18 @@ function useMediaRecording({ onRecordStart, onRecordFinish, onRecordError }) {
       wavBuffer = await mediaRecording;
     } catch (err) {
       setRecordingError(err);
+      setCaptureState('error');
       return;
     }
+    setCaptureState('finalizing');
     onRecordFinish(wavBuffer);
-  }, [
-    selectedCaptureDeviceId,
-    selectedChannelCount,
-    onRecordStart,
-    onRecordFinish,
-  ]);
+  }, [selectedCaptureDeviceId, selectedChannelCount, onRecordFinish]);
   return {
     captureDevices,
     accessState,
     selectedCaptureDeviceId,
     selectedChannelCount,
+    captureState,
     recordingError,
     refreshCaptureDevices,
     setSelectedCaptureDeviceId,
@@ -118,25 +123,22 @@ function useMediaRecording({ onRecordStart, onRecordFinish, onRecordError }) {
 }
 
 /**
- * @typedef {'ready' | 'capturing' | 'preparing' | 'error' | 'idle'} CaptureState
+ * @param {{ onRecordFinish: RecordingCallback }} props
  */
-
-/**
- * @param {{ captureState: CaptureState } & MediaRecordingCallbacks} props
- */
-function SampleRecord({ captureState, ...callbacks }) {
+function SampleRecord({ onRecordFinish }) {
   const {
     captureDevices,
     accessState,
     selectedCaptureDeviceId,
     selectedChannelCount,
+    captureState,
     recordingError,
     refreshCaptureDevices,
     setSelectedCaptureDeviceId,
     setSelectedChannelCount,
     beginRecording,
     stopRecording,
-  } = useMediaRecording(callbacks);
+  } = useMediaRecording(onRecordFinish);
 
   return (
     <SampleRecordDiv>
@@ -205,9 +207,9 @@ function SampleRecord({ captureState, ...callbacks }) {
       <button
         type="button"
         onClick={captureState === 'capturing' ? stopRecording : beginRecording}
-        disabled={captureState === 'preparing'}
+        disabled={captureState === 'finalizing'}
       >
-        {['capturing', 'preparing'].includes(captureState) ? 'Stop' : 'Record'}
+        {['capturing', 'finalizing'].includes(captureState) ? 'Stop' : 'Record'}
       </button>
       <input
         type="file"
@@ -235,7 +237,7 @@ function SampleRecord({ captureState, ...callbacks }) {
                 );
                 return;
               }
-              callbacks.onRecordFinish(audioFileBuffer, file);
+              onRecordFinish(audioFileBuffer, file);
             });
           }
         }}

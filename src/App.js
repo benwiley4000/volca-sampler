@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { styled } from 'tonami';
 
+import Header from './Header.js';
 import SampleList from './SampleList.js';
 import SampleDetail from './SampleDetail.js';
 import SampleRecord from './SampleRecord.js';
@@ -10,28 +11,6 @@ import {
   storeAudioSourceFile,
 } from './store.js';
 import { getSamplePeaksForSourceFile } from './utils/waveform.js';
-
-const Title = styled.h1({
-  display: 'flex',
-  alignItems: 'center',
-  padding: '2rem',
-  paddingBottom: '0px',
-  marginBottom: '0px',
-});
-
-const TitleText = styled.span({
-  color: 'red',
-});
-
-const TitleR = styled.span({
-  textTransform: 'uppercase',
-  textDecoration: 'underline',
-});
-
-const TitleGraphic = styled.img({
-  height: '1.6em',
-  paddingLeft: '1rem',
-});
 
 const MainLayout = styled.div({
   padding: '2rem',
@@ -65,9 +44,6 @@ function App() {
     /** @type {string | null} */ (null)
   );
   const [loadingSamples, setLoadingSamples] = useState(true);
-  const [captureState, setCaptureState] = useState(
-    /** @type {import('./SampleRecord').CaptureState} */ ('idle')
-  );
   const selectedSampleBank = showingFactorySamples ? factorySamples : samples;
   useEffect(() => {
     // TODO: error handling
@@ -90,21 +66,21 @@ function App() {
       });
   }, []);
   useEffect(() => {
-    if (
-      selectedSampleBank.size &&
-      !(focusedSampleId && selectedSampleBank.has(focusedSampleId))
-    ) {
-      setFocusedSampleId([...selectedSampleBank.values()][0].id);
-    }
-  }, [selectedSampleBank, focusedSampleId]);
-
-  const handleRecordStart = useCallback(() => setCaptureState('capturing'), []);
+    setFocusedSampleId((focusedSampleId) => {
+      if (focusedSampleId && selectedSampleBank.has(focusedSampleId)) {
+        return focusedSampleId;
+      }
+      if (!selectedSampleBank.size) {
+        return null;
+      }
+      return [...selectedSampleBank.values()][0].id;
+    });
+  }, [selectedSampleBank]);
 
   /**
    * @type {(audioFileBuffer: Uint8Array, userFile?: File) => void}
    * */
   const handleRecordFinish = useCallback(async (audioFileBuffer, userFile) => {
-    setCaptureState('preparing');
     const sourceFileId = await storeAudioSourceFile(audioFileBuffer);
     /**
      * @type {string}
@@ -126,7 +102,10 @@ function App() {
      * @type {[number, number]}
      */
     const trimFrames = [0, 0];
-    const waveformPeaks = await getSamplePeaksForSourceFile(sourceFileId, trimFrames);
+    const waveformPeaks = await getSamplePeaksForSourceFile(
+      sourceFileId,
+      trimFrames
+    );
     const sample = new SampleContainer.Mutable({
       name,
       sourceFileId,
@@ -143,15 +122,6 @@ function App() {
     setSamples((samples) => new Map([[sample.id, sample], ...samples]));
     setShowingFactorySamples(false);
     setFocusedSampleId(sample.id);
-    setCaptureState('idle');
-  }, []);
-
-  /**
-   * @type {(err: unknown) => void}
-   * */
-  const handleRecordError = useCallback((err) => {
-    console.error(err);
-    setCaptureState('error');
   }, []);
 
   const handleSampleUpdate = useCallback((id, update) => {
@@ -169,13 +139,7 @@ function App() {
 
   return (
     <div>
-      <Title>
-        <TitleText>
-          Volca Sample
-          <TitleR>r</TitleR>
-        </TitleText>
-        <TitleGraphic src="volca_sample.png" alt="" />
-      </Title>
+      <Header />
       <MainLayout>
         <select
           value={JSON.stringify(showingFactorySamples)}
@@ -188,22 +152,17 @@ function App() {
           {loadingSamples ? 'Loading...' : null}
           <SampleList
             samples={selectedSampleBank}
-            selectedSampleId={captureState === 'idle' ? focusedSampleId : null}
-            readonly={['capturing', 'preparing'].includes(captureState)}
-            onNewSample={() => setCaptureState('ready')}
+            selectedSampleId={focusedSampleId}
+            onNewSample={() => setFocusedSampleId(null)}
             onSampleSelect={(id) => {
               setFocusedSampleId(id);
-              setCaptureState('idle');
             }}
           />
         </SampleListContainer>
         <FocusedSampleContainer>
-          {captureState === 'idle' && (
+          {focusedSampleId && (
             <SampleDetail
-              sample={
-                (focusedSampleId && selectedSampleBank.get(focusedSampleId)) ||
-                null
-              }
+              sample={selectedSampleBank.get(focusedSampleId) || null}
               onSampleUpdate={handleSampleUpdate}
               onSampleDuplicate={(id) => {
                 const sample = selectedSampleBank.get(id);
@@ -231,13 +190,8 @@ function App() {
               }}
             />
           )}
-          {captureState !== 'idle' && (
-            <SampleRecord
-              captureState={captureState}
-              onRecordStart={handleRecordStart}
-              onRecordFinish={handleRecordFinish}
-              onRecordError={handleRecordError}
-            />
+          {!focusedSampleId && (
+            <SampleRecord onRecordFinish={handleRecordFinish} />
           )}
         </FocusedSampleContainer>
       </MainLayout>

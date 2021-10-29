@@ -28,11 +28,10 @@ const SampleListItem = React.memo(
    * @param {{
    *   sample: import('./store').SampleContainer;
    *   selected: boolean;
-   *   readonly: boolean;
    *   onSampleSelect: (id: string) => void;
    * }} props
    */
-  ({ sample, selected, readonly, onSampleSelect }) => {
+  ({ sample, selected, onSampleSelect }) => {
     /**
      * @type {React.RefObject<HTMLDivElement>}
      */
@@ -70,8 +69,7 @@ const SampleListItem = React.memo(
     return (
       <SampleListItemDiv
         selected={selected}
-        data-disabled={readonly}
-        onClick={() => !readonly && onSampleSelect(sample.id)}
+        onClick={() => onSampleSelect(sample.id)}
       >
         <div>{sample.metadata.name}</div>
         <WaveformContainer ref={waveformContainerRef}>
@@ -91,7 +89,6 @@ const SampleListItem = React.memo(
  * @param {{
  *   samples: Map<string, import('./store').SampleContainer>;
  *   selectedSampleId: string | null;
- *   readonly: boolean;
  *   onNewSample: () => void;
  *   onSampleSelect: (id: string) => void;
  * }} props
@@ -99,24 +96,17 @@ const SampleListItem = React.memo(
 function SampleList({
   samples,
   selectedSampleId,
-  readonly,
   onNewSample,
   onSampleSelect,
 }) {
   return (
     <SampleListContainer>
-      <SampleListItemDiv
-        data-disabled={readonly}
-        onClick={() => !readonly && onNewSample()}
-      >
-        New Sample
-      </SampleListItemDiv>
+      <SampleListItemDiv onClick={onNewSample}>New Sample</SampleListItemDiv>
       {[...samples].map(([id, sample]) => (
         <SampleListItem
           key={id}
           sample={sample}
           selected={id === selectedSampleId}
-          readonly={readonly}
           onSampleSelect={onSampleSelect}
         />
       ))}

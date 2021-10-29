@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { Button, ProgressBar } from 'react-bootstrap';
 
 import {
   getAudioBufferForAudioFileData,
@@ -63,8 +64,9 @@ function VolcaTransferControl({ sample }) {
   const { playAudioBuffer, isAudioBusy } = useAudioPlaybackContext();
   return (
     <>
-      <button
+      <Button
         type="button"
+        variant="primary"
         onClick={() => {
           if (!(syroAudioBuffer instanceof AudioBuffer)) {
             return;
@@ -91,8 +93,8 @@ function VolcaTransferControl({ sample }) {
           syroTransferState === 'transferring'
         }
       >
-        transfer to volca sample
-      </button>
+        Transfer to volca sample
+      </Button>
       <br />
       {syroAudioBuffer &&
       syroTransferState === 'idle' ? null : syroTransferState === 'error' ? (
@@ -106,9 +108,11 @@ function VolcaTransferControl({ sample }) {
               ? 'Transferring to Volca Sample...'
               : 'Error preparing sample for transfer'}
           </p>
-          <progress value={syroProgress} />
+          <ProgressBar now={100 * syroProgress} />
           <br />
-          <button onClick={() => stop.current()}>Cancel</button>
+          <Button type="button" variant="light" onClick={() => stop.current()}>
+            Cancel
+          </Button>
         </>
       )}
       <br />

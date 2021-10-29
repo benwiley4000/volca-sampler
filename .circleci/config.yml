@@ -13,6 +13,15 @@ jobs:
       - store_artifacts:
           path: ~/volca-sampler/test/artifacts
       - run: npm run build
+      - add_ssh_keys:
+          fingerprints:
+            - '7d:8c:47:41:89:13:de:96:05:bf:10:64:33:03:7b:b2'
+      - run:
+          name: Deploy to GitHub Pages
+          command: |
+            git config user.email "therealbenwiley@gmail.com"
+            git config user.name "Ben Wiley"
+            npm run deploy
 
 workflows:
   build:

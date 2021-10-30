@@ -20,6 +20,15 @@ function VolcaTransferControl({ sample }) {
   const [syroAudioBuffer, setSyroAudioBuffer] = useState(
     /** @type {AudioBuffer | Error | null} */ (null)
   );
+  const [callbackOnSyroBuffer, setCallbackOnSyroBuffer] = useState(
+    /** @type {{ fn: () => void } | null} */ (null)
+  );
+  useEffect(() => {
+    if (syroAudioBuffer instanceof AudioBuffer && callbackOnSyroBuffer) {
+      setCallbackOnSyroBuffer(null);
+      callbackOnSyroBuffer.fn();
+    }
+  }, [syroAudioBuffer, callbackOnSyroBuffer]);
   // to be set when transfer or playback is started
   const stop = useRef(() => {});
   useEffect(() => {
@@ -27,6 +36,7 @@ function VolcaTransferControl({ sample }) {
     setSyroProgress(0);
     setSyroTransferState('idle');
     setSyroAudioBuffer(null);
+    setCallbackOnSyroBuffer(null);
     stop.current = () => {
       cancelled = true;
     };
@@ -67,8 +77,15 @@ function VolcaTransferControl({ sample }) {
       <Button
         type="button"
         variant="primary"
-        onClick={() => {
+        onClick={(e) => {
           if (!(syroAudioBuffer instanceof AudioBuffer)) {
+            if (!syroAudioBuffer) {
+              const button = e.currentTarget;
+              // wait until the syro buffer is ready then simulate a click event
+              // to retry this handler. it's important that we simulate another
+              // click because otherwise iOS won't let us play the audio later.
+              setCallbackOnSyroBuffer({ fn: () => button.click() });
+            }
             return;
           }
           try {
@@ -89,7 +106,7 @@ function VolcaTransferControl({ sample }) {
         }}
         disabled={
           isAudioBusy ||
-          !syroAudioBuffer ||
+          syroAudioBuffer instanceof Error ||
           syroTransferState === 'transferring'
         }
       >

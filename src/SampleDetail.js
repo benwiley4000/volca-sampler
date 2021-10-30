@@ -94,8 +94,20 @@ function SampleDetail({
   const [targetWav, setTargetWav] = useState(
     /** @type {Uint8Array | null} */ (null)
   );
+  const [audioBufferForAudioFileData, setAudioBufferForAudioFileData] =
+    useState(/** @type {AudioBuffer | null} */ (null));
+  const [callbackOnAudioBuffer, setCallbackOnAudioBuffer] = useState(
+    /** @type {{ fn: () => void } | null} */ (null)
+  );
+  useEffect(() => {
+    if (audioBufferForAudioFileData instanceof AudioBuffer && callbackOnAudioBuffer) {
+      setCallbackOnAudioBuffer(null);
+      callbackOnAudioBuffer.fn();
+    }
+  }, [audioBufferForAudioFileData, callbackOnAudioBuffer]);
   useEffect(() => {
     setTargetWav(null);
+    setCallbackOnAudioBuffer(null);
     if (sample) {
       let cancelled = false;
       getTargetWavForSample(sample).then(({ data }) => {
@@ -105,8 +117,6 @@ function SampleDetail({
       });
     }
   }, [sample]);
-  const [audioBufferForAudioFileData, setAudioBufferForAudioFileData] =
-    useState(/** @type {AudioBuffer | null} */ (null));
   useEffect(() => {
     setAudioBufferForAudioFileData(null);
     if (targetWav) {
@@ -197,14 +207,20 @@ function SampleDetail({
         type="button"
         variant="secondary"
         size="sm"
-        onClick={() => {
+        onClick={(e) => {
           if (audioBufferForAudioFileData) {
             stopPreviewPlayback.current = playAudioBuffer(
               audioBufferForAudioFileData
             );
+          } else {
+            const button = e.currentTarget;
+            // wait until the audio buffer is ready then simulate a click event
+            // to retry this handler. it's important that we simulate another
+            // click because otherwise iOS won't let us play the audio later.
+            setCallbackOnAudioBuffer({ fn: () => button.click() });
           }
         }}
-        disabled={isAudioBusy || !audioBufferForAudioFileData}
+        disabled={isAudioBusy}
       >
         Play audio preview
       </Button>
@@ -245,7 +261,9 @@ function SampleDetail({
       <br />
       <br />
       <Form.Group>
-        <Form.Label>Quality bit depth ({sample.metadata.qualityBitDepth})</Form.Label>
+        <Form.Label>
+          Quality bit depth ({sample.metadata.qualityBitDepth})
+        </Form.Label>
         <Form.Range
           value={sample.metadata.qualityBitDepth}
           step={1}

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Form, Button, Collapse } from 'react-bootstrap';
 import { styled } from 'tonami';
 
@@ -6,6 +6,12 @@ import { getAudioBufferForAudioFileData } from './utils/audioData.js';
 import { captureAudio, getAudioInputDevices } from './utils/recording.js';
 
 const SampleRecordDiv = styled.div({});
+
+const captureDevicePreferenceKey = 'capture_device_preference';
+
+/**
+ * @typedef {{ deviceId: string; channelCount: number }} CaptureDevicePreference
+ */
 
 /**
  * @type {Map<string, import('./utils/recording').AudioDeviceInfoContainer> | null}
@@ -20,6 +26,11 @@ let cachedCaptureDevices = null;
  * @param {RecordingCallback} onRecordFinish
  */
 function useMediaRecording(onRecordFinish) {
+  const restoringCaptureDevice = useRef(
+    /** @type {CaptureDevicePreference | null} */ (
+      JSON.parse(localStorage.getItem(captureDevicePreferenceKey) || 'null')
+    )
+  );
   const [captureDevices, setCaptureDevices] = useState(cachedCaptureDevices);
   const [accessState, setAccessState] = useState(
     /** @type {'pending' | 'ok' | 'denied' | 'unavailable'} */ (
@@ -42,7 +53,25 @@ function useMediaRecording(onRecordFinish) {
           setCaptureDevices(
             new Map(devices.map((d) => [d.device.deviceId, d]))
           );
-          setSelectedCaptureDeviceId((id) => id || devices[0].device.deviceId);
+          setSelectedCaptureDeviceId((id) => {
+            if (id) {
+              restoringCaptureDevice.current = null;
+              return id;
+            }
+            if (
+              restoringCaptureDevice.current &&
+              devices.find(
+                ({ device }) =>
+                  /** @type {NonNullable<CaptureDevicePreference>} */ (
+                    restoringCaptureDevice.current
+                  ).deviceId === device.deviceId
+              )
+            ) {
+              return restoringCaptureDevice.current.deviceId;
+            }
+            restoringCaptureDevice.current = null;
+            return devices[0].device.deviceId;
+          });
         }
       })
       .catch((err) => {
@@ -71,9 +100,31 @@ function useMediaRecording(onRecordFinish) {
     const selectedDeviceInfo =
       captureDevices && captureDevices.get(selectedCaptureDeviceId);
     if (selectedDeviceInfo) {
-      setSelectedChannelCount(selectedDeviceInfo.channelsAvailable);
+      if (
+        restoringCaptureDevice.current &&
+        restoringCaptureDevice.current.deviceId ===
+          selectedDeviceInfo.device.deviceId &&
+        restoringCaptureDevice.current.channelCount <=
+          selectedDeviceInfo.channelsAvailable
+      ) {
+        setSelectedChannelCount(restoringCaptureDevice.current.channelCount);
+      } else {
+        setSelectedChannelCount(selectedDeviceInfo.channelsAvailable);
+      }
+      restoringCaptureDevice.current = null;
     }
   }, [captureDevices, selectedCaptureDeviceId]);
+  useEffect(() => {
+    if (selectedCaptureDeviceId) {
+      localStorage.setItem(
+        captureDevicePreferenceKey,
+        JSON.stringify({
+          deviceId: selectedCaptureDeviceId,
+          channelCount: selectedChannelCount,
+        })
+      );
+    }
+  }, [selectedCaptureDeviceId, selectedChannelCount]);
   /**
    * @typedef {'ready' | 'capturing' | 'finalizing' | 'error'} CaptureState
    */

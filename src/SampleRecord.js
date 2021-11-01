@@ -333,57 +333,57 @@ function SampleRecord({ onRecordFinish }) {
                   <br />
                 </div>
               </Collapse>
-              <br />
-              <Button
-                style={{ width: 250 }}
-                type="button"
-                variant="secondary"
-                onClick={(e) => {
-                  const input = e.currentTarget.querySelector('input');
-                  if (input && e.target !== input) {
-                    input.click();
-                  }
-                }}
-              >
-                Or import an audio file
-                <input
-                  hidden
-                  type="file"
-                  accept="audio/*,.wav,.mp3,.ogg"
-                  onChange={(e) => {
-                    if (e.target.files && e.target.files.length) {
-                      const file = e.target.files[0];
-                      file.arrayBuffer().then(async (arrayBuffer) => {
-                        const audioFileBuffer = new Uint8Array(arrayBuffer);
-                        /**
-                         * @type {AudioBuffer}
-                         */
-                        let audioBuffer;
-                        try {
-                          audioBuffer = await getAudioBufferForAudioFileData(
-                            audioFileBuffer
-                          );
-                        } catch (err) {
-                          alert('Unsupported audio format detected');
-                          return;
-                        }
-                        if (audioBuffer.length > 10 * audioBuffer.sampleRate) {
-                          alert(
-                            'Please select an audio file no more than 10 seconds long'
-                          );
-                          return;
-                        }
-                        onRecordFinish(audioFileBuffer, file);
-                      });
-                    }
-                  }}
-                />
-              </Button>
             </>
           )}
         </div>
       )}
       {(captureState === 'error' && recordingError) || null}
+      <br />
+      <Button
+        style={{ width: 250 }}
+        type="button"
+        variant="secondary"
+        onClick={(e) => {
+          const input = e.currentTarget.querySelector('input');
+          if (input && e.target !== input) {
+            input.click();
+          }
+        }}
+      >
+        Or import an audio file
+        <input
+          hidden
+          type="file"
+          accept="audio/*,.wav,.mp3,.ogg"
+          onChange={(e) => {
+            if (e.target.files && e.target.files.length) {
+              const file = e.target.files[0];
+              file.arrayBuffer().then(async (arrayBuffer) => {
+                const audioFileBuffer = new Uint8Array(arrayBuffer);
+                /**
+                 * @type {AudioBuffer}
+                 */
+                let audioBuffer;
+                try {
+                  audioBuffer = await getAudioBufferForAudioFileData(
+                    audioFileBuffer
+                  );
+                } catch (err) {
+                  alert('Unsupported audio format detected');
+                  return;
+                }
+                if (audioBuffer.length > 10 * audioBuffer.sampleRate) {
+                  alert(
+                    'Please select an audio file no more than 10 seconds long'
+                  );
+                  return;
+                }
+                onRecordFinish(audioFileBuffer, file);
+              });
+            }
+          }}
+        />
+      </Button>
     </SampleRecordDiv>
   );
 }

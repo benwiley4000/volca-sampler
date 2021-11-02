@@ -354,20 +354,30 @@ export class SampleContainer {
    */
   static async getAllMetadataFromStore() {
     /**
-     * @type {Promise<[string, SampleMetadata]>[]}
+     * @type {Map<string, SampleMetadata>}
+     */
+    const sampleMetadata = new Map();
+    /**
+     * @type {Promise<void>[]}
      */
     const upgradePromises = [];
     await sampleMetadataStore.iterate((metadata, id) => {
       if (metadata) {
         upgradePromises.push(
-          upgradeMetadata(metadata).then((upgradedMetadata) => [
-            id,
-            upgradedMetadata,
-          ])
+          upgradeMetadata(metadata)
+            .then((upgradedMetadata) => {
+              sampleMetadata.set(id, upgradedMetadata);
+            })
+            .catch((err) => {
+              console.error(err);
+              console.warn(
+                `Failed to upgrade metadata "${id}" (${metadata.name}); ignoring.`
+              );
+            })
         );
       }
     });
-    const sampleMetadata = new Map(await Promise.all(upgradePromises));
+    await Promise.all(upgradePromises);
     return sampleMetadata;
   }
 

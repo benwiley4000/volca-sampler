@@ -1,51 +1,34 @@
 import React from 'react';
-import { styled } from 'tonami';
 
-const Title = styled.h1({
-  display: 'flex',
-  alignItems: 'center',
-  padding: '2rem 1rem 1rem',
-  marginBottom: '0px',
-  backgroundColor: '#f3f3f3',
-  borderBottom: '1px solid #ccc',
-  position: 'sticky',
-  top: 0
-});
-
-const MenuIcon = styled.span({
-  marginRight: '1rem',
-  cursor: 'pointer'
-});
-
-const TitleText = styled.span({
-  color: 'red',
-  whiteSpace: 'nowrap',
-});
-
-const TitleR = styled.span({
-  textTransform: 'uppercase',
-  textDecoration: 'underline',
-});
-
-const TitleGraphic = styled.img({
-  height: '1.6em',
-  paddingLeft: '1rem',
-});
+import classes from './Header.module.scss';
 
 /**
- * @param {{ onMenuOpen: () => void }} props
+ * @param {{ onMenuOpen: () => void, onHeaderClick: () => void }} props
  * @returns
  */
-function Header({ onMenuOpen }) {
+function Header({ onMenuOpen, onHeaderClick }) {
   return (
-    <Title>
-      <MenuIcon onClick={onMenuOpen}>☰</MenuIcon>
-      <TitleText>
+    <h1 className={classes.title} onClick={onHeaderClick}>
+      <span
+        className={classes.menuIcon}
+        onClick={(e) => {
+          e.stopPropagation();
+          onMenuOpen();
+        }}
+      >
+        ☰
+      </span>
+      <span className={classes.titleText} data-text="Volca Sample">
         Volca Sample
-        <TitleR>r</TitleR>
-      </TitleText>
-      <TitleGraphic src="volca_sample.png" alt="" />
-    </Title>
+        <span className={classes.titleR}>r</span>
+      </span>
+      <div className={classes.titleGraphicContainer}>
+        <img className={classes.titleGraphic} src="volca_sample.png" alt="" />
+        <img className={classes.titleGraphic} src="volca_sample.png" alt="" />
+        <img className={classes.titleGraphic} src="volca_sample.png" alt="" />
+        <img className={classes.titleGraphic} src="volca_sample.png" alt="" />
+      </div>
+    </h1>
   );
 }
 

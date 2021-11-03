@@ -52,6 +52,10 @@ import { getSamplePeaksForSourceFile } from './utils/waveform.js';
  * @property {number} [scaleCoefficient]
  */
 
+/**
+ * @typedef {SampleMetadataUpdate | ((metadata: SampleMetadata) => SampleMetadataUpdate)} SampleMetadataUpdateArg
+ */
+
 const audioFileDataStore = localforage.createInstance({
   name: 'audio_file_data',
   driver: localforage.INDEXEDDB,
@@ -230,11 +234,13 @@ export class SampleContainer {
     }
 
     /**
-     * @param {SampleMetadataUpdate} update
+     * @param {SampleMetadataUpdateArg} updater
      * @returns {SampleContainer}
      */
-    update(update) {
+    update(updater) {
       const { id, metadata } = this;
+      const update =
+        typeof updater === 'function' ? updater(metadata) : updater;
       // if the update doesn't change anything, return the existing container
       if (
         /** @type {(keyof SampleMetadataUpdate)[]} */ (

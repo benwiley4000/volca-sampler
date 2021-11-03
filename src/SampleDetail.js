@@ -4,13 +4,11 @@ import { styled } from 'tonami';
 import WaveformEdit from './WaveformEdit.js';
 import {
   getTargetWavForSample,
-  getSourceAudioBuffer,
   getAudioBufferForAudioFileData,
   useAudioPlaybackContext,
 } from './utils/audioData.js';
 import { SampleContainer } from './store.js';
 import VolcaTransferControl from './VolcaTransferControl.js';
-import { getSamplePeaksForSourceFile } from './utils/waveform.js';
 import {
   Container,
   Dropdown,
@@ -43,7 +41,7 @@ function downloadBlob(blob, filename) {
 /**
  * @param {{
  *   sample: import('./store').SampleContainer | null;
- *   onSampleUpdate: (id: string, update: import('./store').SampleMetadataUpdate) => void;
+ *   onSampleUpdate: (id: string, update: import('./store').SampleMetadataUpdateArg) => void;
  *   onSampleDuplicate: (id: string) => void;
  *   onSampleDelete: (id: string) => void;
  * }} props
@@ -54,19 +52,6 @@ function SampleDetail({
   onSampleDuplicate,
   onSampleDelete,
 }) {
-  const [sampleLength, setSampleLength] = useState(0);
-  const sourceFileId = sample && sample.metadata.sourceFileId;
-  useEffect(() => {
-    // when the source file id changes, we should temporarily set the sample
-    // length to 0 so that we can't make changes to the trimming until the
-    // sample length is loaded
-    setSampleLength(0);
-    if (sourceFileId) {
-      getSourceAudioBuffer(sourceFileId, false).then((audioBuffer) =>
-        setSampleLength(audioBuffer.length)
-      );
-    }
-  }, [sourceFileId]);
   const sampleId = sample && sample.id;
   /**
    * @type {(scaleCoefficient: number) => void}
@@ -77,16 +62,16 @@ function SampleDetail({
     [sampleId, onSampleUpdate]
   );
   /**
-   * @type {(trimFrames: (old: [number, number]) => [number, number]) => void}
+   * @type {(updateTrimFrames: (old: [number, number]) => [number, number]) => void}
    */
   const handleSetTrimFrames = useCallback(
-    (trimFrames) =>
+    (updateTrimFrames) =>
       sampleId &&
       onSampleUpdate(sampleId, (metadata) => ({
         ...metadata,
         trim: {
           ...metadata.trim,
-          frames: trimFrames(metadata.trim.frames),
+          frames: updateTrimFrames(metadata.trim.frames),
         },
       })),
     [sampleId, onSampleUpdate]
@@ -137,11 +122,6 @@ function SampleDetail({
   if (!sample) {
     return null;
   }
-  const maxTrimStart = Math.max(
-    0,
-    sampleLength - sample.metadata.trim.frames[1]
-  );
-  const maxTrimEnd = Math.max(0, sampleLength - sample.metadata.trim.frames[0]);
   return (
     <Container fluid="sm">
       <h2>

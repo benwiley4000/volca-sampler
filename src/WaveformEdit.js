@@ -6,7 +6,6 @@ import React, {
   useState,
 } from 'react';
 import { Button } from 'react-bootstrap';
-import { styled } from 'tonami';
 
 import {
   getSourceAudioBuffer,
@@ -18,16 +17,9 @@ import { getPeaksForSamples } from './utils/waveform.js';
 import WaveformDisplay from './WaveformDisplay.js';
 
 /**
- * @type {React.FC<React.InputHTMLAttributes<HTMLInputElement>>}
- */
-const ScaleInput = styled.input({
-  position: 'absolute',
-});
-
-/**
  * @typedef {{
  *   sample: import('./store').SampleContainer;
- *   onSetTrimFrames: (trimFrames: [number, number]) => void;
+ *   onSetTrimFrames: (updateTrimFrames: (old: [number, number]) => [number, number]) => void;
  *   onSetScaleCoefficient: (scaleCoefficient: number) => void;
  * }} WaveformEditProps
  */
@@ -89,7 +81,7 @@ function WaveformEdit({
     }
   }, [scaleCoefficient, maxCoefficient, onSetScaleCoefficient]);
 
-  const peakTarget = scaleCoefficient * trimmedSamplePeak;
+  // const peakTarget = scaleCoefficient * trimmedSamplePeak;
 
   const trimPixels = useMemo(() => {
     if (!monoSamples.length || !pixelWidth) {
@@ -132,7 +124,7 @@ function WaveformEdit({
     }
     function onMouseUp() {
       leftTrimLastX.current = null;
-      delete document.body.style.userSelect;
+      document.body.style.userSelect = 'unset';
     }
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onMouseUp);
@@ -171,7 +163,7 @@ function WaveformEdit({
     }
     function onMouseUp() {
       rightTrimLastX.current = null;
-      delete document.body.style.userSelect;
+      document.body.style.userSelect = 'unset';
     }
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onMouseUp);
@@ -203,22 +195,7 @@ function WaveformEdit({
           </Button>
         </div>
       </div>
-      {/* <ScaleInput
-        type="range"
-        disabled={trimmedSamplePeak === 0}
-        value={peakTarget}
-        min={0.1}
-        max={1}
-        step={0.01}
-        onChange={(e) => {
-          if (trimmedSamplePeak === 0) {
-            return;
-          }
-          onSetScaleCoefficient(Number(e.target.value) / trimmedSamplePeak);
-        }}
-      /> */}
-      <div style={{ position: 'relative',   backgroundColor: '#f3f3f3',
- }}>
+      <div style={{ position: 'relative', backgroundColor: '#f3f3f3' }}>
         <WaveformDisplay
           waveformRef={waveformRef}
           peaks={peaks}
@@ -278,7 +255,7 @@ function WaveformEdit({
               if (diff) {
                 const ratio = diff / pixelWidth;
                 const frameDiff = Math.round(monoSamples.length * ratio);
-                onSetTrimFrames(trimFrames => {
+                onSetTrimFrames((trimFrames) => {
                   let newValue = trimFrames[0] + frameDiff;
                   // enforce at least 2000 sample selection
                   newValue = Math.min(
@@ -353,7 +330,7 @@ function WaveformEdit({
               if (diff) {
                 const ratio = diff / pixelWidth;
                 const frameDiff = Math.round(monoSamples.length * ratio);
-                onSetTrimFrames(trimFrames => {
+                onSetTrimFrames((trimFrames) => {
                   let newValue = trimFrames[1] + frameDiff;
                   // enforce at least 2000 sample selection
                   newValue = Math.min(

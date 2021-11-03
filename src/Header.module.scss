@@ -1,0 +1,79 @@
+.title {
+  display: flex;
+  align-items: center;
+  padding: 2rem 1rem 1rem;
+  margin-bottom: 0px;
+  background-color: #f3f3f3;
+  border-bottom: 1px solid #ccc;
+  position: sticky;
+  top: 0;
+  cursor: pointer;
+}
+
+.menuIcon {
+  margin-right: 1rem;
+  cursor: pointer;
+}
+
+.titleText {
+  color: var(--bs-primary);
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  position: relative;
+  &::after {
+    position: absolute;
+    content: attr(data-text);
+    z-index: -1;
+    // only half of the stroke will be visible
+    -webkit-text-stroke: 2px #000;
+  }
+}
+
+.titleR {
+  font-size: 1.3em;
+  text-decoration: underline;
+  text-decoration-color: #000;
+  position: relative;
+  &::after {
+    position: absolute;
+    left: 0;
+    content: 'r';
+    z-index: -1;
+    // only half of the stroke will be visible
+    -webkit-text-stroke: 2px #000;
+  }
+}
+
+.titleGraphicContainer {
+  margin-left: 1.5rem;
+  height: 1.6em;
+  position: relative;
+  transition: transform 0.1s;
+  .title:hover & {
+    transform: rotate(-5deg) scale(1.1);
+  }
+  display: none;
+  @media screen and (min-width: 400px) {
+    display: unset;
+  }
+}
+
+.titleGraphic {
+  height: 100%;
+  top: 0;
+  left: 0;
+  position: absolute;
+  --x: -1px;
+  --y: -1px;
+  filter: drop-shadow(var(--x) var(--y) 0px #000);
+  &:nth-child(1) {
+    position: unset;
+  }
+  &:nth-child(even) {
+    --x: 2px;
+  }
+  &:first-child, &:last-child {
+    --y: 2px;
+  }
+}

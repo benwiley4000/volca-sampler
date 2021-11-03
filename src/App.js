@@ -107,12 +107,13 @@ function App() {
     setFocusedSampleId(sample.id);
   }, []);
 
-
   const handleSampleUpdate = useCallback((id, update) => {
     setUserSamples((samples) => {
       const sample = samples.get(id);
       if (sample && sample instanceof SampleContainer.Mutable) {
-        const updated = sample.update(typeof update === 'function' ? update(sample.metadata) : update);
+        const updated = sample.update(
+          typeof update === 'function' ? update(sample.metadata) : update
+        );
         if (updated !== sample) {
           return new Map(samples).set(sample.id, updated);
         }
@@ -135,7 +136,10 @@ function App() {
 
   return (
     <div>
-      <Header onMenuOpen={() => setSidebarOpen(true)} />
+      <Header
+        onMenuOpen={() => setSidebarOpen(true)}
+        onHeaderClick={() => setFocusedSampleId(null)}
+      />
       <Offcanvas show={sidebarOpen} onHide={() => setSidebarOpen(false)}>
         <Offcanvas.Header closeButton />
         <Offcanvas.Body>

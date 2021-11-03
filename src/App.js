@@ -107,13 +107,14 @@ function App() {
     setFocusedSampleId(sample.id);
   }, []);
 
-  const handleSampleUpdate = useCallback((id, update) => {
+  /**
+   * @type {(id: string, update: import('./store').SampleMetadataUpdateArg) => void}
+   */
+  const handleSampleUpdate = useCallback((id, updater) => {
     setUserSamples((samples) => {
       const sample = samples.get(id);
       if (sample && sample instanceof SampleContainer.Mutable) {
-        const updated = sample.update(
-          typeof update === 'function' ? update(sample.metadata) : update
-        );
+        const updated = sample.update(updater);
         if (updated !== sample) {
           return new Map(samples).set(sample.id, updated);
         }

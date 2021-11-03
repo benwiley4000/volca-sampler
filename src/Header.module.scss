@@ -18,11 +18,12 @@
 .titleText {
   color: var(--bs-primary);
   white-space: nowrap;
-  display: flex;
+  line-height: 1em;
   align-items: center;
   position: relative;
   &::after {
     position: absolute;
+    left: 0;
     content: attr(data-text);
     z-index: -1;
     // only half of the stroke will be visible
@@ -32,6 +33,7 @@
 
 .titleR {
   font-size: 1.3em;
+  vertical-align: middle;
   text-decoration: underline;
   text-decoration-color: #000;
   position: relative;
@@ -73,7 +75,8 @@
   &:nth-child(even) {
     --x: 2px;
   }
-  &:first-child, &:last-child {
+  &:first-child,
+  &:last-child {
     --y: 2px;
   }
 }

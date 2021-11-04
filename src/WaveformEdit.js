@@ -218,7 +218,7 @@ function WaveformEdit({
               bottom: 0,
               right: 0,
               width: 2,
-              background: 'black',
+              background: 'var(--bs-dark)',
             }}
           />
           <div
@@ -228,7 +228,7 @@ function WaveformEdit({
               right: 0,
               width: 20,
               height: 20,
-              background: 'black',
+              background: 'var(--bs-dark)',
               borderRadius: 10,
               transform: 'translateX(50%)',
             }}
@@ -293,7 +293,7 @@ function WaveformEdit({
               bottom: 0,
               left: 0,
               width: 2,
-              background: 'black',
+              background: 'var(--bs-dark)',
             }}
           />
           <div
@@ -303,7 +303,7 @@ function WaveformEdit({
               left: 0,
               width: 20,
               height: 20,
-              background: 'black',
+              background: 'var(--bs-dark)',
               borderRadius: 10,
               transform: 'translateX(-50%)',
             }}

@@ -104,9 +104,26 @@ export function clampOutOfBoundsValues(samples) {
 }
 
 /**
+ * @param {Float32Array[]} sampleChannels
+ * @returns {Float32Array}
+ */
+export function interleaveSampleChannels(sampleChannels) {
+  const channelCount = sampleChannels.length;
+  const sampleCount = sampleChannels[0].length;
+  const interleaved = new Float32Array(channelCount * sampleCount);
+  for (let sampleIndex = 0; sampleIndex < interleaved.length; sampleIndex++) {
+    const i = channelCount * sampleIndex;
+    for (let ch = 0; ch < channelCount; ch++) {
+      interleaved[i + ch] = sampleChannels[ch][sampleIndex];
+    }
+  }
+  return interleaved;
+}
+
+/**
  * @param {Float32Array} samples
  */
-function convertSamplesTo16Bit(samples) {
+export function convertSamplesTo16Bit(samples) {
   const samples16 = new Int16Array(samples.length);
   const signedMax = 2 ** 15;
   for (let i = 0; i < samples.length; i++) {

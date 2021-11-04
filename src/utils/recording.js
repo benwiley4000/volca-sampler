@@ -1,8 +1,10 @@
-import { WaveFile } from 'wavefile';
+import getWavFileHeaders from 'wav-headers';
 
 import {
   clampOutOfBoundsValues,
+  convertSamplesTo16Bit,
   getAudioContextConstructor,
+  interleaveSampleChannels,
 } from './audioData.js';
 import { SAMPLE_RATE } from './constants.js';
 
@@ -222,18 +224,22 @@ export async function captureAudio({ deviceId, channelCount, onStart }) {
   const maxSamples = timeLimitSeconds * audioContext.sampleRate;
   let samplesRecorded = 0;
   /**
-   * @type {Float32Array[][]}
+   * @type {Int16Array[]}
    */
   const recordedChunks = Array(channelCount).fill([]);
 
   /**
    * @param {Float32Array[]} audioChannels
    */
-  function onData(audioChannels) {
+  async function onData(audioChannels) {
     /**
      * @type {number}
      */
     let sampleCount = 0;
+    /**
+     * @type {Float32Array[]}
+     */
+    const floatChunksByChannel = [];
     for (let channel = 0; channel < channelCount; channel++) {
       const chunk = audioChannels[channel];
       const chunkSize = chunk.length;
@@ -245,12 +251,16 @@ export async function captureAudio({ deviceId, channelCount, onStart }) {
       if (!sampleCount) {
         sampleCount = chunkSliced.length;
       }
-      recordedChunks[channel].push(chunkSliced);
+      floatChunksByChannel.push(chunkSliced);
     }
+    const interleaved = interleaveSampleChannels(floatChunksByChannel);
+    const interleaved16 = convertSamplesTo16Bit(interleaved);
+    recordedChunks.push(interleaved16);
+    // TODO: update listener with floatChunksByChannel
     samplesRecorded += sampleCount;
     // should never be >, but just in case we did something wrong we use >=
     if (samplesRecorded >= maxSamples) {
-      onFinish();
+      await onFinish();
       stop();
     }
   }
@@ -272,27 +282,30 @@ export async function captureAudio({ deviceId, channelCount, onStart }) {
   });
   let finished = false;
 
-  function onFinish() {
+  async function onFinish() {
     if (finished) {
       return;
     }
 
     // create wav file
     try {
-      const samples = recordedChunks.map((chunks) => {
-        const merged = new Float32Array(
-          chunks.reduce((len, chunk) => len + chunk.length, 0)
-        );
-        let offset = 0;
-        for (const chunk of chunks) {
-          merged.set(chunk, offset);
-          offset += chunk.length;
-        }
-        return merged;
+      const blob = new Blob(recordedChunks);
+      const arrayBuffer = await blob.arrayBuffer();
+      const samplesInterleaved16 = new Float32Array(arrayBuffer);
+      const wavHeader = getWavFileHeaders({
+        channels: channelCount,
+        sampleRate: audioContext.sampleRate,
+        bitDepth: 16,
+        dataLength: samplesInterleaved16.byteLength,
       });
-      const wav = new WaveFile();
-      wav.fromScratch(samples.length, audioContext.sampleRate, '32f', samples);
-      const wavBuffer = wav.toBuffer();
+      const wavBuffer = new Uint8Array(
+        wavHeader.length + samplesInterleaved16.byteLength
+      );
+      wavBuffer.set(wavHeader);
+      wavBuffer.set(
+        new Uint8Array(samplesInterleaved16.buffer),
+        wavHeader.length
+      );
       onDone(wavBuffer);
     } catch (err) {
       onError(err);

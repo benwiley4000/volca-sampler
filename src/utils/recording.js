@@ -2,7 +2,7 @@ import getWavFileHeaders from 'wav-headers';
 
 import {
   clampOutOfBoundsValues,
-  convertSamplesTo16Bit,
+  convertFloatSamplesToPcm,
   getAudioContextConstructor,
   interleaveSampleChannels,
 } from './audioData.js';
@@ -239,7 +239,7 @@ export async function captureAudio({ deviceId, channelCount, onStart }) {
   const maxSamples = timeLimitSeconds * audioContext.sampleRate;
   let samplesRecorded = 0;
   /**
-   * @type {Int16Array[]}
+   * @type {Int32Array[]}
    */
   const recordedChunks = Array(channelCount).fill([]);
 
@@ -269,8 +269,8 @@ export async function captureAudio({ deviceId, channelCount, onStart }) {
       floatChunksByChannel.push(chunkSliced);
     }
     const interleaved = interleaveSampleChannels(floatChunksByChannel);
-    const interleaved16 = convertSamplesTo16Bit(interleaved);
-    recordedChunks.push(interleaved16);
+    const interleavedPcm = convertFloatSamplesToPcm(interleaved, 32);
+    recordedChunks.push(interleavedPcm);
     // TODO: update listener with floatChunksByChannel
     samplesRecorded += sampleCount;
     // should never be >, but just in case we did something wrong we use >=
@@ -306,21 +306,17 @@ export async function captureAudio({ deviceId, channelCount, onStart }) {
     try {
       const blob = new Blob(recordedChunks);
       const arrayBuffer = await blob.arrayBuffer();
-      const samplesInterleaved16 = new Float32Array(arrayBuffer);
       const wavHeader = getWavFileHeaders({
         channels: channelCount,
         sampleRate: audioContext.sampleRate,
-        bitDepth: 16,
-        dataLength: samplesInterleaved16.byteLength,
+        bitDepth: 32,
+        dataLength: arrayBuffer.byteLength,
       });
       const wavBuffer = new Uint8Array(
-        wavHeader.length + samplesInterleaved16.byteLength
+        wavHeader.length + arrayBuffer.byteLength
       );
       wavBuffer.set(wavHeader);
-      wavBuffer.set(
-        new Uint8Array(samplesInterleaved16.buffer),
-        wavHeader.length
-      );
+      wavBuffer.set(new Uint8Array(arrayBuffer), wavHeader.length);
       onDone(wavBuffer);
     } catch (err) {
       onError(err);

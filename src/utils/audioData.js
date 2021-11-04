@@ -121,15 +121,20 @@ export function interleaveSampleChannels(sampleChannels) {
 }
 
 /**
+ * @template {32 | 16} B
  * @param {Float32Array} samples
+ * @param {B} bitsPerSample
+ * @returns {B extends 16 ? Int16Array : B extends 32 ? Int32Array : never}
  */
-export function convertSamplesTo16Bit(samples) {
-  const samples16 = new Int16Array(samples.length);
-  const signedMax = 2 ** 15;
+export function convertFloatSamplesToPcm(samples, bitsPerSample) {
+  const ArrayConstructor = bitsPerSample === 16 ? Int16Array : Int32Array;
+  const pcmSamples = new ArrayConstructor(samples.length);
+  const signedMax = 2 ** (bitsPerSample - 1);
   for (let i = 0; i < samples.length; i++) {
-    samples16[i] = samples[i] === 1 ? signedMax - 1 : signedMax * samples[i];
+    pcmSamples[i] = samples[i] === 1 ? signedMax - 1 : signedMax * samples[i];
   }
-  return samples16;
+  // @ts-ignore (it works!)
+  return pcmSamples;
 }
 
 export function getAudioContextConstructor() {
@@ -226,7 +231,7 @@ export async function getTargetWavForSample(sampleContainer) {
   if (qualityBitDepth < 16) {
     applyQualityBitDepthToSamples(samples, qualityBitDepth);
   }
-  const samples16 = convertSamplesTo16Bit(samples);
+  const samples16 = convertFloatSamplesToPcm(samples, 16);
   const samplesByteLength = samples16.length * 2;
   /**
    * @type {Uint8Array}

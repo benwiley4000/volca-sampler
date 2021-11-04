@@ -65,9 +65,24 @@ export async function getAudioInputDevices() {
         ({ deviceId }) => device.deviceId === deviceId
       )
     ).label;
-    const channelsAvailable =
-      (stream.getAudioTracks()[0].getCapabilities().channelCount || {}).max ||
-      1;
+    let channelsAvailable = 1;
+    {
+      const track = stream.getAudioTracks()[0];
+      // not widely available yet according to MDN.. but at least
+      // seems to work with all the latest versions of each browser
+      const channelCountSetting =
+        /** @type {MediaTrackSettings & { channelCount: number }} */ (
+          track.getSettings()
+        ).channelCount;
+      if (channelCountSetting) {
+        channelsAvailable = channelCountSetting;
+      } else if (track.getCapabilities) {
+        // we'll try this as backup if it exists since the API is older, but
+        // also not supported by Firefox
+        channelsAvailable =
+          (track.getCapabilities().channelCount || {}).max || channelsAvailable;
+      }
+    }
     for (const track of stream.getTracks()) {
       track.stop();
     }

@@ -46,6 +46,9 @@
   &::after {
     position: absolute;
     left: 0;
+    // top/transform apparently needed by firefox but not chrome
+    top: 50%;
+    transform: translateY(-50%);
     content: 'r';
     z-index: -1;
     // only half of the stroke will be visible

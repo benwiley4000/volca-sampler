@@ -1,4 +1,6 @@
 .title {
+  --stroke-width: 1px;
+  --stroke-color: var(--bs-dark);
   display: flex;
   align-items: center;
   padding: 2rem 1rem 1rem;
@@ -20,6 +22,10 @@
   white-space: nowrap;
   line-height: 1em;
   align-items: center;
+  transition: transform 0.1s;
+  .title:hover & {
+    transform: scale(1.05);
+  }
   position: relative;
   &::after {
     position: absolute;
@@ -27,7 +33,7 @@
     content: attr(data-text);
     z-index: -1;
     // only half of the stroke will be visible
-    -webkit-text-stroke: 2px #000;
+    -webkit-text-stroke: calc(2 * var(--stroke-width)) var(--stroke-color);
   }
 }
 
@@ -35,7 +41,7 @@
   font-size: 1.3em;
   vertical-align: middle;
   text-decoration: underline;
-  text-decoration-color: #000;
+  text-decoration-color: var(--stroke-color);
   position: relative;
   &::after {
     position: absolute;
@@ -43,14 +49,42 @@
     content: 'r';
     z-index: -1;
     // only half of the stroke will be visible
-    -webkit-text-stroke: 2px #000;
+    -webkit-text-stroke: calc(2 * var(--stroke-width)) var(--stroke-color);
   }
 }
 
-.titleGraphicContainer {
+.titleStarburst {
+  z-index: -2;
+  width: 0;
+  height: 0;
+  position: absolute;
+  pointer-events: none;
+  top: 50%;
+  left: 50%;
+  transform: scale(0);
+  transition: transform 0.1s;
+  .title:hover & {
+    transform: scale(3, 1);
+  }
+  & > span {
+    --rotation: 0deg;
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform: translateY(-50%) rotate(var(--rotation));
+    transform-origin: center left;
+    width: 0;
+    height: 0;
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+    border-left: 75px solid gold;
+  }
+}
+
+.titleGraphic {
   margin-left: 1.5rem;
   height: 1.6em;
-  position: relative;
+  filter: url(#outline);
   transition: transform 0.1s;
   .title:hover & {
     transform: rotate(-5deg) scale(1.1);
@@ -58,25 +92,5 @@
   display: none;
   @media screen and (min-width: 400px) {
     display: unset;
-  }
-}
-
-.titleGraphic {
-  height: 100%;
-  top: 0;
-  left: 0;
-  position: absolute;
-  --x: -1px;
-  --y: -1px;
-  filter: drop-shadow(var(--x) var(--y) 0px #000);
-  &:nth-child(1) {
-    position: unset;
-  }
-  &:nth-child(even) {
-    --x: 2px;
-  }
-  &:first-child,
-  &:last-child {
-    --y: 2px;
   }
 }

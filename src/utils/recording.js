@@ -246,7 +246,7 @@ export async function captureAudio({ deviceId, channelCount, onStart }) {
   /**
    * @param {Float32Array[]} audioChannels
    */
-  async function onData(audioChannels) {
+  function onData(audioChannels) {
     /**
      * @type {number}
      */
@@ -275,7 +275,6 @@ export async function captureAudio({ deviceId, channelCount, onStart }) {
     samplesRecorded += sampleCount;
     // should never be >, but just in case we did something wrong we use >=
     if (samplesRecorded >= maxSamples) {
-      await onFinish();
       stop();
     }
   }

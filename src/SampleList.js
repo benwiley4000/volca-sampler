@@ -1,19 +1,8 @@
 import React, { useLayoutEffect, useRef, useState } from 'react';
+import { ListGroup } from 'react-bootstrap';
 import { styled } from 'tonami';
 import { WAVEFORM_CACHED_WIDTH } from './utils/waveform';
 import WaveformDisplay from './WaveformDisplay';
-
-const SampleListContainer = styled.div({
-  height: '100%',
-  overflow: 'auto',
-});
-
-const SampleListItemDiv = styled.div({
-  padding: '0.5rem',
-  border: '1px solid grey',
-  cursor: 'pointer',
-  backgroundColor: ({ $selected }) => ($selected ? '#f3f3f3' : 'unset'),
-});
 
 const WaveformContainer = styled.div({
   width: `${WAVEFORM_CACHED_WIDTH}px`,
@@ -28,11 +17,10 @@ const SampleListItem = React.memo(
    * @param {{
    *   sample: import('./store').SampleContainer;
    *   selected: boolean;
-   *   readonly: boolean;
    *   onSampleSelect: (id: string) => void;
    * }} props
    */
-  ({ sample, selected, readonly, onSampleSelect }) => {
+  ({ sample, selected, onSampleSelect }) => {
     /**
      * @type {React.RefObject<HTMLDivElement>}
      */
@@ -68,10 +56,9 @@ const SampleListItem = React.memo(
       return () => observer.disconnect();
     }, []);
     return (
-      <SampleListItemDiv
-        selected={selected}
-        data-disabled={readonly}
-        onClick={() => !readonly && onSampleSelect(sample.id)}
+      <ListGroup.Item
+        active={selected}
+        onClick={() => onSampleSelect(sample.id)}
       >
         <div>{sample.metadata.name}</div>
         <WaveformContainer ref={waveformContainerRef}>
@@ -82,7 +69,7 @@ const SampleListItem = React.memo(
             />
           )}
         </WaveformContainer>
-      </SampleListItemDiv>
+      </ListGroup.Item>
     );
   }
 );
@@ -91,36 +78,25 @@ const SampleListItem = React.memo(
  * @param {{
  *   samples: Map<string, import('./store').SampleContainer>;
  *   selectedSampleId: string | null;
- *   readonly: boolean;
- *   onNewSample: () => void;
  *   onSampleSelect: (id: string) => void;
  * }} props
  */
 function SampleList({
   samples,
   selectedSampleId,
-  readonly,
-  onNewSample,
   onSampleSelect,
 }) {
   return (
-    <SampleListContainer>
-      <SampleListItemDiv
-        data-disabled={readonly}
-        onClick={() => !readonly && onNewSample()}
-      >
-        New Sample
-      </SampleListItemDiv>
+    <ListGroup variant="flush">
       {[...samples].map(([id, sample]) => (
         <SampleListItem
           key={id}
           sample={sample}
           selected={id === selectedSampleId}
-          readonly={readonly}
           onSampleSelect={onSampleSelect}
         />
       ))}
-    </SampleListContainer>
+    </ListGroup>
   );
 }
 

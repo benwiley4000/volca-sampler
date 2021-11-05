@@ -1,12 +1,25 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { styled } from 'tonami';
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
+import { Form, Button, Collapse } from 'react-bootstrap';
 
-import { getAudioBufferForAudioFileData } from './utils/audioData.js';
+import {
+  findSamplePeak,
+  getAudioBufferForAudioFileData,
+} from './utils/audioData.js';
 import { captureAudio, getAudioInputDevices } from './utils/recording.js';
 
-const SampleRecordDiv = styled.div({
-  padding: '2rem',
-});
+import classes from './SampleRecord.module.scss';
+
+const captureDevicePreferenceKey = 'capture_device_preference';
+
+/**
+ * @typedef {{ deviceId: string; channelCount: number }} CaptureDevicePreference
+ */
 
 /**
  * @type {Map<string, import('./utils/recording').AudioDeviceInfoContainer> | null}
@@ -14,17 +27,19 @@ const SampleRecordDiv = styled.div({
 let cachedCaptureDevices = null;
 
 /**
- * @typedef {{
- *   onRecordStart: () => void;
- *   onRecordFinish: (audioFileBuffer: Uint8Array, userFile?: File) => void;
- *   onRecordError: (err: unknown) => void;
- * }} MediaRecordingCallbacks
+ * @typedef {(audioFileBuffer: Uint8Array, userFile?: File) => void} RecordingCallback
  */
 
 /**
- * @param {MediaRecordingCallbacks} callbacks
+ * @param {(channels: Float32Array[]) => void} onRecordUpdate
+ * @param {RecordingCallback} onRecordFinish
  */
-function useMediaRecording({ onRecordStart, onRecordFinish, onRecordError }) {
+function useMediaRecording(onRecordUpdate, onRecordFinish) {
+  const restoringCaptureDevice = useRef(
+    /** @type {CaptureDevicePreference | null} */ (
+      JSON.parse(localStorage.getItem(captureDevicePreferenceKey) || 'null')
+    )
+  );
   const [captureDevices, setCaptureDevices] = useState(cachedCaptureDevices);
   const [accessState, setAccessState] = useState(
     /** @type {'pending' | 'ok' | 'denied' | 'unavailable'} */ (
@@ -37,16 +52,41 @@ function useMediaRecording({ onRecordStart, onRecordFinish, onRecordError }) {
     setAccessState('ok');
   }, [captureDevices]);
   const refreshCaptureDevices = useCallback(() => {
+    let cancelled = false;
     getAudioInputDevices()
       .then((devices) => {
+        if (cancelled) {
+          return;
+        }
         if (devices.length) {
           setCaptureDevices(
             new Map(devices.map((d) => [d.device.deviceId, d]))
           );
-          setSelectedCaptureDeviceId((id) => id || devices[0].device.deviceId);
+          setSelectedCaptureDeviceId((id) => {
+            if (id) {
+              restoringCaptureDevice.current = null;
+              return id;
+            }
+            if (
+              restoringCaptureDevice.current &&
+              devices.find(
+                ({ device }) =>
+                  /** @type {NonNullable<CaptureDevicePreference>} */ (
+                    restoringCaptureDevice.current
+                  ).deviceId === device.deviceId
+              )
+            ) {
+              return restoringCaptureDevice.current.deviceId;
+            }
+            restoringCaptureDevice.current = null;
+            return devices[0].device.deviceId;
+          });
         }
       })
       .catch((err) => {
+        if (cancelled) {
+          return;
+        }
         if (err instanceof DOMException) {
           if (err.name === 'NotAllowedError') {
             setAccessState('denied');
@@ -59,33 +99,79 @@ function useMediaRecording({ onRecordStart, onRecordFinish, onRecordError }) {
         }
         throw err;
       });
+    return () => {
+      cancelled = true;
+    };
   }, []);
-  useEffect(refreshCaptureDevices, [refreshCaptureDevices]);
   const [selectedChannelCount, setSelectedChannelCount] = useState(1);
   useEffect(() => {
     const selectedDeviceInfo =
       captureDevices && captureDevices.get(selectedCaptureDeviceId);
     if (selectedDeviceInfo) {
-      setSelectedChannelCount(selectedDeviceInfo.channelsAvailable);
+      if (
+        restoringCaptureDevice.current &&
+        restoringCaptureDevice.current.deviceId ===
+          selectedDeviceInfo.device.deviceId &&
+        restoringCaptureDevice.current.channelCount <=
+          selectedDeviceInfo.channelsAvailable
+      ) {
+        setSelectedChannelCount(restoringCaptureDevice.current.channelCount);
+      } else {
+        setSelectedChannelCount(selectedDeviceInfo.channelsAvailable);
+      }
+      restoringCaptureDevice.current = null;
     }
   }, [captureDevices, selectedCaptureDeviceId]);
+  useEffect(() => {
+    if (selectedCaptureDeviceId) {
+      localStorage.setItem(
+        captureDevicePreferenceKey,
+        JSON.stringify({
+          deviceId: selectedCaptureDeviceId,
+          channelCount: selectedChannelCount,
+        })
+      );
+    }
+  }, [selectedCaptureDeviceId, selectedChannelCount]);
+  /**
+   * @typedef {'ready' | 'capturing' | 'finalizing' | 'error'} CaptureState
+   */
+  const [captureState, setCaptureState] = useState(
+    /** @type {CaptureState} */ ('ready')
+  );
   const [recordingError, setRecordingError] = useState(
     /** @type {unknown} */ (null)
   );
-  useEffect(() => {
-    if (recordingError) {
-      onRecordError(recordingError);
-    }
-  }, [recordingError, onRecordError]);
   // to be set when recording is started
-  const [stop, setStop] = useState({ fn: () => {} });
+  const [stop, setStop] = useState({
+    /**
+     * @param {boolean} [cancel]
+     */
+    fn(cancel) {},
+  });
+  const [sampleRate, setSampleRate] = useState(Infinity);
+  const [maxSamples, setMaxSamples] = useState(0);
   const handleBeginRecording = useCallback(async () => {
+    let cancelled = false;
     const { mediaRecording, stop } = await captureAudio({
       deviceId: selectedCaptureDeviceId,
       channelCount: selectedChannelCount,
-      onStart: onRecordStart,
+      onStart: (sampleRate, timeLimitSeconds) => {
+        const maxSamples = timeLimitSeconds * sampleRate;
+        setSampleRate(sampleRate);
+        setMaxSamples(maxSamples);
+        setCaptureState('capturing');
+      },
+      onUpdate: onRecordUpdate,
     });
-    setStop({ fn: stop });
+    setStop({
+      fn(cancel) {
+        stop();
+        if (cancel) {
+          cancelled = true;
+        }
+      },
+    });
     /**
      * @type {Uint8Array}
      */
@@ -94,13 +180,19 @@ function useMediaRecording({ onRecordStart, onRecordFinish, onRecordError }) {
       wavBuffer = await mediaRecording;
     } catch (err) {
       setRecordingError(err);
+      setCaptureState('error');
       return;
     }
-    onRecordFinish(wavBuffer);
+    if (cancelled) {
+      setCaptureState('ready');
+    } else {
+      setCaptureState('finalizing');
+      onRecordFinish(wavBuffer);
+    }
   }, [
     selectedCaptureDeviceId,
     selectedChannelCount,
-    onRecordStart,
+    onRecordUpdate,
     onRecordFinish,
   ]);
   return {
@@ -108,7 +200,10 @@ function useMediaRecording({ onRecordStart, onRecordFinish, onRecordError }) {
     accessState,
     selectedCaptureDeviceId,
     selectedChannelCount,
+    captureState,
     recordingError,
+    sampleRate,
+    maxSamples,
     refreshCaptureDevices,
     setSelectedCaptureDeviceId,
     setSelectedChannelCount,
@@ -117,131 +212,353 @@ function useMediaRecording({ onRecordStart, onRecordFinish, onRecordError }) {
   };
 }
 
-/**
- * @typedef {'ready' | 'capturing' | 'preparing' | 'error' | 'idle'} CaptureState
- */
+const groupPixelWidth = 3;
 
 /**
- * @param {{ captureState: CaptureState } & MediaRecordingCallbacks} props
+ * @param {{
+ *   canvas: HTMLCanvasElement;
+ *   peaks: Float32Array;
+ *   scaleCoefficient: number;
+ * }} opts
  */
-function SampleRecord({ captureState, ...callbacks }) {
+function drawRecordingPeaks({ canvas, peaks, scaleCoefficient }) {
+  const barColor = '#fff';
+  const ctx = /** @type {CanvasRenderingContext2D} */ (canvas.getContext('2d'));
+  ctx.imageSmoothingEnabled = false;
+  const { width, height } = canvas;
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = barColor;
+  for (let i = 0; i < peaks.length; i++) {
+    const peak = peaks[i];
+    if (peak === 0) {
+      continue;
+    }
+    const basePeakHeight = height * peak; // float
+    // make the bar always at least 1px tall to avoid empty sections
+    const scaledPeakHeight = Math.max(
+      Math.round(scaleCoefficient * basePeakHeight),
+      2
+    );
+    ctx.fillRect(
+      i * groupPixelWidth,
+      height - scaledPeakHeight,
+      groupPixelWidth - 1,
+      scaledPeakHeight
+    );
+  }
+}
+
+/**
+ * @param {{ onRecordFinish: RecordingCallback }} props
+ */
+function SampleRecord({ onRecordFinish }) {
+  /**
+   * @type {React.RefObject<HTMLCanvasElement>}
+   */
+  const recordButtonCanvasRef = useRef(null);
+
+  const groupSizeRef = useRef(0);
+  const peaksRef = useRef(new Float32Array());
+  const peakOffsetRef = useRef(0);
+  // each item in the queue is an array of channel chunks,
+  // each channel chunk being a Float32Array
+  const updatesQueueRef = useRef(/** @type {Float32Array[][]} */ ([]));
+  const sampleRateRef = useRef(Infinity);
+  const samplesRecordedRef = useRef(0);
+
+  const [secondsRecorded, setSecondsRecorded] = useState(0);
+
+  /**
+   * @type {(channels: Float32Array[]) => Promise<void>}
+   */
+  const onRecordUpdate = useCallback(async (channels) => {
+    const groupSize = groupSizeRef.current;
+    const peaks = peaksRef.current;
+    const updatesQueue = updatesQueueRef.current;
+
+    updatesQueue.push(channels);
+    samplesRecordedRef.current += channels[0].length;
+    setSecondsRecorded(
+      Math.floor(samplesRecordedRef.current / sampleRateRef.current)
+    );
+
+    const queuedSampleCount = updatesQueue.reduce(
+      (c, [{ length }]) => c + length,
+      0
+    );
+    if (queuedSampleCount >= groupSize) {
+      const samplesByChannel = await Promise.all(
+        channels
+          .map((_, ch) =>
+            updatesQueue.reduce((chunks, update) => [...chunks, update[ch]], [])
+          )
+          .map(async (chunks) => {
+            const arrayBuffer = await new Blob(chunks).arrayBuffer();
+            return new Float32Array(arrayBuffer);
+          })
+      );
+      const peaksByChannel = samplesByChannel.map((samples) =>
+        findSamplePeak(new Float32Array(samples.buffer, 0, groupSize))
+      );
+      peaks[peakOffsetRef.current] = Math.max(...peaksByChannel);
+      drawRecordingPeaks({
+        canvas: /** @type {HTMLCanvasElement} */ (
+          recordButtonCanvasRef.current
+        ),
+        peaks,
+        scaleCoefficient: 0.3,
+      });
+      peakOffsetRef.current++;
+      updatesQueueRef.current = [
+        samplesByChannel.map((samples) => samples.slice(groupSize)),
+      ];
+    }
+  }, []);
+
   const {
     captureDevices,
     accessState,
     selectedCaptureDeviceId,
     selectedChannelCount,
+    captureState,
     recordingError,
+    maxSamples,
+    sampleRate,
     refreshCaptureDevices,
     setSelectedCaptureDeviceId,
     setSelectedChannelCount,
     beginRecording,
     stopRecording,
-  } = useMediaRecording(callbacks);
+  } = useMediaRecording(onRecordUpdate, onRecordFinish);
+  sampleRateRef.current = sampleRate;
+
+  useEffect(() => {
+    const canvas = recordButtonCanvasRef.current;
+    if (canvas) {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+    }
+  }, [accessState]);
+
+  // set up empty recording waveform data when recording starts
+  useLayoutEffect(() => {
+    const canvas = recordButtonCanvasRef.current;
+    if (!canvas) {
+      return;
+    }
+    if (captureState !== 'finalizing') {
+      /** @type {CanvasRenderingContext2D} */ (
+        canvas.getContext('2d')
+      ).clearRect(0, 0, canvas.width, canvas.height);
+    }
+    if (captureState === 'capturing' && maxSamples) {
+      groupSizeRef.current = Math.floor(
+        (groupPixelWidth * maxSamples) / recordButtonCanvasRef.current.width
+      );
+      peaksRef.current = new Float32Array(
+        Math.floor(maxSamples / groupSizeRef.current)
+      );
+      peakOffsetRef.current = 0;
+      updatesQueueRef.current = [];
+      sampleRateRef.current = Infinity;
+      samplesRecordedRef.current = 0;
+      setSecondsRecorded(0);
+    }
+  }, [maxSamples, captureState]);
+
+  const [showingCaptureConfig, setShowingCaptureConfig] = useState(false);
+
+  useEffect(() => {
+    if (showingCaptureConfig) {
+      refreshCaptureDevices();
+    }
+  }, [showingCaptureConfig, refreshCaptureDevices]);
 
   return (
-    <SampleRecordDiv>
+    <div>
       {accessState === 'denied' ? (
         <p>
           Looks like you didn't grant access to your audio input device. Please
           give Volca Sampler access, then{' '}
-          <button type="button" onClick={refreshCaptureDevices}>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={refreshCaptureDevices}
+          >
             try again
-          </button>
+          </Button>
         </p>
       ) : accessState === 'unavailable' ? (
         <p>
           Volca Sampler couldn't find any audio input devices. Please connect
           one, then{' '}
-          <button type="button" onClick={refreshCaptureDevices}>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={refreshCaptureDevices}
+          >
             try again
-          </button>
+          </Button>
         </p>
       ) : (
         <div>
-          <label>
-            Capture Device
-            <select
-              value={selectedCaptureDeviceId}
-              onChange={(e) => setSelectedCaptureDeviceId(e.target.value)}
-            >
-              {captureDevices && accessState === 'ok' ? (
-                [...captureDevices].map(([id, { device }]) => (
-                  <option key={id} value={id}>
-                    {device.label || id}
-                  </option>
-                ))
-              ) : (
-                <option value="" disabled>
-                  Loading devices...
-                </option>
-              )}
-            </select>
-          </label>
-          <label>
-            Channel count
-            <select
-              value={selectedChannelCount}
-              onChange={(e) => setSelectedChannelCount(Number(e.target.value))}
-            >
-              {[1, 2].map((count) => (
-                <option
-                  key={count}
-                  value={count}
-                  disabled={
-                    !captureDevices ||
-                    !captureDevices.has(selectedCaptureDeviceId) ||
-                    /** @type {import('./utils/recording').AudioDeviceInfoContainer} */ (
-                      captureDevices.get(selectedCaptureDeviceId)
-                    ).channelsAvailable < count
-                  }
-                >
-                  {count}
-                </option>
-              ))}
-            </select>
-          </label>
+          <h2>Send a new sound to your Volca Sample!</h2>
+          <Button
+            className={classes.recordButton}
+            type="button"
+            variant={captureState === 'capturing' ? 'danger' : 'primary'}
+            size="lg"
+            style={{ width: 250 }}
+            onClick={
+              captureState === 'capturing'
+                ? () => stopRecording()
+                : beginRecording
+            }
+            disabled={captureState === 'finalizing'}
+          >
+            <canvas ref={recordButtonCanvasRef} />
+            <span className={classes.mainText}>
+              {['capturing', 'finalizing'].includes(captureState)
+                ? 'Finished recording'
+                : 'Start recording'}
+            </span>
+            {['capturing', 'finalizing'].includes(captureState) && (
+              <span className={classes.timeRecorded}>
+                0:{String(secondsRecorded).padStart(2, '0')}
+              </span>
+            )}
+          </Button>
+          {['capturing', 'finalizing'].includes(captureState) ? (
+            <>
+              <br />
+              <br />
+              <Button
+                style={{ width: 250 }}
+                size="sm"
+                type="button"
+                variant="secondary"
+                onClick={() => stopRecording(true)}
+              >
+                Cancel
+              </Button>
+            </>
+          ) : (
+            <>
+              <br />
+              <Button
+                style={{ width: 250 }}
+                type="button"
+                variant="light"
+                size="sm"
+                onClick={() => setShowingCaptureConfig((showing) => !showing)}
+              >
+                Audio input settings {showingCaptureConfig ? '▲' : '▼'}
+              </Button>
+              <Collapse in={showingCaptureConfig}>
+                <div>
+                  <Form.Group>
+                    <Form.Label>Capture Device</Form.Label>
+                    <Form.Select
+                      style={{ width: 250 }}
+                      value={selectedCaptureDeviceId}
+                      onChange={(e) =>
+                        setSelectedCaptureDeviceId(e.target.value)
+                      }
+                    >
+                      {captureDevices && accessState === 'ok' ? (
+                        [...captureDevices].map(([id, { device }]) => (
+                          <option key={id} value={id}>
+                            {device.label || id}
+                          </option>
+                        ))
+                      ) : (
+                        <option value="" disabled>
+                          Loading devices...
+                        </option>
+                      )}
+                    </Form.Select>
+                  </Form.Group>
+                  <Form.Group>
+                    <Form.Label>Input channels</Form.Label>
+                    <Form.Select
+                      style={{ width: 250 }}
+                      value={selectedChannelCount}
+                      onChange={(e) =>
+                        setSelectedChannelCount(Number(e.target.value))
+                      }
+                    >
+                      {[1, 2].map((count) => (
+                        <option
+                          key={count}
+                          value={count}
+                          disabled={
+                            !captureDevices ||
+                            !captureDevices.has(selectedCaptureDeviceId) ||
+                            /** @type {import('./utils/recording').AudioDeviceInfoContainer} */ (
+                              captureDevices.get(selectedCaptureDeviceId)
+                            ).channelsAvailable < count
+                          }
+                        >
+                          {count === 1 ? 'Mono' : 'Stereo (summed to mono)'}
+                        </option>
+                      ))}
+                    </Form.Select>
+                  </Form.Group>
+                  <br />
+                </div>
+              </Collapse>
+            </>
+          )}
         </div>
       )}
-      <button
+      {(captureState === 'error' && recordingError) || null}
+      <br />
+      <Button
+        style={{ width: 250 }}
         type="button"
-        onClick={captureState === 'capturing' ? stopRecording : beginRecording}
-        disabled={captureState === 'preparing'}
-      >
-        {['capturing', 'preparing'].includes(captureState) ? 'Stop' : 'Record'}
-      </button>
-      <input
-        type="file"
-        accept="audio/*,.wav,.mp3,.ogg"
-        onChange={(e) => {
-          if (e.target.files && e.target.files.length) {
-            const file = e.target.files[0];
-            file.arrayBuffer().then(async (arrayBuffer) => {
-              const audioFileBuffer = new Uint8Array(arrayBuffer);
-              /**
-               * @type {AudioBuffer}
-               */
-              let audioBuffer;
-              try {
-                audioBuffer = await getAudioBufferForAudioFileData(
-                  audioFileBuffer
-                );
-              } catch (err) {
-                alert('Unsupported audio format detected');
-                return;
-              }
-              if (audioBuffer.length > 10 * audioBuffer.sampleRate) {
-                alert(
-                  'Please select an audio file no more than 10 seconds long'
-                );
-                return;
-              }
-              callbacks.onRecordFinish(audioFileBuffer, file);
-            });
+        variant="secondary"
+        onClick={(e) => {
+          const input = e.currentTarget.querySelector('input');
+          if (input && e.target !== input) {
+            input.click();
           }
         }}
-      />
-      {(captureState === 'error' && recordingError) || null}
-    </SampleRecordDiv>
+      >
+        Or import an audio file
+        <input
+          hidden
+          type="file"
+          accept="audio/*,.wav,.mp3,.ogg"
+          onChange={(e) => {
+            if (e.target.files && e.target.files.length) {
+              const file = e.target.files[0];
+              file.arrayBuffer().then(async (arrayBuffer) => {
+                const audioFileBuffer = new Uint8Array(arrayBuffer);
+                /**
+                 * @type {AudioBuffer}
+                 */
+                let audioBuffer;
+                try {
+                  audioBuffer = await getAudioBufferForAudioFileData(
+                    audioFileBuffer
+                  );
+                } catch (err) {
+                  alert('Unsupported audio format detected');
+                  return;
+                }
+                if (audioBuffer.length > 10 * audioBuffer.sampleRate) {
+                  alert(
+                    'Please select an audio file no more than 10 seconds long'
+                  );
+                  return;
+                }
+                onRecordFinish(audioFileBuffer, file);
+              });
+            }
+          }}
+        />
+      </Button>
+    </div>
   );
 }
 

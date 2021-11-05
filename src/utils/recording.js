@@ -1,8 +1,10 @@
-import { WaveFile } from 'wavefile';
+import getWavFileHeaders from 'wav-headers';
 
 import {
   clampOutOfBoundsValues,
+  convertFloatSamplesToPcm,
   getAudioContextConstructor,
+  interleaveSampleChannels,
 } from './audioData.js';
 import { SAMPLE_RATE } from './constants.js';
 
@@ -63,9 +65,24 @@ export async function getAudioInputDevices() {
         ({ deviceId }) => device.deviceId === deviceId
       )
     ).label;
-    // TODO: validate this is the right way to get the channel count..
-    // maybe we have to wait for data available or something else?
-    const channelsAvailable = stream.getAudioTracks().length;
+    let channelsAvailable = 1;
+    {
+      const track = stream.getAudioTracks()[0];
+      // not widely available yet according to MDN.. but at least
+      // seems to work with all the latest versions of each browser
+      const channelCountSetting =
+        /** @type {MediaTrackSettings & { channelCount: number }} */ (
+          track.getSettings()
+        ).channelCount;
+      if (channelCountSetting) {
+        channelsAvailable = channelCountSetting;
+      } else if (track.getCapabilities) {
+        // we'll try this as backup if it exists since the API is older, but
+        // also not supported by Firefox
+        channelsAvailable =
+          (track.getCapabilities().channelCount || {}).max || channelsAvailable;
+      }
+    }
     for (const track of stream.getTracks()) {
       track.stop();
     }
@@ -186,11 +203,17 @@ async function createPcmRecorderNode(options) {
  * @param {{
  *   deviceId: string;
  *   channelCount: number;
- *   onStart: () => void;
+ *   onStart: (sampleRate: number, timeLimitSeconds: number) => void;
+ *   onUpdate: (floatChunksByChannel: Float32Array[]) => void;
  * }} options
  * @returns {Promise<{ mediaRecording: Promise<Uint8Array>; stop: () => void }>}
  */
-export async function captureAudio({ deviceId, channelCount, onStart }) {
+export async function captureAudio({
+  deviceId,
+  channelCount,
+  onStart,
+  onUpdate,
+}) {
   const stream = await navigator.mediaDevices.getUserMedia({
     // TODO: support more recording configuration options
     // https://developer.mozilla.org/en-US/docs/Web/API/MediaTrackConstraints#properties_of_audio_tracks
@@ -216,13 +239,13 @@ export async function captureAudio({ deviceId, channelCount, onStart }) {
   });
   mediaStreamSourceNode.connect(recorderNode);
   recorderNode.connect(audioContext.destination);
-  onStart();
-
   const timeLimitSeconds = 10;
+  onStart(audioContext.sampleRate, timeLimitSeconds);
+
   const maxSamples = timeLimitSeconds * audioContext.sampleRate;
   let samplesRecorded = 0;
   /**
-   * @type {Float32Array[][]}
+   * @type {Int32Array[]}
    */
   const recordedChunks = Array(channelCount).fill([]);
 
@@ -234,6 +257,10 @@ export async function captureAudio({ deviceId, channelCount, onStart }) {
      * @type {number}
      */
     let sampleCount = 0;
+    /**
+     * @type {Float32Array[]}
+     */
+    const floatChunksByChannel = [];
     for (let channel = 0; channel < channelCount; channel++) {
       const chunk = audioChannels[channel];
       const chunkSize = chunk.length;
@@ -245,14 +272,17 @@ export async function captureAudio({ deviceId, channelCount, onStart }) {
       if (!sampleCount) {
         sampleCount = chunkSliced.length;
       }
-      recordedChunks[channel].push(chunkSliced);
+      floatChunksByChannel.push(chunkSliced);
     }
+    const interleaved = interleaveSampleChannels(floatChunksByChannel);
+    const interleavedPcm = convertFloatSamplesToPcm(interleaved, 32);
+    recordedChunks.push(interleavedPcm);
     samplesRecorded += sampleCount;
     // should never be >, but just in case we did something wrong we use >=
     if (samplesRecorded >= maxSamples) {
-      onFinish();
       stop();
     }
+    onUpdate(floatChunksByChannel);
   }
 
   /**
@@ -272,27 +302,26 @@ export async function captureAudio({ deviceId, channelCount, onStart }) {
   });
   let finished = false;
 
-  function onFinish() {
+  async function onFinish() {
     if (finished) {
       return;
     }
 
     // create wav file
     try {
-      const samples = recordedChunks.map((chunks) => {
-        const merged = new Float32Array(
-          chunks.reduce((len, chunk) => len + chunk.length, 0)
-        );
-        let offset = 0;
-        for (const chunk of chunks) {
-          merged.set(chunk, offset);
-          offset += chunk.length;
-        }
-        return merged;
+      const blob = new Blob(recordedChunks);
+      const arrayBuffer = await blob.arrayBuffer();
+      const wavHeader = getWavFileHeaders({
+        channels: channelCount,
+        sampleRate: audioContext.sampleRate,
+        bitDepth: 32,
+        dataLength: arrayBuffer.byteLength,
       });
-      const wav = new WaveFile();
-      wav.fromScratch(samples.length, audioContext.sampleRate, '32f', samples);
-      const wavBuffer = wav.toBuffer();
+      const wavBuffer = new Uint8Array(
+        wavHeader.length + arrayBuffer.byteLength
+      );
+      wavBuffer.set(wavHeader);
+      wavBuffer.set(new Uint8Array(arrayBuffer), wavHeader.length);
       onDone(wavBuffer);
     } catch (err) {
       onError(err);

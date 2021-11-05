@@ -1,0 +1,8 @@
+$h1-font-size: 3.5rem;
+$primary: #e50b0b;
+
+:root {
+  --bs-primary-darkened: #{darken($primary, 20%)};
+}
+
+@import "~bootstrap/scss/bootstrap";

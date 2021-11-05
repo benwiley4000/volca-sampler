@@ -1,6 +1,7 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { styled } from 'tonami';
 
+import Header from './Header.js';
 import SampleList from './SampleList.js';
 import SampleDetail from './SampleDetail.js';
 import SampleRecord from './SampleRecord.js';
@@ -10,39 +11,11 @@ import {
   storeAudioSourceFile,
 } from './store.js';
 import { getSamplePeaksForSourceFile } from './utils/waveform.js';
-
-const Title = styled.h1({
-  display: 'flex',
-  alignItems: 'center',
-  padding: '2rem',
-  paddingBottom: '0px',
-  marginBottom: '0px',
-});
-
-const TitleText = styled.span({
-  color: 'red',
-});
-
-const TitleR = styled.span({
-  textTransform: 'uppercase',
-  textDecoration: 'underline',
-});
-
-const TitleGraphic = styled.img({
-  height: '1.6em',
-  paddingLeft: '1rem',
-});
+import { Accordion, ListGroup, Offcanvas } from 'react-bootstrap';
 
 const MainLayout = styled.div({
   padding: '2rem',
   display: 'flex',
-  height: '100%',
-});
-
-const SampleListContainer = styled.div({
-  width: '300px',
-  flexShrink: 0,
-  paddingRight: '0.5rem',
   height: '100%',
 });
 
@@ -51,13 +24,15 @@ const FocusedSampleContainer = styled.div({
 });
 
 function App() {
-  const [showingFactorySamples, setShowingFactorySamples] = useState(false);
-  const [samples, setSamples] = useState(
+  const [userSamples, setUserSamples] = useState(
     /** @type {Map<string, SampleContainer>} */ (new Map())
   );
   const [factorySamples, setFactorySamples] = useState(
     /** @type {Map<string, SampleContainer>} */ (new Map())
   );
+  const allSamples = useMemo(() => {
+    return new Map([...userSamples, ...factorySamples]);
+  }, [userSamples, factorySamples]);
   useEffect(() => {
     getFactorySamples().then(setFactorySamples).catch(console.error);
   }, []);
@@ -65,15 +40,11 @@ function App() {
     /** @type {string | null} */ (null)
   );
   const [loadingSamples, setLoadingSamples] = useState(true);
-  const [captureState, setCaptureState] = useState(
-    /** @type {import('./SampleRecord').CaptureState} */ ('idle')
-  );
-  const selectedSampleBank = showingFactorySamples ? factorySamples : samples;
   useEffect(() => {
     // TODO: error handling
     SampleContainer.getAllFromStorage()
       .then((storedSamples) => {
-        setSamples(
+        setUserSamples(
           (samples) =>
             new Map([
               ...samples,
@@ -89,22 +60,11 @@ function App() {
         setLoadingSamples(false);
       });
   }, []);
-  useEffect(() => {
-    if (
-      selectedSampleBank.size &&
-      !(focusedSampleId && selectedSampleBank.has(focusedSampleId))
-    ) {
-      setFocusedSampleId([...selectedSampleBank.values()][0].id);
-    }
-  }, [selectedSampleBank, focusedSampleId]);
-
-  const handleRecordStart = useCallback(() => setCaptureState('capturing'), []);
 
   /**
    * @type {(audioFileBuffer: Uint8Array, userFile?: File) => void}
    * */
   const handleRecordFinish = useCallback(async (audioFileBuffer, userFile) => {
-    setCaptureState('preparing');
     const sourceFileId = await storeAudioSourceFile(audioFileBuffer);
     /**
      * @type {string}
@@ -120,13 +80,16 @@ function App() {
         name = userFile.name;
       }
     } else {
-      name = 'New one';
+      name = 'New sample';
     }
     /**
      * @type {[number, number]}
      */
     const trimFrames = [0, 0];
-    const waveformPeaks = await getSamplePeaksForSourceFile(sourceFileId, trimFrames);
+    const waveformPeaks = await getSamplePeaksForSourceFile(
+      sourceFileId,
+      trimFrames
+    );
     const sample = new SampleContainer.Mutable({
       name,
       sourceFileId,
@@ -140,25 +103,18 @@ function App() {
       },
     });
     await sample.persist();
-    setSamples((samples) => new Map([[sample.id, sample], ...samples]));
-    setShowingFactorySamples(false);
+    setUserSamples((samples) => new Map([[sample.id, sample], ...samples]));
     setFocusedSampleId(sample.id);
-    setCaptureState('idle');
   }, []);
 
   /**
-   * @type {(err: unknown) => void}
-   * */
-  const handleRecordError = useCallback((err) => {
-    console.error(err);
-    setCaptureState('error');
-  }, []);
-
-  const handleSampleUpdate = useCallback((id, update) => {
-    setSamples((samples) => {
+   * @type {(id: string, update: import('./store').SampleMetadataUpdateArg) => void}
+   */
+  const handleSampleUpdate = useCallback((id, updater) => {
+    setUserSamples((samples) => {
       const sample = samples.get(id);
       if (sample && sample instanceof SampleContainer.Mutable) {
-        const updated = sample.update(update);
+        const updated = sample.update(updater);
         if (updated !== sample) {
           return new Map(samples).set(sample.id, updated);
         }
@@ -167,62 +123,87 @@ function App() {
     });
   }, []);
 
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const handleSampleSelect = useCallback(
+    /**
+     * @param {string | null} sampleId
+     */
+    (sampleId) => {
+      setFocusedSampleId(sampleId);
+      setSidebarOpen(false);
+    },
+    []
+  );
+
   return (
     <div>
-      <Title>
-        <TitleText>
-          Volca Sample
-          <TitleR>r</TitleR>
-        </TitleText>
-        <TitleGraphic src="volca_sample.png" alt="" />
-      </Title>
+      <Header
+        onMenuOpen={() => setSidebarOpen(true)}
+        onHeaderClick={() => setFocusedSampleId(null)}
+      />
+      <Offcanvas show={sidebarOpen} onHide={() => setSidebarOpen(false)}>
+        <Offcanvas.Header closeButton />
+        <Offcanvas.Body>
+          <ListGroup>
+            <ListGroup.Item
+              as="button"
+              onClick={() => handleSampleSelect(null)}
+            >
+              New Sample
+            </ListGroup.Item>
+            {loadingSamples ? 'Loading...' : null}
+            {!loadingSamples && (
+              <Accordion
+                defaultActiveKey={userSamples.size ? 'user' : 'factory'}
+              >
+                <Accordion.Item eventKey="user">
+                  <Accordion.Header>Your Samples</Accordion.Header>
+                  <Accordion.Body style={{ padding: 0 }}>
+                    <SampleList
+                      samples={userSamples}
+                      selectedSampleId={focusedSampleId}
+                      onSampleSelect={handleSampleSelect}
+                    />
+                  </Accordion.Body>
+                </Accordion.Item>
+                <Accordion.Item eventKey="factory">
+                  <Accordion.Header>Factory Samples</Accordion.Header>
+                  <Accordion.Body style={{ padding: 0 }}>
+                    <SampleList
+                      samples={factorySamples}
+                      selectedSampleId={focusedSampleId}
+                      onSampleSelect={handleSampleSelect}
+                    />
+                  </Accordion.Body>
+                </Accordion.Item>
+              </Accordion>
+            )}
+          </ListGroup>
+        </Offcanvas.Body>
+      </Offcanvas>
       <MainLayout>
-        <select
-          value={JSON.stringify(showingFactorySamples)}
-          onChange={(e) => setShowingFactorySamples(JSON.parse(e.target.value))}
-        >
-          <option value="false">Your Samples</option>
-          <option value="true">Factory Samples</option>
-        </select>
-        <SampleListContainer>
-          {loadingSamples ? 'Loading...' : null}
-          <SampleList
-            samples={selectedSampleBank}
-            selectedSampleId={captureState === 'idle' ? focusedSampleId : null}
-            readonly={['capturing', 'preparing'].includes(captureState)}
-            onNewSample={() => setCaptureState('ready')}
-            onSampleSelect={(id) => {
-              setFocusedSampleId(id);
-              setCaptureState('idle');
-            }}
-          />
-        </SampleListContainer>
         <FocusedSampleContainer>
-          {captureState === 'idle' && (
+          {focusedSampleId && (
             <SampleDetail
-              sample={
-                (focusedSampleId && selectedSampleBank.get(focusedSampleId)) ||
-                null
-              }
+              sample={allSamples.get(focusedSampleId) || null}
               onSampleUpdate={handleSampleUpdate}
               onSampleDuplicate={(id) => {
-                const sample = selectedSampleBank.get(id);
+                const sample = allSamples.get(id);
                 if (sample) {
                   const newSample = sample.duplicate();
-                  setSamples(
+                  setUserSamples(
                     (samples) =>
                       new Map([[newSample.id, newSample], ...samples])
                   );
-                  setShowingFactorySamples(false);
                   // TODO: scroll new sample into view
                   setFocusedSampleId(newSample.id);
                 }
               }}
               onSampleDelete={(id) => {
-                const sample = selectedSampleBank.get(id);
+                const sample = allSamples.get(id);
                 if (sample && sample instanceof SampleContainer.Mutable) {
                   sample.remove();
-                  setSamples((samples) => {
+                  setUserSamples((samples) => {
                     const newSamples = new Map(samples);
                     newSamples.delete(sample.id);
                     return newSamples;
@@ -231,13 +212,8 @@ function App() {
               }}
             />
           )}
-          {captureState !== 'idle' && (
-            <SampleRecord
-              captureState={captureState}
-              onRecordStart={handleRecordStart}
-              onRecordFinish={handleRecordFinish}
-              onRecordError={handleRecordError}
-            />
+          {!focusedSampleId && (
+            <SampleRecord onRecordFinish={handleRecordFinish} />
           )}
         </FocusedSampleContainer>
       </MainLayout>

@@ -5,7 +5,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { styled } from 'tonami';
+import { Button } from 'react-bootstrap';
 
 import {
   getSourceAudioBuffer,
@@ -17,16 +17,9 @@ import { getPeaksForSamples } from './utils/waveform.js';
 import WaveformDisplay from './WaveformDisplay.js';
 
 /**
- * @type {React.FC<React.InputHTMLAttributes<HTMLInputElement>>}
- */
-const ScaleInput = styled.input({
-  position: 'absolute',
-});
-
-/**
  * @typedef {{
  *   sample: import('./store').SampleContainer;
- *   onSetTrimFrames: (trimFrames: [number, number]) => void;
+ *   onSetTrimFrames: (updateTrimFrames: (old: [number, number]) => [number, number]) => void;
  *   onSetScaleCoefficient: (scaleCoefficient: number) => void;
  * }} WaveformEditProps
  */
@@ -53,13 +46,14 @@ function WaveformEdit({
     [sourceAudioBuffer]
   );
 
-  /**
-   * @type {React.RefObject<HTMLElement>}
-   */
-  const waveformRef = useRef(null);
-
+  const [waveformElement, waveformRef] = useState(
+    /** @type {HTMLElement | null} */ (null)
+  );
+  const pixelWidth = useMemo(
+    () => waveformElement && waveformElement.offsetWidth,
+    [waveformElement]
+  );
   const peaks = useMemo(() => {
-    const pixelWidth = waveformRef.current && waveformRef.current.offsetWidth;
     if (!pixelWidth || !monoSamples.length) {
       return {
         positive: new Float32Array(),
@@ -67,7 +61,7 @@ function WaveformEdit({
       };
     }
     return getPeaksForSamples(monoSamples, pixelWidth);
-  }, [monoSamples]);
+  }, [pixelWidth, monoSamples]);
 
   const trimmedSamplePeak = useMemo(() => {
     if (!sourceAudioBuffer) {
@@ -87,43 +81,277 @@ function WaveformEdit({
     }
   }, [scaleCoefficient, maxCoefficient, onSetScaleCoefficient]);
 
-  const peakTarget = scaleCoefficient * trimmedSamplePeak;
+  // const peakTarget = scaleCoefficient * trimmedSamplePeak;
+
+  const trimPixels = useMemo(() => {
+    if (!monoSamples.length || !pixelWidth) {
+      return [0, 0];
+    }
+    const factor = pixelWidth / monoSamples.length;
+    return trimFrames.map((frames) => frames * factor);
+  }, [pixelWidth, monoSamples.length, trimFrames]);
+
+  const leftTrimLastX = useRef(/** @type {number | null} */ (null));
+  const rightTrimLastX = useRef(/** @type {number | null} */ (null));
+
+  useEffect(() => {
+    /** @param {MouseEvent} e */
+    function onMouseMove(e) {
+      if (
+        leftTrimLastX.current === null ||
+        !pixelWidth ||
+        !monoSamples.length
+      ) {
+        return;
+      }
+      const { pageX } = e;
+      const diff = pageX - leftTrimLastX.current;
+      if (diff) {
+        const ratio = diff / pixelWidth;
+        const frameDiff = Math.round(monoSamples.length * ratio);
+        onSetTrimFrames((trimFrames) => {
+          let newValue = trimFrames[0] + frameDiff;
+          // enforce at least 2000 sample selection
+          newValue = Math.min(
+            newValue,
+            monoSamples.length - trimFrames[1] - 2000
+          );
+          newValue = Math.max(newValue, 0);
+          return [newValue, trimFrames[1]];
+        });
+        leftTrimLastX.current = pageX;
+      }
+    }
+    function onMouseUp() {
+      leftTrimLastX.current = null;
+      document.body.style.userSelect = 'unset';
+    }
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+  }, [pixelWidth, monoSamples.length, onSetTrimFrames]);
+  useEffect(() => {
+    /** @param {MouseEvent} e */
+    function onMouseMove(e) {
+      if (
+        rightTrimLastX.current === null ||
+        !pixelWidth ||
+        !monoSamples.length
+      ) {
+        return;
+      }
+      const { pageX } = e;
+      const diff = rightTrimLastX.current - pageX;
+      if (diff) {
+        const ratio = diff / pixelWidth;
+        const frameDiff = Math.round(monoSamples.length * ratio);
+        onSetTrimFrames((trimFrames) => {
+          let newValue = trimFrames[1] + frameDiff;
+          // enforce at least 2000 sample selection
+          newValue = Math.min(
+            newValue,
+            monoSamples.length - trimFrames[0] - 2000
+          );
+          newValue = Math.max(newValue, 0);
+          return [trimFrames[0], newValue];
+        });
+        rightTrimLastX.current = pageX;
+      }
+    }
+    function onMouseUp() {
+      rightTrimLastX.current = null;
+      document.body.style.userSelect = 'unset';
+    }
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+  }, [pixelWidth, monoSamples.length, onSetTrimFrames]);
 
   return (
     <>
-      <ScaleInput
-        type="range"
-        disabled={trimmedSamplePeak === 0}
-        value={peakTarget}
-        min={0.1}
-        max={1}
-        step={0.01}
-        onChange={(e) => {
-          if (trimmedSamplePeak === 0) {
-            return;
-          }
-          onSetScaleCoefficient(Number(e.target.value) / trimmedSamplePeak);
-        }}
-      />
-      <WaveformDisplay
-        waveformRef={waveformRef}
-        peaks={peaks}
-        scaleCoefficient={scaleCoefficient}
-      />
-      <button
-        type="button"
-        disabled={scaleCoefficient === maxCoefficient}
-        onClick={() => onSetScaleCoefficient(maxCoefficient)}
-      >
-        Normalize
-      </button>
-      <button
-        type="button"
-        disabled={scaleCoefficient === 1}
-        onClick={() => onSetScaleCoefficient(1)}
-      >
-        Original level
-      </button>
+      <div style={{ position: 'relative' }}>
+        <div style={{ position: 'absolute', right: 0, bottom: 4 }}>
+          <Button
+            type="button"
+            variant="light"
+            disabled={scaleCoefficient === maxCoefficient}
+            onClick={() => onSetScaleCoefficient(maxCoefficient)}
+          >
+            Normalize
+          </Button>{' '}
+          <Button
+            type="button"
+            variant="light"
+            disabled={scaleCoefficient === 1}
+            onClick={() => onSetScaleCoefficient(1)}
+          >
+            Original level
+          </Button>
+        </div>
+      </div>
+      <div style={{ position: 'relative', backgroundColor: '#f3f3f3' }}>
+        <WaveformDisplay
+          waveformRef={waveformRef}
+          peaks={peaks}
+          scaleCoefficient={scaleCoefficient}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            bottom: 0,
+            left: 0,
+            right: `calc(100% - ${trimPixels[0]}px)`,
+            background: '#f3f3f3',
+          }}
+        >
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              bottom: 0,
+              right: 0,
+              width: 2,
+              background: 'var(--bs-dark)',
+            }}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              top: '100%',
+              right: 0,
+              width: 20,
+              height: 20,
+              background: 'var(--bs-dark)',
+              borderRadius: 10,
+              transform: 'translateX(50%)',
+            }}
+            onTouchStart={(e) => {
+              e.preventDefault();
+              document.body.style.userSelect = 'none';
+              leftTrimLastX.current = e.touches[0].pageX;
+            }}
+            onMouseDown={(e) => {
+              document.body.style.userSelect = 'none';
+              leftTrimLastX.current = e.pageX;
+            }}
+            onTouchMove={(e) => {
+              e.preventDefault();
+              if (
+                leftTrimLastX.current === null ||
+                !pixelWidth ||
+                !monoSamples.length
+              ) {
+                return;
+              }
+              const { pageX } = e.touches[0];
+              const diff = pageX - leftTrimLastX.current;
+              if (diff) {
+                const ratio = diff / pixelWidth;
+                const frameDiff = Math.round(monoSamples.length * ratio);
+                onSetTrimFrames((trimFrames) => {
+                  let newValue = trimFrames[0] + frameDiff;
+                  // enforce at least 2000 sample selection
+                  newValue = Math.min(
+                    newValue,
+                    monoSamples.length - trimFrames[1] - 2000
+                  );
+                  newValue = Math.max(newValue, 0);
+                  return [newValue, trimFrames[1]];
+                });
+                leftTrimLastX.current = pageX;
+              }
+            }}
+            onTouchEnd={() => {
+              leftTrimLastX.current = null;
+            }}
+            onTouchCancel={() => {
+              leftTrimLastX.current = null;
+            }}
+          />
+        </div>
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            bottom: 0,
+            right: 0,
+            left: `calc(100% - ${trimPixels[1]}px)`,
+            background: '#f3f3f3',
+          }}
+        >
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              bottom: 0,
+              left: 0,
+              width: 2,
+              background: 'var(--bs-dark)',
+            }}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              width: 20,
+              height: 20,
+              background: 'var(--bs-dark)',
+              borderRadius: 10,
+              transform: 'translateX(-50%)',
+            }}
+            onTouchStart={(e) => {
+              e.preventDefault();
+              document.body.style.userSelect = 'none';
+              rightTrimLastX.current = e.touches[0].pageX;
+            }}
+            onMouseDown={(e) => {
+              document.body.style.userSelect = 'none';
+              rightTrimLastX.current = e.pageX;
+            }}
+            onTouchMove={(e) => {
+              e.preventDefault();
+              if (
+                rightTrimLastX.current === null ||
+                !pixelWidth ||
+                !monoSamples.length
+              ) {
+                return;
+              }
+              const { pageX } = e.touches[0];
+              const diff = rightTrimLastX.current - pageX;
+              if (diff) {
+                const ratio = diff / pixelWidth;
+                const frameDiff = Math.round(monoSamples.length * ratio);
+                onSetTrimFrames((trimFrames) => {
+                  let newValue = trimFrames[1] + frameDiff;
+                  // enforce at least 2000 sample selection
+                  newValue = Math.min(
+                    newValue,
+                    monoSamples.length - trimFrames[0] - 2000
+                  );
+                  newValue = Math.max(newValue, 0);
+                  return [trimFrames[0], newValue];
+                });
+                rightTrimLastX.current = pageX;
+              }
+            }}
+            onTouchEnd={() => {
+              rightTrimLastX.current = null;
+            }}
+            onTouchCancel={() => {
+              rightTrimLastX.current = null;
+            }}
+          />
+        </div>
+      </div>
     </>
   );
 }

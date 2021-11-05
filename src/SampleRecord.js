@@ -1,11 +1,19 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import { Form, Button, Collapse } from 'react-bootstrap';
-import { styled } from 'tonami';
 
-import { getAudioBufferForAudioFileData } from './utils/audioData.js';
+import {
+  findSamplePeak,
+  getAudioBufferForAudioFileData,
+} from './utils/audioData.js';
 import { captureAudio, getAudioInputDevices } from './utils/recording.js';
 
-const SampleRecordDiv = styled.div({});
+import classes from './SampleRecord.module.scss';
 
 const captureDevicePreferenceKey = 'capture_device_preference';
 
@@ -23,9 +31,10 @@ let cachedCaptureDevices = null;
  */
 
 /**
+ * @param {(channels: Float32Array[]) => void} onRecordUpdate
  * @param {RecordingCallback} onRecordFinish
  */
-function useMediaRecording(onRecordFinish) {
+function useMediaRecording(onRecordUpdate, onRecordFinish) {
   const restoringCaptureDevice = useRef(
     /** @type {CaptureDevicePreference | null} */ (
       JSON.parse(localStorage.getItem(captureDevicePreferenceKey) || 'null')
@@ -141,12 +150,17 @@ function useMediaRecording(onRecordFinish) {
      */
     fn(cancel) {},
   });
+  const [maxSamples, setMaxSamples] = useState(0);
   const handleBeginRecording = useCallback(async () => {
     let cancelled = false;
     const { mediaRecording, stop } = await captureAudio({
       deviceId: selectedCaptureDeviceId,
       channelCount: selectedChannelCount,
-      onStart: () => setCaptureState('capturing'),
+      onStart: (maxSamples) => {
+        setMaxSamples(maxSamples);
+        setCaptureState('capturing');
+      },
+      onUpdate: onRecordUpdate,
     });
     setStop({
       fn(cancel) {
@@ -173,7 +187,12 @@ function useMediaRecording(onRecordFinish) {
       setCaptureState('finalizing');
       onRecordFinish(wavBuffer);
     }
-  }, [selectedCaptureDeviceId, selectedChannelCount, onRecordFinish]);
+  }, [
+    selectedCaptureDeviceId,
+    selectedChannelCount,
+    onRecordUpdate,
+    onRecordFinish,
+  ]);
   return {
     captureDevices,
     accessState,
@@ -181,6 +200,7 @@ function useMediaRecording(onRecordFinish) {
     selectedChannelCount,
     captureState,
     recordingError,
+    maxSamples,
     refreshCaptureDevices,
     setSelectedCaptureDeviceId,
     setSelectedChannelCount,
@@ -189,10 +209,101 @@ function useMediaRecording(onRecordFinish) {
   };
 }
 
+const groupPixelWidth = 2;
+
+/**
+ * @param {{
+ *   canvas: HTMLCanvasElement;
+ *   peaks: Float32Array;
+ *   peakOffset: number;
+ *   scaleCoefficient: number;
+ * }} opts
+ */
+function drawRecordingPeaks({ canvas, peaks, peakOffset, scaleCoefficient }) {
+  const barColor = '#fff';
+  const ctx = /** @type {CanvasRenderingContext2D} */ (canvas.getContext('2d'));
+  const { height } = canvas;
+  ctx.fillStyle = barColor;
+  for (let i = peakOffset; i < peaks.length; i++) {
+    const peak = peaks[i];
+    if (peak === 0) {
+      continue;
+    }
+    const basePeakHeight = height * peak; // float
+    // make the bar always at least 1px tall to avoid empty sections
+    const scaledPeakHeight = Math.max(
+      Math.round(scaleCoefficient * basePeakHeight),
+      1
+    );
+    ctx.fillRect(
+      i * groupPixelWidth,
+      height - scaledPeakHeight,
+      groupPixelWidth - 1,
+      scaledPeakHeight
+    );
+  }
+}
+
 /**
  * @param {{ onRecordFinish: RecordingCallback }} props
  */
 function SampleRecord({ onRecordFinish }) {
+  /**
+   * @type {React.RefObject<HTMLCanvasElement>}
+   */
+  const recordButtonCanvasRef = useRef(null);
+
+  const groupSizeRef = useRef(0);
+  const peaksRef = useRef(new Float32Array());
+  const peakOffsetRef = useRef(0);
+  // each item in the queue is an array of channel chunks,
+  // each channel chunk being a Float32Array
+  const updatesQueueRef = useRef(/** @type {Float32Array[][]} */ ([]));
+
+  /**
+   * @type {(channels: Float32Array[]) => Promise<void>}
+   */
+  const onRecordUpdate = useCallback(async (channels) => {
+    const groupSize = groupSizeRef.current;
+    const peaks = peaksRef.current;
+    const updatesQueue = updatesQueueRef.current;
+
+    updatesQueue.push(channels);
+
+    const queuedSampleCount = updatesQueue.reduce(
+      (c, [{ length }]) => c + length,
+      0
+    );
+    if (queuedSampleCount >= groupSize) {
+      const samplesByChannel = await Promise.all(
+        channels
+          .map((_, ch) =>
+            updatesQueue.reduce((chunks, update) => [...chunks, update[ch]], [])
+          )
+          .map(async (chunks) => {
+            const arrayBuffer = await new Blob(chunks).arrayBuffer();
+            return new Float32Array(arrayBuffer);
+          })
+      );
+      const peaksByChannel = samplesByChannel.map((samples) =>
+        findSamplePeak(new Float32Array(samples.buffer, 0, groupSize))
+      );
+      peaks[peakOffsetRef.current] = Math.max(...peaksByChannel);
+      drawRecordingPeaks({
+        canvas: /** @type {HTMLCanvasElement} */ (
+          recordButtonCanvasRef.current
+        ),
+        peaks,
+        peakOffset: peakOffsetRef.current,
+        scaleCoefficient: 0.3,
+      });
+      peakOffsetRef.current++;
+      updatesQueueRef.current = [
+        samplesByChannel.map((samples) => samples.slice(groupSize)),
+      ];
+    }
+  }, []);
+
   const {
     captureDevices,
     accessState,
@@ -200,17 +311,49 @@ function SampleRecord({ onRecordFinish }) {
     selectedChannelCount,
     captureState,
     recordingError,
+    maxSamples,
     refreshCaptureDevices,
     setSelectedCaptureDeviceId,
     setSelectedChannelCount,
     beginRecording,
     stopRecording,
-  } = useMediaRecording(onRecordFinish);
+  } = useMediaRecording(onRecordUpdate, onRecordFinish);
+
+  useEffect(() => {
+    const canvas = recordButtonCanvasRef.current;
+    if (canvas) {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+    }
+  }, [accessState]);
+
+  // set up empty recording waveform data when recording starts
+  useLayoutEffect(() => {
+    const canvas = recordButtonCanvasRef.current;
+    if (!canvas) {
+      return;
+    }
+    if (captureState !== 'finalizing') {
+      /** @type {CanvasRenderingContext2D} */ (
+        canvas.getContext('2d')
+      ).clearRect(0, 0, canvas.width, canvas.height);
+    }
+    if (captureState === 'capturing' && maxSamples) {
+      groupSizeRef.current = Math.floor(
+        (groupPixelWidth * maxSamples) / recordButtonCanvasRef.current.width
+      );
+      peaksRef.current = new Float32Array(
+        Math.floor(maxSamples / groupSizeRef.current)
+      );
+      peakOffsetRef.current = 0;
+      updatesQueueRef.current = [];
+    }
+  }, [maxSamples, captureState]);
 
   const [showingCaptureConfig, setShowingCaptureConfig] = useState(false);
 
   return (
-    <SampleRecordDiv>
+    <div>
       {accessState === 'denied' ? (
         <p>
           Looks like you didn't grant access to your audio input device. Please
@@ -239,6 +382,7 @@ function SampleRecord({ onRecordFinish }) {
         <div>
           <h2>Send a new sound to your Volca Sample!</h2>
           <Button
+            className={classes.recordButton}
             type="button"
             variant={captureState === 'capturing' ? 'danger' : 'primary'}
             size="lg"
@@ -250,9 +394,12 @@ function SampleRecord({ onRecordFinish }) {
             }
             disabled={captureState === 'finalizing'}
           >
-            {['capturing', 'finalizing'].includes(captureState)
-              ? 'Finished recording'
-              : 'Start recording'}
+            <canvas ref={recordButtonCanvasRef} />
+            <span>
+              {['capturing', 'finalizing'].includes(captureState)
+                ? 'Finished recording'
+                : 'Start recording'}
+            </span>
           </Button>
           {['capturing', 'finalizing'].includes(captureState) ? (
             <>
@@ -384,7 +531,7 @@ function SampleRecord({ onRecordFinish }) {
           }}
         />
       </Button>
-    </SampleRecordDiv>
+    </div>
   );
 }
 

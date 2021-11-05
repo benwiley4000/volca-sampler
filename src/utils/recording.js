@@ -203,7 +203,7 @@ async function createPcmRecorderNode(options) {
  * @param {{
  *   deviceId: string;
  *   channelCount: number;
- *   onStart: (maxSamples: number) => void;
+ *   onStart: (sampleRate: number, timeLimitSeconds: number) => void;
  *   onUpdate: (floatChunksByChannel: Float32Array[]) => void;
  * }} options
  * @returns {Promise<{ mediaRecording: Promise<Uint8Array>; stop: () => void }>}
@@ -240,9 +240,9 @@ export async function captureAudio({
   mediaStreamSourceNode.connect(recorderNode);
   recorderNode.connect(audioContext.destination);
   const timeLimitSeconds = 10;
-  const maxSamples = timeLimitSeconds * audioContext.sampleRate;
-  onStart(maxSamples);
+  onStart(audioContext.sampleRate, timeLimitSeconds);
 
+  const maxSamples = timeLimitSeconds * audioContext.sampleRate;
   let samplesRecorded = 0;
   /**
    * @type {Int32Array[]}

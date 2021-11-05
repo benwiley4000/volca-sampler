@@ -150,13 +150,16 @@ function useMediaRecording(onRecordUpdate, onRecordFinish) {
      */
     fn(cancel) {},
   });
+  const [sampleRate, setSampleRate] = useState(Infinity);
   const [maxSamples, setMaxSamples] = useState(0);
   const handleBeginRecording = useCallback(async () => {
     let cancelled = false;
     const { mediaRecording, stop } = await captureAudio({
       deviceId: selectedCaptureDeviceId,
       channelCount: selectedChannelCount,
-      onStart: (maxSamples) => {
+      onStart: (sampleRate, timeLimitSeconds) => {
+        const maxSamples = timeLimitSeconds * sampleRate;
+        setSampleRate(sampleRate);
         setMaxSamples(maxSamples);
         setCaptureState('capturing');
       },
@@ -200,6 +203,7 @@ function useMediaRecording(onRecordUpdate, onRecordFinish) {
     selectedChannelCount,
     captureState,
     recordingError,
+    sampleRate,
     maxSamples,
     refreshCaptureDevices,
     setSelectedCaptureDeviceId,
@@ -209,23 +213,23 @@ function useMediaRecording(onRecordUpdate, onRecordFinish) {
   };
 }
 
-const groupPixelWidth = 2;
+const groupPixelWidth = 3;
 
 /**
  * @param {{
  *   canvas: HTMLCanvasElement;
  *   peaks: Float32Array;
- *   peakOffset: number;
  *   scaleCoefficient: number;
  * }} opts
  */
-function drawRecordingPeaks({ canvas, peaks, peakOffset, scaleCoefficient }) {
+function drawRecordingPeaks({ canvas, peaks, scaleCoefficient }) {
   const barColor = '#fff';
   const ctx = /** @type {CanvasRenderingContext2D} */ (canvas.getContext('2d'));
   ctx.imageSmoothingEnabled = false;
-  const { height } = canvas;
+  const { width, height } = canvas;
+  ctx.clearRect(0, 0, width, height);
   ctx.fillStyle = barColor;
-  for (let i = peakOffset; i < peaks.length; i++) {
+  for (let i = 0; i < peaks.length; i++) {
     const peak = peaks[i];
     if (peak === 0) {
       continue;
@@ -234,7 +238,7 @@ function drawRecordingPeaks({ canvas, peaks, peakOffset, scaleCoefficient }) {
     // make the bar always at least 1px tall to avoid empty sections
     const scaledPeakHeight = Math.max(
       Math.round(scaleCoefficient * basePeakHeight),
-      1
+      2
     );
     ctx.fillRect(
       i * groupPixelWidth,
@@ -260,6 +264,10 @@ function SampleRecord({ onRecordFinish }) {
   // each item in the queue is an array of channel chunks,
   // each channel chunk being a Float32Array
   const updatesQueueRef = useRef(/** @type {Float32Array[][]} */ ([]));
+  const sampleRateRef = useRef(Infinity);
+  const samplesRecordedRef = useRef(0);
+
+  const [secondsRecorded, setSecondsRecorded] = useState(0);
 
   /**
    * @type {(channels: Float32Array[]) => Promise<void>}
@@ -270,6 +278,10 @@ function SampleRecord({ onRecordFinish }) {
     const updatesQueue = updatesQueueRef.current;
 
     updatesQueue.push(channels);
+    samplesRecordedRef.current += channels[0].length;
+    setSecondsRecorded(
+      Math.floor(samplesRecordedRef.current / sampleRateRef.current)
+    );
 
     const queuedSampleCount = updatesQueue.reduce(
       (c, [{ length }]) => c + length,
@@ -295,7 +307,6 @@ function SampleRecord({ onRecordFinish }) {
           recordButtonCanvasRef.current
         ),
         peaks,
-        peakOffset: peakOffsetRef.current,
         scaleCoefficient: 0.3,
       });
       peakOffsetRef.current++;
@@ -313,12 +324,14 @@ function SampleRecord({ onRecordFinish }) {
     captureState,
     recordingError,
     maxSamples,
+    sampleRate,
     refreshCaptureDevices,
     setSelectedCaptureDeviceId,
     setSelectedChannelCount,
     beginRecording,
     stopRecording,
   } = useMediaRecording(onRecordUpdate, onRecordFinish);
+  sampleRateRef.current = sampleRate;
 
   useEffect(() => {
     const canvas = recordButtonCanvasRef.current;
@@ -348,6 +361,9 @@ function SampleRecord({ onRecordFinish }) {
       );
       peakOffsetRef.current = 0;
       updatesQueueRef.current = [];
+      sampleRateRef.current = Infinity;
+      samplesRecordedRef.current = 0;
+      setSecondsRecorded(0);
     }
   }, [maxSamples, captureState]);
 
@@ -396,11 +412,16 @@ function SampleRecord({ onRecordFinish }) {
             disabled={captureState === 'finalizing'}
           >
             <canvas ref={recordButtonCanvasRef} />
-            <span>
+            <span className={classes.mainText}>
               {['capturing', 'finalizing'].includes(captureState)
                 ? 'Finished recording'
                 : 'Start recording'}
             </span>
+            {['capturing', 'finalizing'].includes(captureState) && (
+              <span className={classes.timeRecorded}>
+                0:{String(secondsRecorded).padStart(2, '0')}
+              </span>
+            )}
           </Button>
           {['capturing', 'finalizing'].includes(captureState) ? (
             <>

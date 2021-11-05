@@ -1,14 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { styled } from 'tonami';
-
-import WaveformEdit from './WaveformEdit.js';
-import {
-  getTargetWavForSample,
-  getAudioBufferForAudioFileData,
-  useAudioPlaybackContext,
-} from './utils/audioData.js';
-import { SampleContainer } from './store.js';
-import VolcaTransferControl from './VolcaTransferControl.js';
+import SevenSegmentDisplay, { Digit } from 'seven-segment-display';
 import {
   Container,
   Dropdown,
@@ -17,10 +8,19 @@ import {
   Form,
 } from 'react-bootstrap';
 
-const WaveformContainer = styled.div({
-  height: '200px',
-  maxWidth: '400px',
-});
+import WaveformEdit from './WaveformEdit.js';
+import VolcaTransferControl from './VolcaTransferControl.js';
+import {
+  getTargetWavForSample,
+  getAudioBufferForAudioFileData,
+  useAudioPlaybackContext,
+} from './utils/audioData.js';
+import { SampleContainer } from './store.js';
+
+import classes from './SampleDetail.module.scss';
+import { findDOMNode } from 'react-dom';
+
+Digit.defaultProps.offOpacity = 0;
 
 /**
  * @param {Blob} blob
@@ -85,7 +85,10 @@ function SampleDetail({
     /** @type {{ fn: () => void } | null} */ (null)
   );
   useEffect(() => {
-    if (audioBufferForAudioFileData instanceof AudioBuffer && callbackOnAudioBuffer) {
+    if (
+      audioBufferForAudioFileData instanceof AudioBuffer &&
+      callbackOnAudioBuffer
+    ) {
       setCallbackOnAudioBuffer(null);
       callbackOnAudioBuffer.fn();
     }
@@ -174,13 +177,13 @@ function SampleDetail({
       </p>
       <br />
       <br />
-      <WaveformContainer>
+      <div className={classes.waveformContainer}>
         <WaveformEdit
           onSetTrimFrames={handleSetTrimFrames}
           onSetScaleCoefficient={handleSetScaleCoefficient}
           sample={sample}
         />
-      </WaveformContainer>
+      </div>
       <br />
       <br />
       <Button
@@ -262,13 +265,51 @@ function SampleDetail({
           value={sample.metadata.slotNumber}
           step={1}
           min={0}
-          max={99}
+          max={199}
           onChange={(e) => {
             const slotNumber = Number(e.target.value);
             onSampleUpdate(sample.id, { slotNumber });
           }}
         />
       </Form.Group>
+      <br />
+      <div
+        className={classes.slotNumber}
+        title={`Slot ${sample.metadata.slotNumber}`}
+      >
+        <SevenSegmentDisplay
+          value="8888"
+          color="var(--bs-gray-dark)"
+          strokeColor="transparent"
+          digitCount={4}
+        />
+        <SevenSegmentDisplay
+          ref={
+            /**
+             * @param {React.Component} instance
+             */
+            (instance) => {
+              const svg = /** @type {SVGElement} */ (findDOMNode(instance));
+              if (svg) {
+                svg.querySelectorAll(classes.point).forEach((oldPoint) => {
+                  svg.removeChild(oldPoint);
+                });
+                const point = document.createElementNS(
+                  'http://www.w3.org/2000/svg',
+                  'circle'
+                );
+                point.classList.add(classes.point);
+                svg.appendChild(point);
+              }
+            }
+          }
+          // the 5 actually represents an S
+          value={`5${String(sample.metadata.slotNumber).padStart(3, '0')}`}
+          digitProps={{ color: 'var(--bs-primary)' }}
+          digitCount={4}
+        />
+      </div>
+      <br />
       <br />
       <VolcaTransferControl sample={sample} />
     </Container>

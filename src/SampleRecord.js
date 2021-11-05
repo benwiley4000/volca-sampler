@@ -103,7 +103,6 @@ function useMediaRecording(onRecordUpdate, onRecordFinish) {
       cancelled = true;
     };
   }, []);
-  useEffect(refreshCaptureDevices, [refreshCaptureDevices]);
   const [selectedChannelCount, setSelectedChannelCount] = useState(1);
   useEffect(() => {
     const selectedDeviceInfo =
@@ -368,6 +367,12 @@ function SampleRecord({ onRecordFinish }) {
   }, [maxSamples, captureState]);
 
   const [showingCaptureConfig, setShowingCaptureConfig] = useState(false);
+
+  useEffect(() => {
+    if (showingCaptureConfig) {
+      refreshCaptureDevices();
+    }
+  }, [showingCaptureConfig, refreshCaptureDevices]);
 
   return (
     <div>

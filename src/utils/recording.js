@@ -203,11 +203,17 @@ async function createPcmRecorderNode(options) {
  * @param {{
  *   deviceId: string;
  *   channelCount: number;
- *   onStart: () => void;
+ *   onStart: (maxSamples: number) => void;
+ *   onUpdate: (floatChunksByChannel: Float32Array[]) => void;
  * }} options
  * @returns {Promise<{ mediaRecording: Promise<Uint8Array>; stop: () => void }>}
  */
-export async function captureAudio({ deviceId, channelCount, onStart }) {
+export async function captureAudio({
+  deviceId,
+  channelCount,
+  onStart,
+  onUpdate,
+}) {
   const stream = await navigator.mediaDevices.getUserMedia({
     // TODO: support more recording configuration options
     // https://developer.mozilla.org/en-US/docs/Web/API/MediaTrackConstraints#properties_of_audio_tracks
@@ -233,10 +239,10 @@ export async function captureAudio({ deviceId, channelCount, onStart }) {
   });
   mediaStreamSourceNode.connect(recorderNode);
   recorderNode.connect(audioContext.destination);
-  onStart();
-
   const timeLimitSeconds = 10;
   const maxSamples = timeLimitSeconds * audioContext.sampleRate;
+  onStart(maxSamples);
+
   let samplesRecorded = 0;
   /**
    * @type {Int32Array[]}
@@ -271,12 +277,12 @@ export async function captureAudio({ deviceId, channelCount, onStart }) {
     const interleaved = interleaveSampleChannels(floatChunksByChannel);
     const interleavedPcm = convertFloatSamplesToPcm(interleaved, 32);
     recordedChunks.push(interleavedPcm);
-    // TODO: update listener with floatChunksByChannel
     samplesRecorded += sampleCount;
     // should never be >, but just in case we did something wrong we use >=
     if (samplesRecorded >= maxSamples) {
       stop();
     }
+    onUpdate(floatChunksByChannel);
   }
 
   /**

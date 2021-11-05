@@ -153,17 +153,42 @@ function useMediaRecording(onRecordUpdate, onRecordFinish) {
   const [maxSamples, setMaxSamples] = useState(0);
   const handleBeginRecording = useCallback(async () => {
     let cancelled = false;
-    const { mediaRecording, stop } = await captureAudio({
-      deviceId: selectedCaptureDeviceId,
-      channelCount: selectedChannelCount,
-      onStart: (sampleRate, timeLimitSeconds) => {
-        const maxSamples = timeLimitSeconds * sampleRate;
-        setSampleRate(sampleRate);
-        setMaxSamples(maxSamples);
-        setCaptureState('capturing');
-      },
-      onUpdate: onRecordUpdate,
-    });
+    /**
+     * @param {string} deviceId
+     * @param {number} channelCount
+     */
+    const record = (deviceId, channelCount) =>
+      captureAudio({
+        deviceId,
+        channelCount,
+        onStart: (sampleRate, timeLimitSeconds) => {
+          const maxSamples = timeLimitSeconds * sampleRate;
+          setSampleRate(sampleRate);
+          setMaxSamples(maxSamples);
+          setCaptureState('capturing');
+        },
+        onUpdate: onRecordUpdate,
+      });
+    // if we haven't opened our device settings to get device info yet, let's
+    // still try to record with our last-used device
+    const tentativeDevice = restoringCaptureDevice.current;
+    const { mediaRecording, stop } = await (tentativeDevice
+      ? (async () => {
+          try {
+            return record(
+              tentativeDevice.deviceId,
+              tentativeDevice.channelCount
+            );
+          } catch (err) {
+            // ignore the NotFound exception if we hadn't refreshed our devices
+            // yet, just try the default instead
+            if (err instanceof DOMException && err.name === 'NotFoundError') {
+              return record(selectedCaptureDeviceId, selectedChannelCount);
+            }
+            throw err;
+          }
+        })()
+      : record(selectedCaptureDeviceId, selectedChannelCount));
     setStop({
       fn(cancel) {
         stop();

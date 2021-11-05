@@ -222,6 +222,7 @@ const groupPixelWidth = 2;
 function drawRecordingPeaks({ canvas, peaks, peakOffset, scaleCoefficient }) {
   const barColor = '#fff';
   const ctx = /** @type {CanvasRenderingContext2D} */ (canvas.getContext('2d'));
+  ctx.imageSmoothingEnabled = false;
   const { height } = canvas;
   ctx.fillStyle = barColor;
   for (let i = peakOffset; i < peaks.length; i++) {

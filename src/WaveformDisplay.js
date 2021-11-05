@@ -13,6 +13,7 @@ const WaveformCanvas = styled.canvas({
   width: '100%',
   height: '100%',
   display: 'block',
+  imageRendering: 'pixelated',
 });
 
 /**
@@ -49,6 +50,7 @@ function drawWaveform(canvas, peaks, scaleCoefficient) {
   const colorRed = documentStyle.getPropertyValue('--bs-primary');
   const colorDarkRed = documentStyle.getPropertyValue('--bs-primary-darkened');
   const ctx = /** @type {CanvasRenderingContext2D} */ (canvas.getContext('2d'));
+  ctx.imageSmoothingEnabled = false;
   const { width, height } = canvas;
   ctx.clearRect(0, 0, width, height);
   const positiveHeight = Math.floor(height * (2 / 3)) + 1;

@@ -4,21 +4,21 @@ import { styled } from 'tonami';
 import WaveformEdit from './WaveformEdit.js';
 import {
   getTargetWavForSample,
-  getSourceAudioBuffer,
   getAudioBufferForAudioFileData,
   useAudioPlaybackContext,
 } from './utils/audioData.js';
 import { SampleContainer } from './store.js';
 import VolcaTransferControl from './VolcaTransferControl.js';
-import { getSamplePeaksForSourceFile } from './utils/waveform.js';
-
-const SampleDetailContainer = styled.div({
-  paddingLeft: '2rem',
-});
+import {
+  Container,
+  Dropdown,
+  DropdownButton,
+  Button,
+  Form,
+} from 'react-bootstrap';
 
 const WaveformContainer = styled.div({
   height: '200px',
-  backgroundColor: '#f3f3f3',
   maxWidth: '400px',
 });
 
@@ -41,7 +41,7 @@ function downloadBlob(blob, filename) {
 /**
  * @param {{
  *   sample: import('./store').SampleContainer | null;
- *   onSampleUpdate: (id: string, update: import('./store').SampleMetadataUpdate) => void;
+ *   onSampleUpdate: (id: string, update: import('./store').SampleMetadataUpdateArg) => void;
  *   onSampleDuplicate: (id: string) => void;
  *   onSampleDelete: (id: string) => void;
  * }} props
@@ -52,19 +52,6 @@ function SampleDetail({
   onSampleDuplicate,
   onSampleDelete,
 }) {
-  const [sampleLength, setSampleLength] = useState(0);
-  const sourceFileId = sample && sample.metadata.sourceFileId;
-  useEffect(() => {
-    // when the source file id changes, we should temporarily set the sample
-    // length to 0 so that we can't make changes to the trimming until the
-    // sample length is loaded
-    setSampleLength(0);
-    if (sourceFileId) {
-      getSourceAudioBuffer(sourceFileId, false).then((audioBuffer) =>
-        setSampleLength(audioBuffer.length)
-      );
-    }
-  }, [sourceFileId]);
   const sampleId = sample && sample.id;
   /**
    * @type {(scaleCoefficient: number) => void}
@@ -74,11 +61,38 @@ function SampleDetail({
       sampleId && onSampleUpdate(sampleId, { scaleCoefficient }),
     [sampleId, onSampleUpdate]
   );
+  /**
+   * @type {(updateTrimFrames: (old: [number, number]) => [number, number]) => void}
+   */
+  const handleSetTrimFrames = useCallback(
+    (updateTrimFrames) =>
+      sampleId &&
+      onSampleUpdate(sampleId, (metadata) => ({
+        ...metadata,
+        trim: {
+          ...metadata.trim,
+          frames: updateTrimFrames(metadata.trim.frames),
+        },
+      })),
+    [sampleId, onSampleUpdate]
+  );
   const [targetWav, setTargetWav] = useState(
     /** @type {Uint8Array | null} */ (null)
   );
+  const [audioBufferForAudioFileData, setAudioBufferForAudioFileData] =
+    useState(/** @type {AudioBuffer | null} */ (null));
+  const [callbackOnAudioBuffer, setCallbackOnAudioBuffer] = useState(
+    /** @type {{ fn: () => void } | null} */ (null)
+  );
+  useEffect(() => {
+    if (audioBufferForAudioFileData instanceof AudioBuffer && callbackOnAudioBuffer) {
+      setCallbackOnAudioBuffer(null);
+      callbackOnAudioBuffer.fn();
+    }
+  }, [audioBufferForAudioFileData, callbackOnAudioBuffer]);
   useEffect(() => {
     setTargetWav(null);
+    setCallbackOnAudioBuffer(null);
     if (sample) {
       let cancelled = false;
       getTargetWavForSample(sample).then(({ data }) => {
@@ -88,8 +102,6 @@ function SampleDetail({
       });
     }
   }, [sample]);
-  const [audioBufferForAudioFileData, setAudioBufferForAudioFileData] =
-    useState(/** @type {AudioBuffer | null} */ (null));
   useEffect(() => {
     setAudioBufferForAudioFileData(null);
     if (targetWav) {
@@ -110,174 +122,142 @@ function SampleDetail({
   if (!sample) {
     return null;
   }
-  const maxTrimStart = Math.max(
-    0,
-    sampleLength - sample.metadata.trim.frames[1]
-  );
-  const maxTrimEnd = Math.max(0, sampleLength - sample.metadata.trim.frames[0]);
   return (
-    <SampleDetailContainer>
-      <h3>{sample.metadata.name}</h3>
-      <button type="button" onClick={() => onSampleDuplicate(sample.id)}>
-        Duplicate
-      </button>
-      <button
-        type="button"
-        onClick={() => {
-          if (
-            window.confirm(
-              `Are you sure you want to delete ${sample.metadata.name}?`
-            )
-          ) {
-            onSampleDelete(sample.id);
-          }
-        }}
-      >
-        Remove
-      </button>
-      <h4>
-        Last edited: {new Date(sample.metadata.dateModified).toLocaleString()}
-      </h4>
-      <h4>Sampled: {new Date(sample.metadata.dateSampled).toLocaleString()}</h4>
-      <label>
-        <h4>Trim start</h4>
-        <input
-          type="number"
-          value={sample.metadata.trim.frames[0]}
-          step={1}
-          min={0}
-          max={maxTrimStart}
-          onChange={async (e) => {
-            if (sampleLength) {
-              const trimStart = Number(e.target.value);
-              /**
-               * @type {[number, number]}
-               */
-              const trimFrames = [
-                Math.min(trimStart, maxTrimStart),
-                sample.metadata.trim.frames[1],
-              ];
-              const waveformPeaks = await getSamplePeaksForSourceFile(
-                sample.metadata.sourceFileId,
-                trimFrames
+    <Container fluid="sm">
+      <h2>
+        {sample.metadata.name}
+        <DropdownButton
+          style={{ display: 'inline-block', float: 'right' }}
+          variant="light"
+          align="end"
+          title="options"
+        >
+          <Dropdown.Item
+            onClick={() => {
+              const newName = prompt(
+                `Choose a new name for the sample "${sample.metadata.name}":`,
+                sample.metadata.name
               );
-              onSampleUpdate(sample.id, {
-                trim: {
-                  frames: trimFrames,
-                  waveformPeaks,
-                },
-              });
-            } else {
-              onSampleUpdate(sample.id, {
-                trim: { ...sample.metadata.trim },
-              });
-            }
-          }}
-        />
-      </label>
-      <label>
-        <h4>Trim end</h4>
-        <input
-          type="number"
-          value={sample.metadata.trim.frames[1]}
-          step={1}
-          min={0}
-          max={maxTrimEnd}
-          onChange={async (e) => {
-            if (sampleLength) {
-              const trimEnd = Number(e.target.value);
-              /**
-               * @type {[number, number]}
-               */
-              const trimFrames = [
-                sample.metadata.trim.frames[0],
-                Math.min(trimEnd, maxTrimEnd),
-              ];
-              const waveformPeaks = await getSamplePeaksForSourceFile(
-                sample.metadata.sourceFileId,
-                trimFrames
-              );
-              onSampleUpdate(sample.id, {
-                trim: {
-                  frames: trimFrames,
-                  waveformPeaks,
-                },
-              });
-            } else {
-              onSampleUpdate(sample.id, {
-                trim: { ...sample.metadata.trim },
-              });
-            }
-          }}
-        />
-      </label>
+              const newNameTrimmed = newName && newName.trim();
+              if (newNameTrimmed) {
+                onSampleUpdate(sample.id, { name: newNameTrimmed });
+              }
+            }}
+          >
+            Rename
+          </Dropdown.Item>
+          <Dropdown.Item onClick={() => onSampleDuplicate(sample.id)}>
+            Duplicate
+          </Dropdown.Item>
+          <Dropdown.Divider />
+          <Dropdown.Item
+            onClick={() => {
+              if (
+                window.confirm(
+                  `Are you sure you want to delete ${sample.metadata.name}?`
+                )
+              ) {
+                onSampleDelete(sample.id);
+              }
+            }}
+          >
+            Delete
+          </Dropdown.Item>
+        </DropdownButton>
+      </h2>
+      <p>
+        <strong>Sampled:</strong>{' '}
+        {new Date(sample.metadata.dateSampled).toLocaleString()}
+        <br />
+        <strong>Updated:</strong>{' '}
+        {new Date(sample.metadata.dateModified).toLocaleString()}
+      </p>
+      <br />
+      <br />
       <WaveformContainer>
         <WaveformEdit
-          onSetTrimFrames={() => null}
+          onSetTrimFrames={handleSetTrimFrames}
           onSetScaleCoefficient={handleSetScaleCoefficient}
           sample={sample}
         />
-        <button
-          type="button"
-          onClick={() => {
-            if (audioBufferForAudioFileData) {
-              stopPreviewPlayback.current = playAudioBuffer(
-                audioBufferForAudioFileData
-              );
-            }
-          }}
-          disabled={isAudioBusy || !audioBufferForAudioFileData}
-        >
-          play
-        </button>
-        <button
-          type="button"
-          onClick={async () => {
-            if (targetWav) {
-              const blob = new Blob([targetWav], {
-                type: 'audio/x-wav',
-              });
-              downloadBlob(blob, `${sample.metadata.name}.wav`);
-            }
-          }}
-          disabled={!targetWav}
-        >
-          download
-        </button>
-        <button
-          type="button"
-          onClick={async () => {
-            const { sourceFileId, userFileInfo } = sample.metadata;
-            const data = await SampleContainer.getSourceFileData(sourceFileId);
-            const blob = new Blob([data], {
-              type: userFileInfo ? userFileInfo.type : 'audio/x-wav',
-            });
-            downloadBlob(
-              blob,
-              `${sample.metadata.name}${
-                userFileInfo ? userFileInfo.ext : '.wav'
-              }`
-            );
-          }}
-        >
-          download (orig)
-        </button>
       </WaveformContainer>
-      <h4>Quality bit depth: {sample.metadata.qualityBitDepth}</h4>
-      <input
-        type="range"
-        value={sample.metadata.qualityBitDepth}
-        step={1}
-        min={8}
-        max={16}
-        onChange={(e) => {
-          const qualityBitDepth = Number(e.target.value);
-          onSampleUpdate(sample.id, { qualityBitDepth });
+      <br />
+      <br />
+      <Button
+        type="button"
+        variant="secondary"
+        size="sm"
+        onClick={(e) => {
+          if (audioBufferForAudioFileData) {
+            stopPreviewPlayback.current = playAudioBuffer(
+              audioBufferForAudioFileData
+            );
+          } else {
+            const button = e.currentTarget;
+            // wait until the audio buffer is ready then simulate a click event
+            // to retry this handler. it's important that we simulate another
+            // click because otherwise iOS won't let us play the audio later.
+            setCallbackOnAudioBuffer({ fn: () => button.click() });
+          }
         }}
-      />
-      <label>
-        <h4>Slot number</h4>
-        <input
+        disabled={isAudioBusy}
+      >
+        Play audio preview
+      </Button>
+      {/* {' '}
+      <Button
+        type="button"
+        variant="secondary"
+        onClick={async () => {
+          if (targetWav) {
+            const blob = new Blob([targetWav], {
+              type: 'audio/x-wav',
+            });
+            downloadBlob(blob, `${sample.metadata.name}.wav`);
+          }
+        }}
+        disabled={!targetWav}
+      >
+        Download preview audio
+      </Button> */}{' '}
+      <Button
+        type="button"
+        variant="secondary"
+        size="sm"
+        onClick={async () => {
+          const { sourceFileId, userFileInfo } = sample.metadata;
+          const data = await SampleContainer.getSourceFileData(sourceFileId);
+          const blob = new Blob([data], {
+            type: userFileInfo ? userFileInfo.type : 'audio/x-wav',
+          });
+          downloadBlob(
+            blob,
+            `${sample.metadata.name}${userFileInfo ? userFileInfo.ext : '.wav'}`
+          );
+        }}
+      >
+        Download original file
+      </Button>
+      <br />
+      <br />
+      <Form.Group>
+        <Form.Label>
+          Quality bit depth ({sample.metadata.qualityBitDepth})
+        </Form.Label>
+        <Form.Range
+          value={sample.metadata.qualityBitDepth}
+          step={1}
+          min={8}
+          max={16}
+          onChange={(e) => {
+            const qualityBitDepth = Number(e.target.value);
+            onSampleUpdate(sample.id, { qualityBitDepth });
+          }}
+        />
+      </Form.Group>
+      <Form.Group>
+        <Form.Label>Slot number</Form.Label>
+        <Form.Control
           type="number"
           value={sample.metadata.slotNumber}
           step={1}
@@ -288,9 +268,10 @@ function SampleDetail({
             onSampleUpdate(sample.id, { slotNumber });
           }}
         />
-      </label>
+      </Form.Group>
+      <br />
       <VolcaTransferControl sample={sample} />
-    </SampleDetailContainer>
+    </Container>
   );
 }
 

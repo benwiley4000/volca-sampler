@@ -1,9 +1,17 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
+import './bootstrap.scss';
 import App from './App.js';
 import reportWebVitals from './reportWebVitals.js';
 import { AudioPlaybackContextProvider } from './utils/audioData.js';
+
+// polyfills
+if (!Blob.prototype.arrayBuffer) {
+  Blob.prototype.arrayBuffer = function arrayBuffer() {
+    return new Response(this).arrayBuffer();
+  };
+}
 
 ReactDOM.render(
   <React.StrictMode>

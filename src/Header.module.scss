@@ -1,0 +1,102 @@
+.title {
+  --stroke-width: 1px;
+  --stroke-color: var(--bs-dark);
+  display: flex;
+  align-items: center;
+  padding: 2rem 1rem 1rem;
+  margin-bottom: 0px;
+  background-color: #f3f3f3;
+  border-bottom: 1px solid #ccc;
+  position: sticky;
+  top: 0;
+  cursor: pointer;
+}
+
+.menuIcon {
+  margin-right: 1rem;
+  cursor: pointer;
+}
+
+.titleText {
+  color: var(--bs-primary);
+  white-space: nowrap;
+  line-height: 1em;
+  align-items: center;
+  transition: transform 0.1s;
+  will-change: transform;
+  .title:hover & {
+    transform: scale(1.05);
+  }
+  position: relative;
+  &::after {
+    position: absolute;
+    left: 0;
+    content: attr(data-text);
+    z-index: -1;
+    // only half of the stroke will be visible
+    -webkit-text-stroke: calc(2 * var(--stroke-width)) var(--stroke-color);
+  }
+}
+
+.titleR {
+  font-size: 1.3em;
+  vertical-align: middle;
+  text-decoration: underline;
+  text-decoration-color: var(--stroke-color);
+  position: relative;
+  &::after {
+    position: absolute;
+    left: 0;
+    // top/transform apparently needed by firefox but not chrome
+    top: 50%;
+    transform: translateY(-50%);
+    content: 'r';
+    z-index: -1;
+    // only half of the stroke will be visible
+    -webkit-text-stroke: calc(2 * var(--stroke-width)) var(--stroke-color);
+  }
+}
+
+.titleStarburst {
+  z-index: -2;
+  width: 0;
+  height: 0;
+  position: absolute;
+  pointer-events: none;
+  top: 50%;
+  left: 50%;
+  transform: scale(0);
+  transition: transform 0.1s;
+  will-change: transform;
+  .title:hover & {
+    transform: scale(3, 1);
+  }
+  & > span {
+    --rotation: 0deg;
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform: translateY(-50%) rotate(var(--rotation));
+    transform-origin: center left;
+    width: 0;
+    height: 0;
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+    border-left: 75px solid gold;
+  }
+}
+
+.titleGraphic {
+  margin-left: 1.5rem;
+  height: 1.6em;
+  filter: url(#outline);
+  transition: transform 0.1s;
+  will-change: transform;
+  .title:hover & {
+    transform: rotate(-5deg) scale(1.1);
+  }
+  display: none;
+  @media screen and (min-width: 400px) {
+    display: unset;
+  }
+}

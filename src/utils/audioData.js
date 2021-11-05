@@ -104,15 +104,37 @@ export function clampOutOfBoundsValues(samples) {
 }
 
 /**
- * @param {Float32Array} samples
+ * @param {Float32Array[]} sampleChannels
+ * @returns {Float32Array}
  */
-function convertSamplesTo16Bit(samples) {
-  const samples16 = new Int16Array(samples.length);
-  const signedMax = 2 ** 15;
-  for (let i = 0; i < samples.length; i++) {
-    samples16[i] = samples[i] === 1 ? signedMax - 1 : signedMax * samples[i];
+export function interleaveSampleChannels(sampleChannels) {
+  const channelCount = sampleChannels.length;
+  const sampleCount = sampleChannels[0].length;
+  const interleaved = new Float32Array(channelCount * sampleCount);
+  for (let sampleIndex = 0; sampleIndex < interleaved.length; sampleIndex++) {
+    const i = channelCount * sampleIndex;
+    for (let ch = 0; ch < channelCount; ch++) {
+      interleaved[i + ch] = sampleChannels[ch][sampleIndex];
+    }
   }
-  return samples16;
+  return interleaved;
+}
+
+/**
+ * @template {32 | 16} B
+ * @param {Float32Array} samples
+ * @param {B} bitsPerSample
+ * @returns {B extends 16 ? Int16Array : B extends 32 ? Int32Array : never}
+ */
+export function convertFloatSamplesToPcm(samples, bitsPerSample) {
+  const ArrayConstructor = bitsPerSample === 16 ? Int16Array : Int32Array;
+  const pcmSamples = new ArrayConstructor(samples.length);
+  const signedMax = 2 ** (bitsPerSample - 1);
+  for (let i = 0; i < samples.length; i++) {
+    pcmSamples[i] = samples[i] === 1 ? signedMax - 1 : signedMax * samples[i];
+  }
+  // @ts-ignore (it works!)
+  return pcmSamples;
 }
 
 export function getAudioContextConstructor() {
@@ -209,7 +231,7 @@ export async function getTargetWavForSample(sampleContainer) {
   if (qualityBitDepth < 16) {
     applyQualityBitDepthToSamples(samples, qualityBitDepth);
   }
-  const samples16 = convertSamplesTo16Bit(samples);
+  const samples16 = convertFloatSamplesToPcm(samples, 16);
   const samplesByteLength = samples16.length * 2;
   /**
    * @type {Uint8Array}

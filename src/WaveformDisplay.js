@@ -13,6 +13,7 @@ const WaveformCanvas = styled.canvas({
   width: '100%',
   height: '100%',
   display: 'block',
+  imageRendering: 'pixelated',
 });
 
 /**
@@ -45,11 +46,15 @@ function observeCanvas(canvas, onResize) {
  * @param {number} scaleCoefficient
  */
 function drawWaveform(canvas, peaks, scaleCoefficient) {
+  const documentStyle = getComputedStyle(document.documentElement);
+  const colorRed = documentStyle.getPropertyValue('--bs-primary');
+  const colorDarkRed = documentStyle.getPropertyValue('--bs-primary-darkened');
   const ctx = /** @type {CanvasRenderingContext2D} */ (canvas.getContext('2d'));
+  ctx.imageSmoothingEnabled = false;
   const { width, height } = canvas;
   ctx.clearRect(0, 0, width, height);
   const positiveHeight = Math.floor(height * (2 / 3)) + 1;
-  ctx.fillStyle = 'red';
+  ctx.fillStyle = colorRed;
   peaks.positive.forEach((peak, i) => {
     const basePeakHeight = positiveHeight * peak; // float
     // make the positive bar always at least 1px tall to avoid empty sections
@@ -65,7 +70,7 @@ function drawWaveform(canvas, peaks, scaleCoefficient) {
     );
   });
   const negativeHeight = height - positiveHeight;
-  ctx.fillStyle = 'darkred';
+  ctx.fillStyle = colorDarkRed;
   peaks.negative.forEach((peak, i) => {
     const basePeakHeight = negativeHeight * peak * -1; // float
     const scaledPeakHeight = Math.round(scaleCoefficient * basePeakHeight);

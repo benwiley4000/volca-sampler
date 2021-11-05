@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { Button, ProgressBar } from 'react-bootstrap';
 
 import {
   getAudioBufferForAudioFileData,
@@ -19,6 +20,15 @@ function VolcaTransferControl({ sample }) {
   const [syroAudioBuffer, setSyroAudioBuffer] = useState(
     /** @type {AudioBuffer | Error | null} */ (null)
   );
+  const [callbackOnSyroBuffer, setCallbackOnSyroBuffer] = useState(
+    /** @type {{ fn: () => void } | null} */ (null)
+  );
+  useEffect(() => {
+    if (syroAudioBuffer instanceof AudioBuffer && callbackOnSyroBuffer) {
+      setCallbackOnSyroBuffer(null);
+      callbackOnSyroBuffer.fn();
+    }
+  }, [syroAudioBuffer, callbackOnSyroBuffer]);
   // to be set when transfer or playback is started
   const stop = useRef(() => {});
   useEffect(() => {
@@ -26,6 +36,7 @@ function VolcaTransferControl({ sample }) {
     setSyroProgress(0);
     setSyroTransferState('idle');
     setSyroAudioBuffer(null);
+    setCallbackOnSyroBuffer(null);
     stop.current = () => {
       cancelled = true;
     };
@@ -63,10 +74,18 @@ function VolcaTransferControl({ sample }) {
   const { playAudioBuffer, isAudioBusy } = useAudioPlaybackContext();
   return (
     <>
-      <button
+      <Button
         type="button"
-        onClick={() => {
+        variant="primary"
+        onClick={(e) => {
           if (!(syroAudioBuffer instanceof AudioBuffer)) {
+            if (!syroAudioBuffer) {
+              const button = e.currentTarget;
+              // wait until the syro buffer is ready then simulate a click event
+              // to retry this handler. it's important that we simulate another
+              // click because otherwise iOS won't let us play the audio later.
+              setCallbackOnSyroBuffer({ fn: () => button.click() });
+            }
             return;
           }
           try {
@@ -87,12 +106,12 @@ function VolcaTransferControl({ sample }) {
         }}
         disabled={
           isAudioBusy ||
-          !syroAudioBuffer ||
+          syroAudioBuffer instanceof Error ||
           syroTransferState === 'transferring'
         }
       >
-        transfer to volca sample
-      </button>
+        Transfer to volca sample
+      </Button>
       <br />
       {syroAudioBuffer &&
       syroTransferState === 'idle' ? null : syroTransferState === 'error' ? (
@@ -106,9 +125,11 @@ function VolcaTransferControl({ sample }) {
               ? 'Transferring to Volca Sample...'
               : 'Error preparing sample for transfer'}
           </p>
-          <progress value={syroProgress} />
+          <ProgressBar now={100 * syroProgress} />
           <br />
-          <button onClick={() => stop.current()}>Cancel</button>
+          <Button type="button" variant="light" onClick={() => stop.current()}>
+            Cancel
+          </Button>
         </>
       )}
       <br />

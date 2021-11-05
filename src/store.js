@@ -52,6 +52,10 @@ import { getSamplePeaksForSourceFile } from './utils/waveform.js';
  * @property {number} [scaleCoefficient]
  */
 
+/**
+ * @typedef {SampleMetadataUpdate | ((metadata: SampleMetadata) => SampleMetadataUpdate)} SampleMetadataUpdateArg
+ */
+
 const audioFileDataStore = localforage.createInstance({
   name: 'audio_file_data',
   driver: localforage.INDEXEDDB,
@@ -230,11 +234,13 @@ export class SampleContainer {
     }
 
     /**
-     * @param {SampleMetadataUpdate} update
+     * @param {SampleMetadataUpdateArg} updater
      * @returns {SampleContainer}
      */
-    update(update) {
+    update(updater) {
       const { id, metadata } = this;
+      const update =
+        typeof updater === 'function' ? updater(metadata) : updater;
       // if the update doesn't change anything, return the existing container
       if (
         /** @type {(keyof SampleMetadataUpdate)[]} */ (
@@ -354,20 +360,30 @@ export class SampleContainer {
    */
   static async getAllMetadataFromStore() {
     /**
-     * @type {Promise<[string, SampleMetadata]>[]}
+     * @type {Map<string, SampleMetadata>}
+     */
+    const sampleMetadata = new Map();
+    /**
+     * @type {Promise<void>[]}
      */
     const upgradePromises = [];
     await sampleMetadataStore.iterate((metadata, id) => {
       if (metadata) {
         upgradePromises.push(
-          upgradeMetadata(metadata).then((upgradedMetadata) => [
-            id,
-            upgradedMetadata,
-          ])
+          upgradeMetadata(metadata)
+            .then((upgradedMetadata) => {
+              sampleMetadata.set(id, upgradedMetadata);
+            })
+            .catch((err) => {
+              console.error(err);
+              console.warn(
+                `Failed to upgrade metadata "${id}" (${metadata.name}); ignoring.`
+              );
+            })
         );
       }
     });
-    const sampleMetadata = new Map(await Promise.all(upgradePromises));
+    await Promise.all(upgradePromises);
     return sampleMetadata;
   }
 

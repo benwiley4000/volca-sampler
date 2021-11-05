@@ -11,6 +11,7 @@
     "react-dom": "^17.0.2",
     "react-scripts": "4.0.3",
     "resize-observer-polyfill": "^1.5.1",
+    "seven-segment-display": "^0.2.0",
     "tonami": "^0.4.4",
     "unique-names-generator": "^4.6.0",
     "uuid": "^8.3.2",

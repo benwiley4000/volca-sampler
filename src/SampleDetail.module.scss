@@ -1,0 +1,36 @@
+.waveformContainer {
+  height: 200px;
+  max-width: 400px;
+}
+
+.slotNumber {
+  --slot-bg-color: var(--bs-dark);
+  background-color: var(--slot-bg-color);
+  display: inline-block;
+  padding: 0.25rem;
+  position: relative;
+  border-radius: 0.25rem;
+
+  & > svg {
+    width: 160px;
+    transform: skewX(-4deg);
+
+    // digits background
+    &:first-child {
+      position: absolute;
+      top: 0.25rem;
+      opacity: 0.4;
+    }
+  
+    polygon {
+      stroke: var(--slot-bg-color);
+    }
+
+    circle.point {
+      cx: 11.5;
+      cy: 17;
+      r: 1;
+      fill: var(--bs-primary);
+    }
+  }
+}

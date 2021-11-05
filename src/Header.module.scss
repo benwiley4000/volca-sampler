@@ -23,6 +23,7 @@
   line-height: 1em;
   align-items: center;
   transition: transform 0.1s;
+  will-change: transform;
   .title:hover & {
     transform: scale(1.05);
   }
@@ -66,6 +67,7 @@
   left: 50%;
   transform: scale(0);
   transition: transform 0.1s;
+  will-change: transform;
   .title:hover & {
     transform: scale(3, 1);
   }
@@ -89,6 +91,7 @@
   height: 1.6em;
   filter: url(#outline);
   transition: transform 0.1s;
+  will-change: transform;
   .title:hover & {
     transform: rotate(-5deg) scale(1.1);
   }

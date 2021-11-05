@@ -2,7 +2,7 @@ import getWavFileHeaders from 'wav-headers';
 
 import {
   clampOutOfBoundsValues,
-  convertFloatSamplesToPcm,
+  convertSamplesTo16Bit,
   getAudioContextConstructor,
   interleaveSampleChannels,
 } from './audioData.js';
@@ -245,7 +245,7 @@ export async function captureAudio({
   const maxSamples = timeLimitSeconds * audioContext.sampleRate;
   let samplesRecorded = 0;
   /**
-   * @type {Int32Array[]}
+   * @type {Int16Array[]}
    */
   const recordedChunks = Array(channelCount).fill([]);
 
@@ -275,8 +275,8 @@ export async function captureAudio({
       floatChunksByChannel.push(chunkSliced);
     }
     const interleaved = interleaveSampleChannels(floatChunksByChannel);
-    const interleavedPcm = convertFloatSamplesToPcm(interleaved, 32);
-    recordedChunks.push(interleavedPcm);
+    const interleaved16 = convertSamplesTo16Bit(interleaved);
+    recordedChunks.push(interleaved16);
     samplesRecorded += sampleCount;
     // should never be >, but just in case we did something wrong we use >=
     if (samplesRecorded >= maxSamples) {
@@ -311,17 +311,21 @@ export async function captureAudio({
     try {
       const blob = new Blob(recordedChunks);
       const arrayBuffer = await blob.arrayBuffer();
+      const samplesInterleaved16 = new Float32Array(arrayBuffer);
       const wavHeader = getWavFileHeaders({
         channels: channelCount,
         sampleRate: audioContext.sampleRate,
-        bitDepth: 32,
-        dataLength: arrayBuffer.byteLength,
+        bitDepth: 16,
+        dataLength: samplesInterleaved16.byteLength,
       });
       const wavBuffer = new Uint8Array(
-        wavHeader.length + arrayBuffer.byteLength
+        wavHeader.length + samplesInterleaved16.byteLength
       );
       wavBuffer.set(wavHeader);
-      wavBuffer.set(new Uint8Array(arrayBuffer), wavHeader.length);
+      wavBuffer.set(
+        new Uint8Array(samplesInterleaved16.buffer),
+        wavHeader.length
+      );
       onDone(wavBuffer);
     } catch (err) {
       onError(err);

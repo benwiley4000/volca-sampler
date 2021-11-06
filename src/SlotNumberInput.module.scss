@@ -1,5 +1,7 @@
 .slotNumberContainer {
   --slot-width: 160px;
+  --slot-padding: 0.25rem;
+  --slot-bg-color: var(--bs-dark);
   width: var(--slot-width);
 }
 
@@ -8,6 +10,8 @@
   justify-content: flex-end;
   width: var(--slot-width);
   height: 2rem;
+  padding-left: var(--slot-padding);
+  padding-right: var(--slot-padding);
 
   & > span {
     height: 100%;
@@ -19,8 +23,6 @@
 }
 
 .slotNumber {
-  --slot-bg-color: var(--bs-dark);
-  --slot-padding: 0.25rem;
   background-color: var(--slot-bg-color);
   display: inline-block;
   width: var(--slot-width);

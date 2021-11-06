@@ -1,11 +1,25 @@
-.waveformContainer {
-  height: 200px;
-  max-width: 400px;
+.slotNumberContainer {
+  --slot-width: 160px;
+  width: var(--slot-width);
+}
+
+.arrowControls {
+  display: flex;
+  justify-content: flex-end;
+  width: var(--slot-width);
+  height: 2rem;
+
+  & > span {
+    height: 100%;
+    width: 25%;
+    display: flex;
+    justify-content: center;
+    cursor: pointer;
+  }
 }
 
 .slotNumber {
   --slot-bg-color: var(--bs-dark);
-  --slot-width: 160px;
   --slot-padding: 0.25rem;
   background-color: var(--slot-bg-color);
   display: inline-block;
@@ -19,7 +33,7 @@
     width: calc(var(--slot-width) - var(--slot-padding) * 2);
     transform: skewX(-4deg);
 
-    // digits background
+    // digits background outlines
     &:first-child {
       position: absolute;
       top: 0.25rem;
@@ -30,10 +44,15 @@
       stroke: var(--slot-bg-color);
     }
 
-    g:nth-last-child(3),
-    g:nth-last-child(2),
-    g:nth-last-child(1) {
+    g {
       pointer-events: bounding-box;
+
+      &.active {
+        animation-name: digitBlinkEffect;
+        animation-duration: 0.5s;
+        animation-timing-function: linear;
+        animation-iteration-count: infinite;
+      }
     }
 
     circle.point {
@@ -42,5 +61,17 @@
       r: 1;
       fill: var(--bs-primary);
     }
+  }
+}
+
+@keyframes digitBlinkEffect {
+  from {
+    visibility: hidden;
+  }
+  20% {
+    visibility: hidden;
+  }
+  to {
+    visibility: visible;
   }
 }

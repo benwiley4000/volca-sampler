@@ -85,6 +85,9 @@ function SlotNumberInput({ sample, onSampleUpdate }) {
         element.addEventListener('click', () => {
           setFocusedDigit(digit);
         });
+        element.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+        });
       });
       /** @param {KeyboardEvent} e */
       function onKeyDown(e) {
@@ -167,10 +170,79 @@ function SlotNumberInput({ sample, onSampleUpdate }) {
       document.addEventListener('keydown', onKeyDown, true);
       document.addEventListener('keyup', onKeyUp, true);
       document.addEventListener('click', onDocumentClick);
+      const slotNumberElement = /** @type {HTMLDivElement} */ (
+        slotNumberRef.current
+      );
+      let pageYStart = 0;
+      let mousedown = false;
+      let mouseMoved = false;
+      let slotNumberStart = 0;
+      /**
+       * @param {MouseEvent | TouchEvent} e
+       */
+      function handleMouseDown(e) {
+        document.body.style.userSelect = 'none';
+        pageYStart = e instanceof MouseEvent ? e.pageY : e.touches[0].pageY;
+        mousedown = true;
+        mouseMoved = false;
+        slotNumberStart = slotNumberLocalRef.current;
+      }
+      slotNumberElement.addEventListener('mousedown', handleMouseDown);
+      slotNumberElement.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        handleMouseDown(e);
+      });
+      /**
+       * @param {MouseEvent | TouchEvent} e
+       */
+      function handleMouseMove(e) {
+        if (!mousedown) {
+          return;
+        }
+        mouseMoved = true;
+        const { pageY } = e instanceof MouseEvent ? e : e.touches[0];
+        const pixelsPerIncrement = 2;
+        const increment = Math.round((pageYStart - pageY) / pixelsPerIncrement);
+        setSlotNumberLocal(
+          Math.min(199, Math.max(0, slotNumberStart + increment))
+        );
+      }
+      window.addEventListener('mousemove', handleMouseMove);
+      slotNumberElement.addEventListener('touchmove', handleMouseMove);
+      function handleMouseUp() {
+        document.body.style.userSelect = 'unset';
+        mousedown = false;
+        if (mouseMoved) {
+          onSampleUpdate(sampleIdRef.current, {
+            slotNumber: slotNumberLocalRef.current,
+          });
+        }
+      }
+      window.addEventListener('mouseup', handleMouseUp);
+      slotNumberElement.addEventListener('touchend', handleMouseUp);
+      slotNumberElement.addEventListener('touchcancel', () => {
+        document.body.style.userSelect = 'unset';
+      });
+      /** @param {MouseEvent} e */
+      function handleClick(e) {
+        if (
+          mouseMoved ||
+          (digitElementsRef.current &&
+            digitElementsRef.current.some((elem) =>
+              elem.contains(/** @type {Node} */ (e.target))
+            ))
+        ) {
+          return;
+        }
+        setFocusedDigit(2);
+      }
+      slotNumberElement.addEventListener('click', handleClick);
       return () => {
         document.removeEventListener('keydown', onKeyDown, true);
         document.removeEventListener('keyup', onKeyUp, true);
         document.removeEventListener('click', onDocumentClick);
+        window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('mouseup', handleMouseUp);
       };
     }, [onSampleUpdate]);
   }
@@ -206,17 +278,6 @@ function SlotNumberInput({ sample, onSampleUpdate }) {
           className={classes.slotNumber}
           title={`Slot ${slotNumberLocal}`}
           ref={slotNumberRef}
-          onClick={(e) => {
-            if (
-              digitElementsRef.current &&
-              digitElementsRef.current.some((elem) =>
-                elem.contains(/** @type {Node} */ (e.target))
-              )
-            ) {
-              return;
-            }
-            setFocusedDigit(2);
-          }}
         >
           {/* behind the real information we just put a row of faint 8s to
         simulate the effect of unilluminated character segments */}

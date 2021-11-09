@@ -303,6 +303,9 @@ function SlotNumberInput({ sample, onSampleUpdate }) {
                     'circle'
                   );
                   point.classList.add(classes.point);
+                  point.setAttribute('cx', '10.7');
+                  point.setAttribute('cy', '17');
+                  point.setAttribute('r', '1');
                   svg.appendChild(point);
 
                   digitElementsRef.current = /** @type {SVGGElement[]} */ (

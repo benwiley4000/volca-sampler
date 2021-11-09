@@ -81,15 +81,6 @@ function SlotNumberInput({ sample, onSampleUpdate }) {
       if (!digitElementsRef.current) {
         throw new Error('Expected elements to exist');
       }
-      digitElementsRef.current.forEach((element, i) => {
-        const digit = /** @type {0 | 1 | 2} */ (i);
-        element.addEventListener('click', () => {
-          setFocusedDigit(digit);
-        });
-        element.addEventListener('touchstart', (e) => {
-          e.preventDefault();
-        });
-      });
       /** @param {KeyboardEvent} e */
       function onKeyDown(e) {
         const focusedDigit = focusedDigitRef.current;
@@ -176,7 +167,7 @@ function SlotNumberInput({ sample, onSampleUpdate }) {
       );
       let pageYStart = 0;
       let mousedown = false;
-      let mouseMoved = false;
+      let slotNumberDragged = false;
       let slotNumberStart = 0;
       /**
        * @param {MouseEvent | TouchEvent} e
@@ -185,7 +176,7 @@ function SlotNumberInput({ sample, onSampleUpdate }) {
         document.body.style.userSelect = 'none';
         pageYStart = e instanceof MouseEvent ? e.pageY : e.touches[0].pageY;
         mousedown = true;
-        mouseMoved = false;
+        slotNumberDragged = false;
         slotNumberStart = slotNumberLocalRef.current;
       }
       slotNumberElement.addEventListener('mousedown', handleMouseDown);
@@ -200,20 +191,22 @@ function SlotNumberInput({ sample, onSampleUpdate }) {
         if (!mousedown) {
           return;
         }
-        mouseMoved = true;
         const { pageY } = e instanceof MouseEvent ? e : e.touches[0];
         const pixelsPerIncrement = 2;
         const increment = Math.round((pageYStart - pageY) / pixelsPerIncrement);
-        setSlotNumberLocal(
-          Math.min(199, Math.max(0, slotNumberStart + increment))
-        );
+        if (increment) {
+          slotNumberDragged = true;
+          setSlotNumberLocal(
+            Math.min(199, Math.max(0, slotNumberStart + increment))
+          );
+        }
       }
       window.addEventListener('mousemove', handleMouseMove);
       slotNumberElement.addEventListener('touchmove', handleMouseMove);
       function handleMouseUp() {
         document.body.style.userSelect = 'unset';
         mousedown = false;
-        if (mouseMoved) {
+        if (slotNumberDragged) {
           onSampleUpdate(sampleIdRef.current, {
             slotNumber: slotNumberLocalRef.current,
           });
@@ -227,7 +220,7 @@ function SlotNumberInput({ sample, onSampleUpdate }) {
       /** @param {MouseEvent} e */
       function handleClick(e) {
         if (
-          mouseMoved ||
+          slotNumberDragged ||
           (digitElementsRef.current &&
             digitElementsRef.current.some((elem) =>
               elem.contains(/** @type {Node} */ (e.target))
@@ -238,6 +231,17 @@ function SlotNumberInput({ sample, onSampleUpdate }) {
         setFocusedDigit(2);
       }
       slotNumberElement.addEventListener('click', handleClick);
+      digitElementsRef.current.forEach((element, i) => {
+        const digit = /** @type {0 | 1 | 2} */ (i);
+        element.addEventListener('click', () => {
+          if (!slotNumberDragged) {
+            setFocusedDigit(digit);
+          }
+        });
+        element.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+        });
+      });
       return () => {
         document.removeEventListener('keydown', onKeyDown, true);
         document.removeEventListener('keyup', onKeyUp, true);

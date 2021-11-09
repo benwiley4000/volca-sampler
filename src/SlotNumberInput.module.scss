@@ -1,3 +1,7 @@
+.slotNumberRow {
+  display: flex;
+}
+
 .slotNumberContainer {
   --slot-width: 160px;
   --slot-padding: 0.25rem;
@@ -61,6 +65,12 @@
       fill: var(--bs-primary);
     }
   }
+}
+
+.warning {
+  width: 1.5rem;
+  margin-left: 1rem;
+  align-self: center;
 }
 
 @keyframes digitBlinkEffect {

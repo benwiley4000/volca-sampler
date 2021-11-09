@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import SevenSegmentDisplay, { Digit } from 'seven-segment-display';
-import { Form } from 'react-bootstrap';
+import { Form, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { findDOMNode } from 'react-dom';
 import keyboardArrowUpIcon from '@material-design-icons/svg/filled/keyboard_arrow_up.svg';
 import keyboardArrowDownIcon from '@material-design-icons/svg/filled/keyboard_arrow_down.svg';
+import warningIcon from '@material-design-icons/svg/filled/warning.svg';
 
 import classes from './SlotNumberInput.module.scss';
 
@@ -262,78 +263,97 @@ function SlotNumberInput({ sample, onSampleUpdate }) {
     <>
       <Form.Label>Destination</Form.Label>
       <br />
-      <div className={classes.slotNumberContainer}>
-        <div className={classes.arrowControls}>
-          <span onClick={() => handleArrowUp(2)}>
-            <img src={keyboardArrowUpIcon} alt="Increment 100" />
-          </span>
-          <span onClick={() => handleArrowUp(1)}>
-            <img src={keyboardArrowUpIcon} alt="Increment 10" />
-          </span>
-          <span onClick={() => handleArrowUp(0)}>
-            <img src={keyboardArrowUpIcon} alt="Increment 1" />
-          </span>
-        </div>
-        <div
-          className={classes.slotNumber}
-          title={`Slot ${slotNumberLocal}`}
-          ref={slotNumberRef}
-        >
-          {/* behind the real information we just put a row of faint 8s to
+      <div className={classes.slotNumberRow}>
+        <div className={classes.slotNumberContainer}>
+          <div className={classes.arrowControls}>
+            <span onClick={() => handleArrowUp(2)}>
+              <img src={keyboardArrowUpIcon} alt="Increment 100" />
+            </span>
+            <span onClick={() => handleArrowUp(1)}>
+              <img src={keyboardArrowUpIcon} alt="Increment 10" />
+            </span>
+            <span onClick={() => handleArrowUp(0)}>
+              <img src={keyboardArrowUpIcon} alt="Increment 1" />
+            </span>
+          </div>
+          <div
+            className={classes.slotNumber}
+            title={`Slot ${slotNumberLocal}`}
+            ref={slotNumberRef}
+          >
+            {/* behind the real information we just put a row of faint 8s to
         simulate the effect of unilluminated character segments */}
-          <SevenSegmentDisplay
-            value="8888"
-            color="var(--bs-gray-dark)"
-            strokeColor="transparent"
-            digitCount={4}
-          />
-          <SevenSegmentDisplay
-            ref={
-              /**
-               * @param {React.Component} instance
-               */
-              (instance) => {
-                const svg = /** @type {SVGElement} */ (findDOMNode(instance));
-                if (svg) {
-                  svg.querySelectorAll('circle').forEach((oldPoint) => {
-                    svg.removeChild(oldPoint);
-                  });
-                  const point = document.createElementNS(
-                    'http://www.w3.org/2000/svg',
-                    'circle'
-                  );
-                  point.classList.add(classes.point);
-                  point.setAttribute('cx', '10.7');
-                  point.setAttribute('cy', '17');
-                  point.setAttribute('r', '1');
-                  svg.appendChild(point);
+            <SevenSegmentDisplay
+              value="8888"
+              color="var(--bs-gray-dark)"
+              strokeColor="transparent"
+              digitCount={4}
+            />
+            <SevenSegmentDisplay
+              ref={
+                /**
+                 * @param {React.Component} instance
+                 */
+                (instance) => {
+                  const svg = /** @type {SVGElement} */ (findDOMNode(instance));
+                  if (svg) {
+                    svg.querySelectorAll('circle').forEach((oldPoint) => {
+                      svg.removeChild(oldPoint);
+                    });
+                    const point = document.createElementNS(
+                      'http://www.w3.org/2000/svg',
+                      'circle'
+                    );
+                    point.classList.add(classes.point);
+                    point.setAttribute('cx', '10.7');
+                    point.setAttribute('cy', '17');
+                    point.setAttribute('r', '1');
+                    svg.appendChild(point);
 
-                  digitElementsRef.current = /** @type {SVGGElement[]} */ (
-                    [].slice.call(svg.querySelectorAll('g'))
-                  )
-                    // call .reverse() to get the right-most (smallest) digit first
-                    .reverse()
-                    .slice(0, 3);
+                    digitElementsRef.current = /** @type {SVGGElement[]} */ (
+                      [].slice.call(svg.querySelectorAll('g'))
+                    )
+                      // call .reverse() to get the right-most (smallest) digit first
+                      .reverse()
+                      .slice(0, 3);
+                  }
                 }
               }
+              // the 5 actually represents an S
+              value={`5${String(slotNumberLocal).padStart(3, '0')}`}
+              digitProps={{ color: 'var(--bs-primary)' }}
+              digitCount={4}
+            />
+          </div>
+          <div className={classes.arrowControls}>
+            <span onClick={() => handleArrowDown(2)}>
+              <img src={keyboardArrowDownIcon} alt="Decrement 100" />
+            </span>
+            <span onClick={() => handleArrowDown(1)}>
+              <img src={keyboardArrowDownIcon} alt="Decrement 10" />
+            </span>
+            <span onClick={() => handleArrowDown(0)}>
+              <img src={keyboardArrowDownIcon} alt="Decrement 1" />
+            </span>
+          </div>
+        </div>
+        {sample.metadata.slotNumber > 99 && slotNumberLocal > 99 && (
+          <OverlayTrigger
+            placement="auto-end"
+            overlay={
+              <Tooltip>
+                To transfer to this destination, be sure you have a volca
+                sample2. The original volca sample only supports slots 0-99.
+              </Tooltip>
             }
-            // the 5 actually represents an S
-            value={`5${String(slotNumberLocal).padStart(3, '0')}`}
-            digitProps={{ color: 'var(--bs-primary)' }}
-            digitCount={4}
-          />
-        </div>
-        <div className={classes.arrowControls}>
-          <span onClick={() => handleArrowDown(2)}>
-            <img src={keyboardArrowDownIcon} alt="Decrement 100" />
-          </span>
-          <span onClick={() => handleArrowDown(1)}>
-            <img src={keyboardArrowDownIcon} alt="Decrement 10" />
-          </span>
-          <span onClick={() => handleArrowDown(0)}>
-            <img src={keyboardArrowDownIcon} alt="Decrement 1" />
-          </span>
-        </div>
+          >
+            <img
+              className={classes.warning}
+              src={warningIcon}
+              alt="destination-warning"
+            />
+          </OverlayTrigger>
+        )}
       </div>
     </>
   );

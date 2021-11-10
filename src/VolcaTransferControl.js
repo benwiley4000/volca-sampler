@@ -71,7 +71,7 @@ function VolcaTransferControl({ sample }) {
     }
     return () => stop.current();
   }, [sample]);
-  const { playAudioBuffer, isAudioBusy } = useAudioPlaybackContext();
+  const { playAudioBuffer } = useAudioPlaybackContext();
   return (
     <>
       <Button
@@ -105,7 +105,6 @@ function VolcaTransferControl({ sample }) {
           }
         }}
         disabled={
-          isAudioBusy ||
           syroAudioBuffer instanceof Error ||
           syroTransferState === 'transferring'
         }

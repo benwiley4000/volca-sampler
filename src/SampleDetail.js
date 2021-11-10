@@ -113,7 +113,7 @@ function SampleDetail({
       });
     }
   }, [targetWav]);
-  const { playAudioBuffer, isAudioBusy } = useAudioPlaybackContext();
+  const { playAudioBuffer } = useAudioPlaybackContext();
   // to be set when playback is started
   const stopPreviewPlayback = useRef(() => {});
   useEffect(() => {
@@ -200,7 +200,6 @@ function SampleDetail({
             setCallbackOnAudioBuffer({ fn: () => button.click() });
           }
         }}
-        disabled={isAudioBusy}
       >
         Play audio preview
       </Button>

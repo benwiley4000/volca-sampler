@@ -4,7 +4,7 @@ import {
   useCallback,
   useContext,
   useMemo,
-  useState,
+  useRef,
 } from 'react';
 import getWavFileHeaders from 'wav-headers';
 
@@ -258,7 +258,6 @@ const audioPlaybackContextDefaultValue = {
   playAudioBuffer(audioBuffer, opts) {
     throw new Error('Must render AudioPlaybackContextProvider');
   },
-  isAudioBusy: false,
 };
 
 const AudioPlaybackContext = createContext(audioPlaybackContextDefaultValue);
@@ -268,37 +267,19 @@ const AudioPlaybackContext = createContext(audioPlaybackContextDefaultValue);
  * @returns
  */
 export function AudioPlaybackContextProvider({ children }) {
-  const [isAudioBusy, setIsAudioBusy] = useState(false);
+  const stopCurrent = useRef(() => {});
 
   const playAudioBuffer = useCallback(
     /**
      * @type {(typeof audioPlaybackContextDefaultValue.playAudioBuffer)}
      */
     (audioBuffer, { onTimeUpdate = () => null, onEnded = () => null } = {}) => {
-      if (isAudioBusy) {
-        throw new Error(
-          'Wait until audio playback has finished to start new playback'
-        );
-      }
-      setIsAudioBusy(true);
-      /**
-       * @type {AudioContext}
-       */
-      let audioContext;
-      /**
-       * @type {AudioBufferSourceNode}
-       */
-      let source;
-      try {
-        audioContext = getTargetAudioContext();
-        source = audioContext.createBufferSource();
-        source.buffer = audioBuffer;
-        source.connect(audioContext.destination);
-        source.start();
-      } catch (err) {
-        setIsAudioBusy(false);
-        throw err;
-      }
+      stopCurrent.current();
+      const audioContext = getTargetAudioContext();
+      const source = audioContext.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(audioContext.destination);
+      source.start();
       const startTime = audioContext.currentTime;
       onTimeUpdate(0);
       let frame = requestAnimationFrame(updateCurrentTime);
@@ -312,23 +293,24 @@ export function AudioPlaybackContextProvider({ children }) {
           onTimeUpdate(audioBuffer.duration);
           onEnded();
         }
-        setIsAudioBusy(false);
         cancelAnimationFrame(frame);
       });
-      return function stop() {
+      function stop() {
         source.stop();
+        cancelAnimationFrame(frame);
         stopped = true;
-      };
+      }
+      stopCurrent.current = stop;
+      return stop;
     },
-    [isAudioBusy]
+    []
   );
 
   const contextValue = useMemo(
     () => ({
       playAudioBuffer,
-      isAudioBusy,
     }),
-    [playAudioBuffer, isAudioBusy]
+    [playAudioBuffer]
   );
 
   return createElement(

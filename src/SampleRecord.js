@@ -5,7 +5,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Form, Button, Collapse } from 'react-bootstrap';
+import { Form, Button, Collapse, Alert, Container } from 'react-bootstrap';
 
 import {
   findSamplePeak,
@@ -27,7 +27,7 @@ const captureDevicePreferenceKey = 'capture_device_preference';
 let cachedCaptureDevices = null;
 
 /**
- * @typedef {(audioFileBuffer: Uint8Array, userFile?: File) => void} RecordingCallback
+ * @typedef {(audioFileBuffer: Uint8Array, userFile?: File) => Promise<'saved' | 'silent'>} RecordingCallback
  */
 
 /**
@@ -142,6 +142,15 @@ function useMediaRecording(onRecordUpdate, onRecordFinish) {
   const [recordingError, setRecordingError] = useState(
     /** @type {unknown} */ (null)
   );
+  const [showSilenceWarning, setShowSilenceWarning] = useState(false);
+  useEffect(() => {
+    if (captureState !== 'ready') {
+      setShowSilenceWarning(false);
+    }
+  }, [captureState]);
+  const dismissSilenceWarning = useCallback(() => {
+    setShowSilenceWarning(false);
+  }, []);
   // to be set when recording is started
   const [stop, setStop] = useState({
     /**
@@ -149,6 +158,9 @@ function useMediaRecording(onRecordUpdate, onRecordFinish) {
      */
     fn(cancel) {},
   });
+  useEffect(() => {
+    return stop.fn;
+  }, [stop]);
   const [sampleRate, setSampleRate] = useState(Infinity);
   const [maxSamples, setMaxSamples] = useState(0);
   const handleBeginRecording = useCallback(async () => {
@@ -212,7 +224,13 @@ function useMediaRecording(onRecordUpdate, onRecordFinish) {
       setCaptureState('ready');
     } else {
       setCaptureState('finalizing');
-      onRecordFinish(wavBuffer);
+      const result = await onRecordFinish(wavBuffer);
+      if (!cancelled) {
+        setCaptureState('ready');
+        if (result === 'silent') {
+          setShowSilenceWarning(true);
+        }
+      }
     }
   }, [
     selectedCaptureDeviceId,
@@ -227,6 +245,7 @@ function useMediaRecording(onRecordUpdate, onRecordFinish) {
     selectedChannelCount,
     captureState,
     recordingError,
+    showSilenceWarning,
     sampleRate,
     maxSamples,
     refreshCaptureDevices,
@@ -234,6 +253,7 @@ function useMediaRecording(onRecordUpdate, onRecordFinish) {
     setSelectedChannelCount,
     beginRecording: handleBeginRecording,
     stopRecording: stop.fn,
+    dismissSilenceWarning,
   };
 }
 
@@ -347,6 +367,7 @@ function SampleRecord({ onRecordFinish }) {
     selectedChannelCount,
     captureState,
     recordingError,
+    showSilenceWarning,
     maxSamples,
     sampleRate,
     refreshCaptureDevices,
@@ -354,6 +375,7 @@ function SampleRecord({ onRecordFinish }) {
     setSelectedChannelCount,
     beginRecording,
     stopRecording,
+    dismissSilenceWarning,
   } = useMediaRecording(onRecordUpdate, onRecordFinish);
   sampleRateRef.current = sampleRate;
 
@@ -400,7 +422,7 @@ function SampleRecord({ onRecordFinish }) {
   }, [showingCaptureConfig, refreshCaptureDevices]);
 
   return (
-    <div>
+    <Container fluid="sm">
       {accessState === 'denied' ? (
         <p>
           Looks like you didn't grant access to your audio input device. Please
@@ -428,6 +450,21 @@ function SampleRecord({ onRecordFinish }) {
       ) : (
         <div>
           <h2>Send a new sound to your Volca Sample!</h2>
+          {showSilenceWarning && (
+            <div className={classes.alertContainer}>
+              <Alert
+                dismissible
+                variant="warning"
+                onClose={dismissSilenceWarning}
+              >
+                <Alert.Heading>Your recording was totally silent</Alert.Heading>
+                <p>
+                  Check the audio input settings and your connections, then try
+                  again
+                </p>
+              </Alert>
+            </div>
+          )}
           <Button
             className={classes.recordButton}
             type="button"
@@ -583,7 +620,7 @@ function SampleRecord({ onRecordFinish }) {
           }}
         />
       </Button>
-    </div>
+    </Container>
   );
 }
 

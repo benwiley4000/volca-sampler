@@ -10,8 +10,9 @@ import {
   SampleContainer,
   storeAudioSourceFile,
 } from './store.js';
-import { getSamplePeaksForSourceFile } from './utils/waveform.js';
+import { getSamplePeaksForAudioBuffer } from './utils/waveform.js';
 import { Accordion, ListGroup, Offcanvas } from 'react-bootstrap';
+import { getAudioBufferForAudioFileData } from './utils/audioData.js';
 
 const MainLayout = styled.div({
   padding: '2rem',
@@ -62,9 +63,25 @@ function App() {
   }, []);
 
   /**
-   * @type {(audioFileBuffer: Uint8Array, userFile?: File) => void}
+   * @type {(audioFileBuffer: Uint8Array, userFile?: File) => Promise<'saved' | 'silent'>}
    * */
   const handleRecordFinish = useCallback(async (audioFileBuffer, userFile) => {
+    const audioBuffer = await getAudioBufferForAudioFileData(audioFileBuffer);
+    /**
+     * @type {[number, number]}
+     */
+    const trimFrames = [0, 0];
+    const waveformPeaks = await getSamplePeaksForAudioBuffer(
+      audioBuffer,
+      trimFrames
+    );
+    if (
+      [...waveformPeaks.positive, ...waveformPeaks.negative].every(
+        (peak) => peak === 0
+      )
+    ) {
+      return 'silent';
+    }
     const sourceFileId = await storeAudioSourceFile(audioFileBuffer);
     /**
      * @type {string}
@@ -82,14 +99,6 @@ function App() {
     } else {
       name = 'New sample';
     }
-    /**
-     * @type {[number, number]}
-     */
-    const trimFrames = [0, 0];
-    const waveformPeaks = await getSamplePeaksForSourceFile(
-      sourceFileId,
-      trimFrames
-    );
     const sample = new SampleContainer.Mutable({
       name,
       sourceFileId,
@@ -105,6 +114,7 @@ function App() {
     await sample.persist();
     setUserSamples((samples) => new Map([[sample.id, sample], ...samples]));
     setFocusedSampleId(sample.id);
+    return 'saved';
   }, []);
 
   /**

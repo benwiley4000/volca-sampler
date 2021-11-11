@@ -263,21 +263,19 @@ const groupPixelWidth = 3;
  * @param {{
  *   canvas: HTMLCanvasElement;
  *   peaks: Float32Array;
+ *   drawUntil: number;
  *   scaleCoefficient: number;
  * }} opts
  */
-function drawRecordingPeaks({ canvas, peaks, scaleCoefficient }) {
+function drawRecordingPeaks({ canvas, peaks, drawUntil, scaleCoefficient }) {
   const barColor = '#fff';
   const ctx = /** @type {CanvasRenderingContext2D} */ (canvas.getContext('2d'));
   ctx.imageSmoothingEnabled = false;
   const { width, height } = canvas;
   ctx.clearRect(0, 0, width, height);
   ctx.fillStyle = barColor;
-  for (let i = 0; i < peaks.length; i++) {
+  for (let i = 0; i < drawUntil && i < peaks.length; i++) {
     const peak = peaks[i];
-    if (peak === 0) {
-      continue;
-    }
     const basePeakHeight = height * peak; // float
     // make the bar always at least 1px tall to avoid empty sections
     const scaledPeakHeight = Math.max(
@@ -345,15 +343,15 @@ function SampleRecord({ onRecordFinish }) {
       const peaksByChannel = samplesByChannel.map((samples) =>
         findSamplePeak(new Float32Array(samples.buffer, 0, groupSize))
       );
-      peaks[peakOffsetRef.current] = Math.max(...peaksByChannel);
+      peaks[peakOffsetRef.current++] = Math.max(...peaksByChannel);
       drawRecordingPeaks({
         canvas: /** @type {HTMLCanvasElement} */ (
           recordButtonCanvasRef.current
         ),
         peaks,
+        drawUntil: peakOffsetRef.current,
         scaleCoefficient: 0.3,
       });
-      peakOffsetRef.current++;
       updatesQueueRef.current = [
         samplesByChannel.map((samples) => samples.slice(groupSize)),
       ];

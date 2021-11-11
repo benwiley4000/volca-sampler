@@ -3,7 +3,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { decode as decodeBase64 } from 'base64-arraybuffer';
 
 import { SAMPLE_RATE } from './utils/constants.js';
-import { getSamplePeaksForSourceFile } from './utils/waveform.js';
+import { getSourceAudioBuffer } from './utils/audioData.js';
+import { getSamplePeaksForAudioBuffer } from './utils/waveform.js';
 
 /**
  * @typedef {{
@@ -113,8 +114,12 @@ const metadataUpgrades = {
     const { trimFrames, ...prevMetadata } = /** @type {PrevMetadata} */ (
       oldMetadata
     );
-    const waveformPeaks = await getSamplePeaksForSourceFile(
+    const audioBuffer = await getSourceAudioBuffer(
       prevMetadata.sourceFileId,
+      false
+    );
+    const waveformPeaks = await getSamplePeaksForAudioBuffer(
+      audioBuffer,
       trimFrames
     );
     /**

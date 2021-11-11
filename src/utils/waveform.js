@@ -1,7 +1,4 @@
-import {
-  getMonoSamplesFromAudioBuffer,
-  getSourceAudioBuffer,
-} from './audioData.js';
+import { getMonoSamplesFromAudioBuffer } from './audioData.js';
 
 export const GROUP_PIXEL_WIDTH = 6;
 
@@ -48,11 +45,10 @@ export function getPeaksForSamples(samples, containerPixelWidth) {
 }
 
 /**
- * @param {string} sourceFileId
+ * @param {AudioBuffer} audioBuffer
  * @param {[number, number]} trimFrames
  */
-export async function getSamplePeaksForSourceFile(sourceFileId, trimFrames) {
-  const audioBuffer = await getSourceAudioBuffer(sourceFileId, false);
+export async function getSamplePeaksForAudioBuffer(audioBuffer, trimFrames) {
   const monoSamples = getMonoSamplesFromAudioBuffer(audioBuffer, trimFrames);
   const waveformPeaks = getPeaksForSamples(monoSamples, WAVEFORM_CACHED_WIDTH);
   return waveformPeaks;

@@ -1,3 +1,9 @@
+.alertContainer {
+  & > * {
+    display: inline-block;
+  }
+}
+
 .recordButton {
   position: relative;
   overflow: hidden;

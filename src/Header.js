@@ -1,4 +1,5 @@
 import React from 'react';
+import { Container } from 'react-bootstrap';
 
 import classes from './Header.module.scss';
 
@@ -8,38 +9,38 @@ import classes from './Header.module.scss';
  */
 function Header({ onMenuOpen, onHeaderClick }) {
   return (
-    <h1 className={classes.title} onClick={onHeaderClick}>
-      <span
-        className={classes.menuIcon}
-        onClick={(e) => {
-          e.stopPropagation();
-          onMenuOpen();
-        }}
-      >
+    <div className={classes.titleBar}>
+      <span className={classes.menuIcon} onClick={onMenuOpen}>
         ☰
       </span>
-      <span className={classes.titleText} data-text="Volca Sample">
-        Volca Sample
-        <span className={classes.titleR}>r</span>
-        <svg
-          viewBox="0 0 150 150"
-          preserveAspectRatio="none"
-          className={classes.titleStarburst}
-        >
-          {
-            /** @type {void[]} */ (Array(24)).fill().map((_, i, { length }) => (
-              <polygon
-                key={i}
-                points="75,70 75,80 150,75"
-                transform-origin="75 75"
-                // @ts-ignore
-                style={{ '--rotation': `${(i * 360) / length}deg` }}
-              />
-            ))
-          }
-        </svg>
-      </span>
-      <img className={classes.titleGraphic} src="volca_sample.png" alt="" />
+      <Container fluid="sm" className={classes.titleContainer}>
+        <h1 className={classes.title} onClick={onHeaderClick}>
+          <span className={classes.titleText} data-text="Volca Sample">
+            Volca Sample
+            <span className={classes.titleR}>r</span>
+            <svg
+              viewBox="0 0 150 150"
+              preserveAspectRatio="none"
+              className={classes.titleStarburst}
+            >
+              {
+                /** @type {void[]} */ (Array(24))
+                  .fill()
+                  .map((_, i, { length }) => (
+                    <polygon
+                      key={i}
+                      points="75,70 75,80 150,75"
+                      transform-origin="75 75"
+                      // @ts-ignore
+                      style={{ '--rotation': `${(i * 360) / length}deg` }}
+                    />
+                  ))
+              }
+            </svg>
+          </span>
+          <img className={classes.titleGraphic} src="volca_sample.png" alt="" />
+        </h1>
+      </Container>
       <svg width={0} height={0}>
         {/* https://tympanus.net/codrops/2019/01/22/svg-filter-effects-outline-text-with-femorphology/ */}
         <filter id="outline">
@@ -66,7 +67,7 @@ function Header({ onMenuOpen, onHeaderClick }) {
           </feMerge>
         </filter>
       </svg>
-    </h1>
+    </div>
   );
 }
 

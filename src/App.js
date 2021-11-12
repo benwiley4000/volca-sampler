@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { styled } from 'tonami';
+import { Accordion, ListGroup, Offcanvas } from 'react-bootstrap';
 
 import Header from './Header.js';
 import SampleList from './SampleList.js';
@@ -11,18 +11,9 @@ import {
   storeAudioSourceFile,
 } from './store.js';
 import { getSamplePeaksForAudioBuffer } from './utils/waveform.js';
-import { Accordion, ListGroup, Offcanvas } from 'react-bootstrap';
 import { getAudioBufferForAudioFileData } from './utils/audioData.js';
 
-const MainLayout = styled.div({
-  padding: '2rem',
-  display: 'flex',
-  height: '100%',
-});
-
-const FocusedSampleContainer = styled.div({
-  flexGrow: 1,
-});
+import classes from './App.module.scss';
 
 function App() {
   const [userSamples, setUserSamples] = useState(
@@ -191,8 +182,8 @@ function App() {
           </ListGroup>
         </Offcanvas.Body>
       </Offcanvas>
-      <MainLayout>
-        <FocusedSampleContainer>
+      <div className={classes.mainLayout}>
+        <div className={classes.focusedSampleContainer}>
           {focusedSampleId && (
             <SampleDetail
               sample={allSamples.get(focusedSampleId) || null}
@@ -225,8 +216,8 @@ function App() {
           {!focusedSampleId && (
             <SampleRecord onRecordFinish={handleRecordFinish} />
           )}
-        </FocusedSampleContainer>
-      </MainLayout>
+        </div>
+      </div>
     </div>
   );
 }

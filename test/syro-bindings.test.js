@@ -30,7 +30,7 @@ export const createElement = () => {};
 export const useCallback = () => {};
 export const useContext = () => {};
 export const useMemo = () => {};
-export const useState = () => {};
+export const useRef = () => {};
   `,
   uuid: 'export const v4 = () => `id-${Math.random()}`;',
   'base64-arraybuffer': `

@@ -28,17 +28,15 @@ const arrowDownCallback = (digit, slotNumber) =>
 
 /**
  * @param {{
- *   sample: import('./store').SampleContainer
- *   onSampleUpdate: (id: string, update: import('./store').SampleMetadataUpdateArg) => void;
+ *   slotNumber: number;
+ *   onSlotNumberUpdate: (update: number | ((slotNumber: number) => number)) => void;
  * }} props
  */
-function SlotNumberInput({ sample, onSampleUpdate }) {
-  const [slotNumberLocal, setSlotNumberLocal] = useState(
-    sample.metadata.slotNumber
-  );
+function SlotNumberInput({ slotNumber, onSlotNumberUpdate }) {
+  const [slotNumberLocal, setSlotNumberLocal] = useState(slotNumber);
   useEffect(() => {
-    setSlotNumberLocal(sample.metadata.slotNumber);
-  }, [sample.metadata.slotNumber]);
+    setSlotNumberLocal(slotNumber);
+  }, [slotNumber]);
 
   // 0 is 0-9, 1 is 0-90, 2 is 0-200
   const [focusedDigit, setFocusedDigit] = useState(
@@ -48,21 +46,17 @@ function SlotNumberInput({ sample, onSampleUpdate }) {
   /** @type {(digit: 0 | 1 | 2) => void} */
   const handleArrowUp = useCallback(
     (digit) => {
-      onSampleUpdate(sample.id, ({ slotNumber }) => ({
-        slotNumber: arrowUpCallback(digit, slotNumber),
-      }));
+      onSlotNumberUpdate((slotNumber) => arrowUpCallback(digit, slotNumber));
     },
-    [sample.id, onSampleUpdate]
+    [onSlotNumberUpdate]
   );
 
   /** @type {(digit: 0 | 1 | 2) => void} */
   const handleArrowDown = useCallback(
     (digit) => {
-      onSampleUpdate(sample.id, ({ slotNumber }) => ({
-        slotNumber: arrowDownCallback(digit, slotNumber),
-      }));
+      onSlotNumberUpdate((slotNumber) => arrowDownCallback(digit, slotNumber));
     },
-    [sample.id, onSampleUpdate]
+    [onSlotNumberUpdate]
   );
 
   /**
@@ -73,8 +67,6 @@ function SlotNumberInput({ sample, onSampleUpdate }) {
   {
     const focusedDigitRef = useRef(focusedDigit);
     focusedDigitRef.current = focusedDigit;
-    const sampleIdRef = useRef(sample.id);
-    sampleIdRef.current = sample.id;
     const slotNumberLocalRef = useRef(slotNumberLocal);
     slotNumberLocalRef.current = slotNumberLocal;
     useEffect(() => {
@@ -144,9 +136,9 @@ function SlotNumberInput({ sample, onSampleUpdate }) {
           setFocusedDigit(
             focusedDigit ? /** @type {0 | 1} */ (focusedDigit - 1) : null
           );
-          onSampleUpdate(sampleIdRef.current, { slotNumber: newSlotNumber });
+          onSlotNumberUpdate(newSlotNumber);
         } else {
-          onSampleUpdate(sampleIdRef.current, { slotNumber });
+          onSlotNumberUpdate(slotNumber);
         }
       }
       /** @param {MouseEvent} e */
@@ -207,9 +199,7 @@ function SlotNumberInput({ sample, onSampleUpdate }) {
         document.body.style.userSelect = 'unset';
         mousedown = false;
         if (slotNumberDragged) {
-          onSampleUpdate(sampleIdRef.current, {
-            slotNumber: slotNumberLocalRef.current,
-          });
+          onSlotNumberUpdate(slotNumberLocalRef.current);
         }
       }
       window.addEventListener('mouseup', handleMouseUp);
@@ -249,7 +239,7 @@ function SlotNumberInput({ sample, onSampleUpdate }) {
         window.removeEventListener('mousemove', handleMouseMove);
         window.removeEventListener('mouseup', handleMouseUp);
       };
-    }, [onSampleUpdate]);
+    }, [onSlotNumberUpdate]);
   }
   useEffect(() => {
     if (!digitElementsRef.current) {
@@ -341,7 +331,7 @@ function SlotNumberInput({ sample, onSampleUpdate }) {
             </span>
           </div>
         </div>
-        {sample.metadata.slotNumber > 99 && slotNumberLocal > 99 && (
+        {slotNumber > 99 && slotNumberLocal > 99 && (
           <OverlayTrigger
             placement="auto-end"
             overlay={

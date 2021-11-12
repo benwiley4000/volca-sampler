@@ -4,6 +4,7 @@ import { Accordion, ListGroup, Offcanvas } from 'react-bootstrap';
 import Header from './Header.js';
 import SampleList from './SampleList.js';
 import SampleDetail from './SampleDetail.js';
+import SampleDetailReadonly from './SampleDetailReadonly.js';
 import SampleRecord from './SampleRecord.js';
 import {
   getFactorySamples,
@@ -184,11 +185,16 @@ function App() {
       </Offcanvas>
       <div className={classes.mainLayout}>
         <div className={classes.focusedSampleContainer}>
-          {focusedSampleId && (
-            <SampleDetail
-              sample={allSamples.get(focusedSampleId) || null}
-              onSampleUpdate={handleSampleUpdate}
-              onSampleDuplicate={(id) => {
+          {focusedSampleId &&
+            (() => {
+              const sample = allSamples.get(focusedSampleId) || null;
+              if (!sample) {
+                return null;
+              }
+              /**
+               * @param {string} id
+               */
+              const onSampleDuplicate = (id) => {
                 const sample = allSamples.get(id);
                 if (sample) {
                   const newSample = sample.duplicate();
@@ -199,20 +205,34 @@ function App() {
                   // TODO: scroll new sample into view
                   setFocusedSampleId(newSample.id);
                 }
-              }}
-              onSampleDelete={(id) => {
-                const sample = allSamples.get(id);
-                if (sample && sample instanceof SampleContainer.Mutable) {
-                  sample.remove();
-                  setUserSamples((samples) => {
-                    const newSamples = new Map(samples);
-                    newSamples.delete(sample.id);
-                    return newSamples;
-                  });
-                }
-              }}
-            />
-          )}
+              };
+              if (sample instanceof SampleContainer.Mutable) {
+                return (
+                  <SampleDetail
+                    sample={sample}
+                    onSampleUpdate={handleSampleUpdate}
+                    onSampleDuplicate={onSampleDuplicate}
+                    onSampleDelete={(id) => {
+                      const sample = allSamples.get(id);
+                      if (sample && sample instanceof SampleContainer.Mutable) {
+                        sample.remove();
+                        setUserSamples((samples) => {
+                          const newSamples = new Map(samples);
+                          newSamples.delete(sample.id);
+                          return newSamples;
+                        });
+                      }
+                    }}
+                  />
+                );
+              }
+              return (
+                <SampleDetailReadonly
+                  sample={sample}
+                  onSampleDuplicate={onSampleDuplicate}
+                />
+              );
+            })()}
           {!focusedSampleId && (
             <SampleRecord onRecordFinish={handleRecordFinish} />
           )}

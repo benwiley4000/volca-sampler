@@ -1,3 +1,11 @@
+.buttonLink {
+  white-space: nowrap;
+  & > button {
+    padding: 0;
+    vertical-align: unset;
+  }
+}
+
 .waveformContainer {
   height: 200px;
   max-width: 400px;

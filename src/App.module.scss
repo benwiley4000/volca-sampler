@@ -1,0 +1,18 @@
+@import "~bootstrap/scss/functions";
+@import "~bootstrap/scss/variables";
+@import "~bootstrap/scss/mixins";
+
+.mainLayout {
+  padding: 2rem;
+  display: flex;
+  height: 100%;
+  @include media-breakpoint-up(sm) {
+    // set horizontal padding to match title bar
+    padding-left: 4rem;
+    padding-right: 4rem;
+  }
+}
+
+.focusedSampleContainer {
+  flex-grow: 1;
+}

@@ -1,13 +1,7 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  Container,
-  Dropdown,
-  DropdownButton,
-  Button,
-  Form,
-} from 'react-bootstrap';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Container, Button, Form, Alert } from 'react-bootstrap';
 
-import WaveformEdit from './WaveformEdit.js';
+import WaveformReadonly from './WaveformReadonly.js';
 import VolcaTransferControl from './VolcaTransferControl.js';
 import {
   getTargetWavForSample,
@@ -36,43 +30,36 @@ function downloadBlob(blob, filename) {
 }
 
 /**
+ * @param {import('./store').SampleContainer} readonlySample
+ */
+function useSampleWithTemporalSlotNumber(readonlySample) {
+  const readonlySlotNumber = readonlySample.metadata.slotNumber;
+  const [slotNumber, setSlotNumber] = useState(readonlySlotNumber);
+  useEffect(() => {
+    setSlotNumber(readonlySlotNumber);
+  }, [readonlySlotNumber]);
+  const sample = useMemo(
+    () =>
+      readonlySample &&
+      new SampleContainer({
+        id: readonlySample.id,
+        ...readonlySample.metadata,
+        slotNumber,
+      }),
+    [readonlySample, slotNumber]
+  );
+  return { sample, setSlotNumber };
+}
+
+/**
  * @param {{
  *   sample: import('./store').SampleContainer;
- *   onSampleUpdate: (id: string, update: import('./store').SampleMetadataUpdateArg) => void;
  *   onSampleDuplicate: (id: string) => void;
- *   onSampleDelete: (id: string) => void;
  * }} props
  */
-function SampleDetail({
-  sample,
-  onSampleUpdate,
-  onSampleDuplicate,
-  onSampleDelete,
-}) {
-  const sampleId = sample && sample.id;
-  /**
-   * @type {(scaleCoefficient: number) => void}
-   */
-  const handleSetScaleCoefficient = useCallback(
-    (scaleCoefficient) =>
-      sampleId && onSampleUpdate(sampleId, { scaleCoefficient }),
-    [sampleId, onSampleUpdate]
-  );
-  /**
-   * @type {(updateTrimFrames: (old: [number, number]) => [number, number]) => void}
-   */
-  const handleSetTrimFrames = useCallback(
-    (updateTrimFrames) =>
-      sampleId &&
-      onSampleUpdate(sampleId, (metadata) => ({
-        ...metadata,
-        trim: {
-          ...metadata.trim,
-          frames: updateTrimFrames(metadata.trim.frames),
-        },
-      })),
-    [sampleId, onSampleUpdate]
-  );
+function SampleDetailReadonly({ sample: readonlySample, onSampleDuplicate }) {
+  const { sample, setSlotNumber } =
+    useSampleWithTemporalSlotNumber(readonlySample);
   const [targetWav, setTargetWav] = useState(
     /** @type {Uint8Array | null} */ (null)
   );
@@ -117,75 +104,28 @@ function SampleDetail({
   useEffect(() => {
     return () => stopPreviewPlayback.current();
   }, [sample]);
-  /**
-   * @type {(update: number | ((slotNumber: number) => number)) => void}
-   */
-  const handleSlotNumberUpdate = useCallback(
-    (update) => {
-      onSampleUpdate(sample.id, ({ slotNumber }) => ({
-        slotNumber: typeof update === 'function' ? update(slotNumber) : update,
-      }));
-    },
-    [sample.id, onSampleUpdate]
-  );
   return (
     <Container fluid="sm">
-      <h2>
-        {sample.metadata.name}
-        <DropdownButton
-          style={{ display: 'inline-block', float: 'right' }}
-          variant="light"
-          align="end"
-          title="options"
-        >
-          <Dropdown.Item
-            onClick={() => {
-              const newName = prompt(
-                `Choose a new name for the sample "${sample.metadata.name}":`,
-                sample.metadata.name
-              );
-              const newNameTrimmed = newName && newName.trim();
-              if (newNameTrimmed) {
-                onSampleUpdate(sample.id, { name: newNameTrimmed });
-              }
-            }}
-          >
-            Rename
-          </Dropdown.Item>
-          <Dropdown.Item onClick={() => onSampleDuplicate(sample.id)}>
-            Duplicate
-          </Dropdown.Item>
-          <Dropdown.Divider />
-          <Dropdown.Item
-            onClick={() => {
-              if (
-                window.confirm(
-                  `Are you sure you want to delete ${sample.metadata.name}?`
-                )
-              ) {
-                onSampleDelete(sample.id);
-              }
-            }}
-          >
-            Delete
-          </Dropdown.Item>
-        </DropdownButton>
-      </h2>
+      <h2>{sample.metadata.name}</h2>
       <p>
         <strong>Sampled:</strong>{' '}
         {new Date(sample.metadata.dateSampled).toLocaleString()}
-        <br />
-        <strong>Updated:</strong>{' '}
-        {new Date(sample.metadata.dateModified).toLocaleString()}
       </p>
-      <br />
-      <br />
+      <Alert variant="secondary">
+        <Alert.Heading>This is a factory sample.</Alert.Heading>
+        <p>
+          If you want to trim the audio, change volume or adjust quality before
+          transferring to the volca sample,{' '}
+          <span className={classes.buttonLink}>
+            <Button variant="link" onClick={() => onSampleDuplicate(sample.id)}>
+              make a duplicate
+            </Button>
+            .
+          </span>
+        </p>
+      </Alert>
       <div className={classes.waveformContainer}>
-        <WaveformEdit
-          onSetTrimFrames={handleSetTrimFrames}
-          onSetScaleCoefficient={handleSetScaleCoefficient}
-          sample={sample}
-        />
+        <WaveformReadonly sample={sample} />
       </div>
       <br />
       <br />
@@ -250,19 +190,16 @@ function SampleDetail({
           Quality bit depth ({sample.metadata.qualityBitDepth})
         </Form.Label>
         <Form.Range
+          disabled
           value={sample.metadata.qualityBitDepth}
           step={1}
           min={8}
           max={16}
-          onChange={(e) => {
-            const qualityBitDepth = Number(e.target.value);
-            onSampleUpdate(sample.id, { qualityBitDepth });
-          }}
         />
       </Form.Group>
       <SlotNumberInput
         slotNumber={sample.metadata.slotNumber}
-        onSlotNumberUpdate={handleSlotNumberUpdate}
+        onSlotNumberUpdate={setSlotNumber}
       />
       <br />
       <VolcaTransferControl sample={sample} />
@@ -270,4 +207,4 @@ function SampleDetail({
   );
 }
 
-export default SampleDetail;
+export default SampleDetailReadonly;

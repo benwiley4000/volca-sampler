@@ -1,19 +1,8 @@
-import React, {
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { Button } from 'react-bootstrap';
 
-import {
-  getSourceAudioBuffer,
-  getMonoSamplesFromAudioBuffer,
-  findSamplePeak,
-  getTrimmedView,
-} from './utils/audioData.js';
-import { getPeaksForSamples } from './utils/waveform.js';
+import { findSamplePeak, getTrimmedView } from './utils/audioData.js';
+import { useLoadedSample, useWaveformInfo } from './utils/waveform.js';
 import WaveformDisplay from './WaveformDisplay.js';
 
 /**
@@ -25,43 +14,24 @@ import WaveformDisplay from './WaveformDisplay.js';
  */
 
 /**
- * @param {WaveformEditProps & { sourceAudioBuffer: AudioBuffer | null }} props
+ * @param {WaveformEditProps} props
  */
 function WaveformEdit({
-  sourceAudioBuffer,
-  sample: {
-    metadata: {
-      trim: { frames: trimFrames },
-      scaleCoefficient,
-    },
-  },
+  sample: _sample,
   onSetTrimFrames,
   onSetScaleCoefficient,
 }) {
-  const monoSamples = useMemo(
-    () =>
-      sourceAudioBuffer
-        ? getMonoSamplesFromAudioBuffer(sourceAudioBuffer, [0, 0])
-        : new Float32Array(),
-    [sourceAudioBuffer]
-  );
-
-  const [waveformElement, waveformRef] = useState(
-    /** @type {HTMLElement | null} */ (null)
-  );
-  const pixelWidth = useMemo(
-    () => waveformElement && waveformElement.offsetWidth,
-    [waveformElement]
-  );
-  const peaks = useMemo(() => {
-    if (!pixelWidth || !monoSamples.length) {
-      return {
-        positive: new Float32Array(),
-        negative: new Float32Array(),
-      };
-    }
-    return getPeaksForSamples(monoSamples, pixelWidth);
-  }, [pixelWidth, monoSamples]);
+  const {
+    sample: {
+      metadata: {
+        trim: { frames: trimFrames },
+        scaleCoefficient,
+      },
+    },
+    sourceAudioBuffer,
+  } = useLoadedSample(_sample);
+  const { monoSamples, waveformRef, pixelWidth, peaks } =
+    useWaveformInfo(sourceAudioBuffer);
 
   const trimmedSamplePeak = useMemo(() => {
     if (!sourceAudioBuffer) {
@@ -356,48 +326,4 @@ function WaveformEdit({
   );
 }
 
-/**
- *
- * @param {WaveformEditProps} props
- */
-function AsyncWaveformEdit({ sample, ...rest }) {
-  const [loadedAudioBuffer, setSourceAudioBuffer] = useState(
-    /** @type {[string, AudioBuffer] | null} */ (null)
-  );
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      if (cancelled) return;
-      const audioBuffer = await getSourceAudioBuffer(
-        sample.metadata.sourceFileId,
-        Boolean(sample.metadata.userFileInfo)
-      );
-      if (cancelled) return;
-      setSourceAudioBuffer([sample.metadata.sourceFileId, audioBuffer]);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [sample.metadata.sourceFileId, sample.metadata.userFileInfo]);
-
-  // We need to hold onto an internal state because when the sample changes,
-  // the sourceAudioBuffer loads asynchronously and we want to avoid trying
-  // to apply the new sample's metadata to the old sample's audio.
-  const displayedSample = useRef(sample);
-  if (
-    loadedAudioBuffer &&
-    sample.metadata.sourceFileId === loadedAudioBuffer[0]
-  ) {
-    displayedSample.current = sample;
-  }
-
-  return (
-    <WaveformEdit
-      {...rest}
-      sample={displayedSample.current}
-      sourceAudioBuffer={loadedAudioBuffer && loadedAudioBuffer[1]}
-    />
-  );
-}
-
-export default AsyncWaveformEdit;
+export default WaveformEdit;

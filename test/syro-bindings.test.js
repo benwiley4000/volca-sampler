@@ -31,6 +31,8 @@ export const useCallback = () => {};
 export const useContext = () => {};
 export const useMemo = () => {};
 export const useRef = () => {};
+export const useState = () => {};
+export const useEffect = () => {};
   `,
   uuid: 'export const v4 = () => `id-${Math.random()}`;',
   'base64-arraybuffer': `

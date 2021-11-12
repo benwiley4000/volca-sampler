@@ -1,4 +1,9 @@
-import { getMonoSamplesFromAudioBuffer } from './audioData.js';
+import { useEffect, useMemo, useRef, useState } from 'react';
+
+import {
+  getMonoSamplesFromAudioBuffer,
+  getSourceAudioBuffer,
+} from './audioData.js';
 
 export const GROUP_PIXEL_WIDTH = 6;
 
@@ -52,4 +57,83 @@ export async function getSamplePeaksForAudioBuffer(audioBuffer, trimFrames) {
   const monoSamples = getMonoSamplesFromAudioBuffer(audioBuffer, trimFrames);
   const waveformPeaks = getPeaksForSamples(monoSamples, WAVEFORM_CACHED_WIDTH);
   return waveformPeaks;
+}
+
+/**
+ * @param {import('../store').SampleContainer} sample
+ * @returns {{
+ *   sample: import('../store').SampleContainer;
+ *   sourceAudioBuffer: AudioBuffer | null;
+ * }}
+ */
+export function useLoadedSample(sample) {
+  const [loadedAudioBuffer, setSourceAudioBuffer] = useState(
+    /** @type {[string, AudioBuffer] | null} */ (null)
+  );
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (cancelled) return;
+      const audioBuffer = await getSourceAudioBuffer(
+        sample.metadata.sourceFileId,
+        Boolean(sample.metadata.userFileInfo)
+      );
+      if (cancelled) return;
+      setSourceAudioBuffer([sample.metadata.sourceFileId, audioBuffer]);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [sample.metadata.sourceFileId, sample.metadata.userFileInfo]);
+
+  // We need to hold onto an internal state because when the sample changes,
+  // the sourceAudioBuffer loads asynchronously and we want to avoid trying
+  // to apply the new sample's metadata to the old sample's audio.
+  const displayedSample = useRef(sample);
+  if (
+    loadedAudioBuffer &&
+    sample.metadata.sourceFileId === loadedAudioBuffer[0]
+  ) {
+    displayedSample.current = sample;
+  }
+
+  return {
+    sample: displayedSample.current,
+    sourceAudioBuffer: loadedAudioBuffer && loadedAudioBuffer[1],
+  };
+}
+
+/**
+ * @param {AudioBuffer | null} sourceAudioBuffer
+ */
+export function useWaveformInfo(sourceAudioBuffer) {
+  const monoSamples = useMemo(
+    () =>
+      sourceAudioBuffer
+        ? getMonoSamplesFromAudioBuffer(sourceAudioBuffer, [0, 0])
+        : new Float32Array(),
+    [sourceAudioBuffer]
+  );
+  const [waveformElement, waveformRef] = useState(
+    /** @type {HTMLElement | null} */ (null)
+  );
+  const pixelWidth = useMemo(
+    () => waveformElement && waveformElement.offsetWidth,
+    [waveformElement]
+  );
+  const peaks = useMemo(() => {
+    if (!pixelWidth || !monoSamples.length) {
+      return {
+        positive: new Float32Array(),
+        negative: new Float32Array(),
+      };
+    }
+    return getPeaksForSamples(monoSamples, pixelWidth);
+  }, [pixelWidth, monoSamples]);
+  return {
+    monoSamples,
+    waveformRef,
+    pixelWidth,
+    peaks,
+  };
 }

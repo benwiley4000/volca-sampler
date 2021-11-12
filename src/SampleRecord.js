@@ -455,10 +455,12 @@ function SampleRecord({ onRecordFinish }) {
                 variant="warning"
                 onClose={dismissSilenceWarning}
               >
-                <Alert.Heading>Your recording was totally silent</Alert.Heading>
+                <Alert.Heading>
+                  Your recording was totally silent.
+                </Alert.Heading>
                 <p>
                   Check the audio input settings and your connections, then try
-                  again
+                  again.
                 </p>
               </Alert>
             </div>

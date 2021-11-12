@@ -66,24 +66,21 @@
   pointer-events: none;
   top: 50%;
   left: 50%;
-  transform: scale(0);
-  transition: transform 0.1s;
-  will-change: transform;
+  transform: translate(-50%, -50%);
+  transition: width 0.1s, height 0.1s;
+  will-change: width, height;
   .title:hover & {
-    transform: scale(3, 1);
+    // 75 is the height of a starburst ray at full scale.
+    // 56 is the maximum font size displayed (3.5rem).
+    // At full scale, width will be 56px * 6 * 75 / 56 = 6px * 75 = 450px.
+    // At full scale, height will be 56px * 2 * 75 / 56 = 2px * 75 = 150px.
+    width: calc(6em * 75 / 56);
+    height: calc(2em * 75 / 56);
   }
-  & > span {
+  & > polygon {
     --rotation: 0deg;
-    position: absolute;
-    top: 0;
-    left: 0;
-    transform: translateY(-50%) rotate(var(--rotation));
-    transform-origin: center left;
-    width: 0;
-    height: 0;
-    border-top: 5px solid transparent;
-    border-bottom: 5px solid transparent;
-    border-left: 75px solid gold;
+    transform: rotate(var(--rotation));
+    fill: gold;
   }
 }
 

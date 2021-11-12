@@ -21,17 +21,23 @@ function Header({ onMenuOpen, onHeaderClick }) {
       <span className={classes.titleText} data-text="Volca Sample">
         Volca Sample
         <span className={classes.titleR}>r</span>
-        <div className={classes.titleStarburst}>
+        <svg
+          viewBox="0 0 150 150"
+          preserveAspectRatio="none"
+          className={classes.titleStarburst}
+        >
           {
             /** @type {void[]} */ (Array(24)).fill().map((_, i, { length }) => (
-              <span
+              <polygon
                 key={i}
+                points="75,70 75,80 150,75"
+                transform-origin="75 75"
                 // @ts-ignore
                 style={{ '--rotation': `${(i * 360) / length}deg` }}
               />
             ))
           }
-        </div>
+        </svg>
       </span>
       <img className={classes.titleGraphic} src="volca_sample.png" alt="" />
       <svg width={0} height={0}>

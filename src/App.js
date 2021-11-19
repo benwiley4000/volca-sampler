@@ -213,9 +213,27 @@ function App() {
                     onSampleUpdate={handleSampleUpdate}
                     onSampleDuplicate={onSampleDuplicate}
                     onSampleDelete={(id) => {
-                      const sample = allSamples.get(id);
+                      const sample = userSamples.get(id);
                       if (sample && sample instanceof SampleContainer.Mutable) {
                         sample.remove();
+                        /** @type {string | null} */
+                        let nextFocusedSampleId = null;
+                        let awaitingNextBeforeBreak = false;
+                        for (const [, sample] of userSamples) {
+                          if (awaitingNextBeforeBreak) {
+                            nextFocusedSampleId = sample.id;
+                            break;
+                          }
+                          if (sample.id === id) {
+                            if (!nextFocusedSampleId) {
+                              awaitingNextBeforeBreak = true;
+                              continue;
+                            }
+                            break;
+                          }
+                          nextFocusedSampleId = sample.id;
+                        }
+                        setFocusedSampleId(nextFocusedSampleId);
                         setUserSamples((samples) => {
                           const newSamples = new Map(samples);
                           newSamples.delete(sample.id);

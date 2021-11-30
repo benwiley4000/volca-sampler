@@ -67,71 +67,49 @@ function WaveformEdit({
   useEffect(() => {
     /** @param {MouseEvent} e */
     function onMouseMove(e) {
-      if (
-        leftTrimLastX.current === null ||
-        !pixelWidth ||
-        !monoSamples.length
-      ) {
+      if (!pixelWidth || !monoSamples.length) {
         return;
       }
       const { pageX } = e;
-      const diff = pageX - leftTrimLastX.current;
-      if (diff) {
-        const ratio = diff / pixelWidth;
-        const frameDiff = Math.round(monoSamples.length * ratio);
-        onSetTrimFrames((trimFrames) => {
-          let newValue = trimFrames[0] + frameDiff;
-          // enforce at least 2000 sample selection
-          newValue = Math.min(
-            newValue,
-            monoSamples.length - trimFrames[1] - 2000
-          );
-          newValue = Math.max(newValue, 0);
-          return [newValue, trimFrames[1]];
-        });
-        leftTrimLastX.current = pageX;
+      if (leftTrimLastX.current !== null) {
+        const diff = pageX - leftTrimLastX.current;
+        if (diff) {
+          const ratio = diff / pixelWidth;
+          const frameDiff = Math.round(monoSamples.length * ratio);
+          onSetTrimFrames((trimFrames) => {
+            let newValue = trimFrames[0] + frameDiff;
+            // enforce at least 2000 sample selection
+            newValue = Math.min(
+              newValue,
+              monoSamples.length - trimFrames[1] - 2000
+            );
+            newValue = Math.max(newValue, 0);
+            return [newValue, trimFrames[1]];
+          });
+          leftTrimLastX.current = pageX;
+        }
+      }
+      if (rightTrimLastX.current !== null) {
+        const diff = rightTrimLastX.current - pageX;
+        if (diff) {
+          const ratio = diff / pixelWidth;
+          const frameDiff = Math.round(monoSamples.length * ratio);
+          onSetTrimFrames((trimFrames) => {
+            let newValue = trimFrames[1] + frameDiff;
+            // enforce at least 2000 sample selection
+            newValue = Math.min(
+              newValue,
+              monoSamples.length - trimFrames[0] - 2000
+            );
+            newValue = Math.max(newValue, 0);
+            return [trimFrames[0], newValue];
+          });
+          rightTrimLastX.current = pageX;
+        }
       }
     }
     function onMouseUp() {
       leftTrimLastX.current = null;
-      document.body.style.userSelect = 'unset';
-    }
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseup', onMouseUp);
-    return () => {
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('mouseup', onMouseUp);
-    };
-  }, [pixelWidth, monoSamples.length, onSetTrimFrames]);
-  useEffect(() => {
-    /** @param {MouseEvent} e */
-    function onMouseMove(e) {
-      if (
-        rightTrimLastX.current === null ||
-        !pixelWidth ||
-        !monoSamples.length
-      ) {
-        return;
-      }
-      const { pageX } = e;
-      const diff = rightTrimLastX.current - pageX;
-      if (diff) {
-        const ratio = diff / pixelWidth;
-        const frameDiff = Math.round(monoSamples.length * ratio);
-        onSetTrimFrames((trimFrames) => {
-          let newValue = trimFrames[1] + frameDiff;
-          // enforce at least 2000 sample selection
-          newValue = Math.min(
-            newValue,
-            monoSamples.length - trimFrames[0] - 2000
-          );
-          newValue = Math.max(newValue, 0);
-          return [trimFrames[0], newValue];
-        });
-        rightTrimLastX.current = pageX;
-      }
-    }
-    function onMouseUp() {
       rightTrimLastX.current = null;
       document.body.style.userSelect = 'unset';
     }

@@ -1,4 +1,10 @@
-import React, { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import React, {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { Button } from 'react-bootstrap';
 
 import { findSamplePeak, getTrimmedView } from './utils/audioData.js';
@@ -30,6 +36,7 @@ function WaveformEdit({
     },
     sourceAudioBuffer,
   } = useLoadedSample(_sample);
+
   const { monoSamples, waveformRef, pixelWidth, peaks } =
     useWaveformInfo(sourceAudioBuffer);
 
@@ -53,73 +60,85 @@ function WaveformEdit({
 
   // const peakTarget = scaleCoefficient * trimmedSamplePeak;
 
+  const [trimFramesLocal, setTrimFramesLocal] = useState(trimFrames);
+  useEffect(() => {
+    setTrimFramesLocal(trimFrames);
+  }, [trimFrames]);
+
   const trimPixels = useMemo(() => {
     if (!monoSamples.length || !pixelWidth) {
       return [0, 0];
     }
     const factor = pixelWidth / monoSamples.length;
-    return trimFrames.map((frames) => frames * factor);
-  }, [pixelWidth, monoSamples.length, trimFrames]);
+    return trimFramesLocal.map((frames) => frames * factor);
+  }, [pixelWidth, monoSamples.length, trimFramesLocal]);
 
   const leftTrimLastX = useRef(/** @type {number | null} */ (null));
   const rightTrimLastX = useRef(/** @type {number | null} */ (null));
 
-  useEffect(() => {
-    /** @param {MouseEvent} e */
-    function onMouseMove(e) {
-      if (!pixelWidth || !monoSamples.length) {
-        return;
-      }
-      const { pageX } = e;
-      if (leftTrimLastX.current !== null) {
-        const diff = pageX - leftTrimLastX.current;
-        if (diff) {
-          const ratio = diff / pixelWidth;
-          const frameDiff = Math.round(monoSamples.length * ratio);
-          onSetTrimFrames((trimFrames) => {
-            let newValue = trimFrames[0] + frameDiff;
-            // enforce at least 2000 sample selection
-            newValue = Math.min(
-              newValue,
-              monoSamples.length - trimFrames[1] - 2000
-            );
-            newValue = Math.max(newValue, 0);
-            return [newValue, trimFrames[1]];
-          });
-          leftTrimLastX.current = pageX;
+  {
+    const trimFramesLocalRef = useRef(trimFramesLocal);
+    trimFramesLocalRef.current = trimFramesLocal;
+    useEffect(() => {
+      /** @param {MouseEvent} e */
+      function onMouseMove(e) {
+        if (!pixelWidth || !monoSamples.length) {
+          return;
+        }
+        const { pageX } = e;
+        if (leftTrimLastX.current !== null) {
+          const diff = pageX - leftTrimLastX.current;
+          if (diff) {
+            const ratio = diff / pixelWidth;
+            const frameDiff = Math.round(monoSamples.length * ratio);
+            setTrimFramesLocal((trimFrames) => {
+              let newValue = trimFrames[0] + frameDiff;
+              // enforce at least 2000 sample selection
+              newValue = Math.min(
+                newValue,
+                monoSamples.length - trimFrames[1] - 2000
+              );
+              newValue = Math.max(newValue, 0);
+              return [newValue, trimFrames[1]];
+            });
+            leftTrimLastX.current = pageX;
+          }
+        }
+        if (rightTrimLastX.current !== null) {
+          const diff = rightTrimLastX.current - pageX;
+          if (diff) {
+            const ratio = diff / pixelWidth;
+            const frameDiff = Math.round(monoSamples.length * ratio);
+            setTrimFramesLocal((trimFrames) => {
+              let newValue = trimFrames[1] + frameDiff;
+              // enforce at least 2000 sample selection
+              newValue = Math.min(
+                newValue,
+                monoSamples.length - trimFrames[0] - 2000
+              );
+              newValue = Math.max(newValue, 0);
+              return [trimFrames[0], newValue];
+            });
+            rightTrimLastX.current = pageX;
+          }
         }
       }
-      if (rightTrimLastX.current !== null) {
-        const diff = rightTrimLastX.current - pageX;
-        if (diff) {
-          const ratio = diff / pixelWidth;
-          const frameDiff = Math.round(monoSamples.length * ratio);
-          onSetTrimFrames((trimFrames) => {
-            let newValue = trimFrames[1] + frameDiff;
-            // enforce at least 2000 sample selection
-            newValue = Math.min(
-              newValue,
-              monoSamples.length - trimFrames[0] - 2000
-            );
-            newValue = Math.max(newValue, 0);
-            return [trimFrames[0], newValue];
-          });
-          rightTrimLastX.current = pageX;
+      function onMouseUp() {
+        if (leftTrimLastX.current !== null || rightTrimLastX.current !== null) {
+          onSetTrimFrames(() => trimFramesLocalRef.current);
         }
+        leftTrimLastX.current = null;
+        rightTrimLastX.current = null;
+        document.body.style.userSelect = 'unset';
       }
-    }
-    function onMouseUp() {
-      leftTrimLastX.current = null;
-      rightTrimLastX.current = null;
-      document.body.style.userSelect = 'unset';
-    }
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseup', onMouseUp);
-    return () => {
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('mouseup', onMouseUp);
-    };
-  }, [pixelWidth, monoSamples.length, onSetTrimFrames]);
+      window.addEventListener('mousemove', onMouseMove);
+      window.addEventListener('mouseup', onMouseUp);
+      return () => {
+        window.removeEventListener('mousemove', onMouseMove);
+        window.removeEventListener('mouseup', onMouseUp);
+      };
+    }, [pixelWidth, monoSamples.length, onSetTrimFrames]);
+  }
 
   return (
     <>

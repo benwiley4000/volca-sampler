@@ -11,6 +11,8 @@ import { findSamplePeak, getTrimmedView } from './utils/audioData.js';
 import { useLoadedSample, useWaveformInfo } from './utils/waveform.js';
 import WaveformDisplay from './WaveformDisplay.js';
 
+import classes from './WaveformEdit.module.scss';
+
 /**
  * @typedef {{
  *   sample: import('./store').SampleContainer;
@@ -73,77 +75,245 @@ function WaveformEdit({
     return trimFramesLocal.map((frames) => frames * factor);
   }, [pixelWidth, monoSamples.length, trimFramesLocal]);
 
+  /** @type {React.RefObject<HTMLDivElement>} */
+  const leftTrimHandleRef = useRef(null);
+  /** @type {React.RefObject<HTMLDivElement>} */
+  const rightTrimHandleRef = useRef(null);
+
   const leftTrimLastX = useRef(/** @type {number | null} */ (null));
   const rightTrimLastX = useRef(/** @type {number | null} */ (null));
 
+  /** @type {React.RefObject<HTMLDivElement>} */
+  const waveformOverlayRef = useRef(null);
+
+  const waveformOverlayDownFrame = useRef(/** @type {number | null} */ (null));
+
   {
+    const moveCallbackParams = useMemo(() => {
+      if (!pixelWidth || !monoSamples.length) {
+        return null;
+      }
+      const minPixelWidth = 10;
+      const minFrameWidth = Math.max(
+        // enforce at least 2000 sample selection
+        2000,
+        Math.ceil((minPixelWidth * monoSamples.length) / pixelWidth)
+      );
+      return {
+        pixelWidth,
+        monoSamplesLength: monoSamples.length,
+        minFrameWidth,
+      };
+    }, [pixelWidth, monoSamples.length]);
+
     const trimFramesLocalRef = useRef(trimFramesLocal);
     trimFramesLocalRef.current = trimFramesLocal;
     useEffect(() => {
-      /** @param {MouseEvent} e */
-      function onMouseMove(e) {
-        if (!pixelWidth || !monoSamples.length) {
+      if (
+        !moveCallbackParams ||
+        !leftTrimHandleRef.current ||
+        !rightTrimHandleRef.current ||
+        !waveformOverlayRef.current
+      ) {
+        return;
+      }
+      const { pixelWidth, monoSamplesLength, minFrameWidth } =
+        moveCallbackParams;
+      const { left: waveformClientLeft } =
+        waveformOverlayRef.current.getBoundingClientRect();
+
+      /** @param {MouseEvent | TouchEvent} e */
+      function onLeftHandleDown(e) {
+        e.preventDefault();
+        document.body.style.userSelect = 'none';
+        const { pageX } = e instanceof MouseEvent ? e : e.touches[0];
+        leftTrimLastX.current = pageX;
+      }
+
+      /** @param {MouseEvent | TouchEvent} e */
+      function onRightHandleDown(e) {
+        e.preventDefault();
+        document.body.style.userSelect = 'none';
+        const { pageX } = e instanceof MouseEvent ? e : e.touches[0];
+        rightTrimLastX.current = pageX;
+      }
+
+      /** @param {MouseEvent | TouchEvent} e */
+      function onWaveformOverlayDown(e) {
+        e.preventDefault();
+        document.body.style.userSelect = 'none';
+        const { clientX } = e instanceof MouseEvent ? e : e.touches[0];
+        const waveformX = clientX - waveformClientLeft;
+        const ratio = waveformX / pixelWidth;
+        const frameFrom = Math.round(monoSamplesLength * ratio);
+        const frameToTentative = frameFrom + minFrameWidth;
+        const frameTo =
+          frameToTentative < monoSamplesLength
+            ? frameToTentative
+            : frameFrom - minFrameWidth;
+        if (frameTo < 0) {
+          // looks like we don't have enough room to make the minimum selection
           return;
         }
-        const { pageX } = e;
-        if (leftTrimLastX.current !== null) {
-          const diff = pageX - leftTrimLastX.current;
-          if (diff) {
-            const ratio = diff / pixelWidth;
-            const frameDiff = Math.round(monoSamples.length * ratio);
-            setTrimFramesLocal((trimFrames) => {
-              let newValue = trimFrames[0] + frameDiff;
-              // enforce at least 2000 sample selection
-              newValue = Math.min(
-                newValue,
-                monoSamples.length - trimFrames[1] - 2000
-              );
-              newValue = Math.max(newValue, 0);
-              return [newValue, trimFrames[1]];
-            });
-            leftTrimLastX.current = pageX;
-          }
+        setTrimFramesLocal([
+          Math.min(frameFrom, frameTo),
+          monoSamplesLength - 1 - Math.max(frameFrom, frameTo),
+        ]);
+        waveformOverlayDownFrame.current = frameFrom;
+      }
+
+      /** @param {MouseEvent | TouchEvent} e */
+      function onLeftHandleMove(e) {
+        if (leftTrimLastX.current === null) {
+          return;
         }
-        if (rightTrimLastX.current !== null) {
-          const diff = rightTrimLastX.current - pageX;
-          if (diff) {
-            const ratio = diff / pixelWidth;
-            const frameDiff = Math.round(monoSamples.length * ratio);
-            setTrimFramesLocal((trimFrames) => {
-              let newValue = trimFrames[1] + frameDiff;
-              // enforce at least 2000 sample selection
-              newValue = Math.min(
-                newValue,
-                monoSamples.length - trimFrames[0] - 2000
-              );
-              newValue = Math.max(newValue, 0);
-              return [trimFrames[0], newValue];
-            });
-            rightTrimLastX.current = pageX;
-          }
+        e.preventDefault();
+        const { pageX } = e instanceof MouseEvent ? e : e.touches[0];
+        const diff = pageX - leftTrimLastX.current;
+        if (diff) {
+          const ratio = diff / pixelWidth;
+          const frameDiff = Math.round(monoSamplesLength * ratio);
+          setTrimFramesLocal((trimFrames) => {
+            let newValue = trimFrames[0] + frameDiff;
+            newValue = Math.min(
+              newValue,
+              monoSamplesLength - trimFrames[1] - minFrameWidth
+            );
+            newValue = Math.max(newValue, 0);
+            return [newValue, trimFrames[1]];
+          });
+          leftTrimLastX.current = pageX;
         }
       }
-      function onMouseUp() {
-        if (leftTrimLastX.current !== null || rightTrimLastX.current !== null) {
-          onSetTrimFrames(() => trimFramesLocalRef.current);
+
+      /** @param {MouseEvent | TouchEvent} e */
+      function onRightHandleMove(e) {
+        if (rightTrimLastX.current === null) {
+          return;
         }
-        leftTrimLastX.current = null;
-        rightTrimLastX.current = null;
+        e.preventDefault();
+        const { pageX } = e instanceof MouseEvent ? e : e.touches[0];
+        const diff = rightTrimLastX.current - pageX;
+        if (diff) {
+          const ratio = diff / pixelWidth;
+          const frameDiff = Math.round(monoSamplesLength * ratio);
+          setTrimFramesLocal((trimFrames) => {
+            let newValue = trimFrames[1] + frameDiff;
+            newValue = Math.min(
+              newValue,
+              monoSamplesLength - trimFrames[0] - minFrameWidth
+            );
+            newValue = Math.max(newValue, 0);
+            return [trimFrames[0], newValue];
+          });
+          rightTrimLastX.current = pageX;
+        }
+      }
+
+      /** @param {MouseEvent | TouchEvent} e */
+      function onWaveformOverlayMove(e) {
+        if (waveformOverlayDownFrame.current === null) {
+          return;
+        }
+        e.preventDefault();
+        const frameFrom = waveformOverlayDownFrame.current;
+        const { clientX } = e instanceof MouseEvent ? e : e.touches[0];
+        const waveformX = clientX - waveformClientLeft;
+        const ratio = waveformX / pixelWidth;
+        const frameToTentative = Math.max(
+          0,
+          Math.min(monoSamplesLength - 1, Math.round(monoSamplesLength * ratio))
+        );
+        if (frameToTentative !== waveformOverlayDownFrame.current) {
+          const aboveFrameMin = frameFrom + minFrameWidth;
+          const belowFrameMax = frameFrom - minFrameWidth;
+          const frameTo =
+            frameToTentative > frameFrom
+              ? aboveFrameMin < monoSamplesLength
+                ? Math.max(frameToTentative, aboveFrameMin)
+                : belowFrameMax
+              : belowFrameMax >= 0
+              ? Math.min(frameToTentative, belowFrameMax)
+              : aboveFrameMin;
+          setTrimFramesLocal([
+            Math.min(frameFrom, frameTo),
+            monoSamplesLength - 1 - Math.max(frameFrom, frameTo),
+          ]);
+        }
+      }
+
+      /** @param {MouseEvent} e */
+      function onMouseMove(e) {
+        onLeftHandleMove(e);
+        onRightHandleMove(e);
+        onWaveformOverlayMove(e);
+      }
+
+      /** @param {MouseEvent | TouchEvent} e */
+      function onUp(e) {
+        if (
+          leftTrimLastX.current !== null ||
+          rightTrimLastX.current !== null ||
+          waveformOverlayDownFrame.current !== null
+        ) {
+          e.preventDefault();
+          onSetTrimFrames(() => trimFramesLocalRef.current);
+          leftTrimLastX.current = null;
+          rightTrimLastX.current = null;
+          waveformOverlayDownFrame.current = null;
+        }
         document.body.style.userSelect = 'unset';
       }
+
+      const leftHandle = leftTrimHandleRef.current;
+      const rightHandle = rightTrimHandleRef.current;
+      const waveformOverlay = waveformOverlayRef.current;
+      leftHandle.addEventListener('touchstart', onLeftHandleDown);
+      leftHandle.addEventListener('mousedown', onLeftHandleDown);
+      rightHandle.addEventListener('touchstart', onRightHandleDown);
+      rightHandle.addEventListener('mousedown', onRightHandleDown);
+      waveformOverlay.addEventListener('touchstart', onWaveformOverlayDown);
+      waveformOverlay.addEventListener('mousedown', onWaveformOverlayDown);
+      leftHandle.addEventListener('touchmove', onLeftHandleMove);
+      rightHandle.addEventListener('touchmove', onRightHandleMove);
+      waveformOverlay.addEventListener('touchmove', onWaveformOverlayMove);
       window.addEventListener('mousemove', onMouseMove);
-      window.addEventListener('mouseup', onMouseUp);
+      leftHandle.addEventListener('touchend', onUp);
+      leftHandle.addEventListener('touchcancel', onUp);
+      rightHandle.addEventListener('touchend', onUp);
+      rightHandle.addEventListener('touchcancel', onUp);
+      waveformOverlay.addEventListener('touchend', onUp);
+      waveformOverlay.addEventListener('touchcancel', onUp);
+      window.addEventListener('mouseup', onUp);
       return () => {
+        leftHandle.removeEventListener('touchstart', onLeftHandleDown);
+        leftHandle.removeEventListener('mousedown', onLeftHandleDown);
+        rightHandle.removeEventListener('touchstart', onRightHandleDown);
+        rightHandle.removeEventListener('mousedown', onRightHandleDown);
+        waveformOverlay.removeEventListener(
+          'touchstart',
+          onWaveformOverlayDown
+        );
+        waveformOverlay.removeEventListener('mousedown', onWaveformOverlayDown);
+        leftHandle.removeEventListener('touchmove', onLeftHandleMove);
+        rightHandle.removeEventListener('touchmove', onRightHandleMove);
+        waveformOverlay.removeEventListener('touchmove', onWaveformOverlayMove);
         window.removeEventListener('mousemove', onMouseMove);
-        window.removeEventListener('mouseup', onMouseUp);
+        leftHandle.removeEventListener('touchend', onUp);
+        leftHandle.removeEventListener('touchcancel', onUp);
+        rightHandle.removeEventListener('touchend', onUp);
+        rightHandle.removeEventListener('touchcancel', onUp);
+        waveformOverlay.removeEventListener('touchend', onUp);
+        waveformOverlay.removeEventListener('touchcancel', onUp);
+        window.removeEventListener('mouseup', onUp);
       };
-    }, [pixelWidth, monoSamples.length, onSetTrimFrames]);
+    }, [moveCallbackParams, onSetTrimFrames]);
   }
 
   return (
     <>
-      <div style={{ position: 'relative' }}>
-        <div style={{ position: 'absolute', right: 0, bottom: 4 }}>
+      <div className={classes.scaleButtonsContainer}>
+        <div className={classes.scaleButtons}>
           <Button
             type="button"
             variant="light"
@@ -162,162 +332,29 @@ function WaveformEdit({
           </Button>
         </div>
       </div>
-      <div style={{ position: 'relative', backgroundColor: '#f3f3f3' }}>
+      <div className={classes.waveformContainer}>
         <WaveformDisplay
           waveformRef={waveformRef}
           peaks={peaks}
           scaleCoefficient={scaleCoefficient}
         />
         <div
-          style={{
-            position: 'absolute',
-            top: 0,
-            bottom: 0,
-            left: 0,
-            right: `calc(100% - ${trimPixels[0]}px)`,
-            background: '#f3f3f3',
-          }}
+          className={[classes.trim, classes.left].join(' ')}
+          // @ts-ignore
+          style={{ '--trim-pixels': `${trimPixels[0]}px` }}
         >
-          <div
-            style={{
-              position: 'absolute',
-              top: 0,
-              bottom: 0,
-              right: 0,
-              width: 2,
-              background: 'var(--bs-dark)',
-            }}
-          />
-          <div
-            style={{
-              position: 'absolute',
-              top: '100%',
-              right: 0,
-              width: 20,
-              height: 20,
-              background: 'var(--bs-dark)',
-              borderRadius: 10,
-              transform: 'translateX(50%)',
-            }}
-            onTouchStart={(e) => {
-              e.preventDefault();
-              document.body.style.userSelect = 'none';
-              leftTrimLastX.current = e.touches[0].pageX;
-            }}
-            onMouseDown={(e) => {
-              document.body.style.userSelect = 'none';
-              leftTrimLastX.current = e.pageX;
-            }}
-            onTouchMove={(e) => {
-              e.preventDefault();
-              if (
-                leftTrimLastX.current === null ||
-                !pixelWidth ||
-                !monoSamples.length
-              ) {
-                return;
-              }
-              const { pageX } = e.touches[0];
-              const diff = pageX - leftTrimLastX.current;
-              if (diff) {
-                const ratio = diff / pixelWidth;
-                const frameDiff = Math.round(monoSamples.length * ratio);
-                onSetTrimFrames((trimFrames) => {
-                  let newValue = trimFrames[0] + frameDiff;
-                  // enforce at least 2000 sample selection
-                  newValue = Math.min(
-                    newValue,
-                    monoSamples.length - trimFrames[1] - 2000
-                  );
-                  newValue = Math.max(newValue, 0);
-                  return [newValue, trimFrames[1]];
-                });
-                leftTrimLastX.current = pageX;
-              }
-            }}
-            onTouchEnd={() => {
-              leftTrimLastX.current = null;
-            }}
-            onTouchCancel={() => {
-              leftTrimLastX.current = null;
-            }}
-          />
+          <div className={classes.bar} />
+          <div ref={leftTrimHandleRef} className={classes.handle} />
         </div>
         <div
-          style={{
-            position: 'absolute',
-            top: 0,
-            bottom: 0,
-            right: 0,
-            left: `calc(100% - ${trimPixels[1]}px)`,
-            background: '#f3f3f3',
-          }}
+          className={[classes.trim, classes.right].join(' ')}
+          // @ts-ignore
+          style={{ '--trim-pixels': `${trimPixels[1]}px` }}
         >
-          <div
-            style={{
-              position: 'absolute',
-              top: 0,
-              bottom: 0,
-              left: 0,
-              width: 2,
-              background: 'var(--bs-dark)',
-            }}
-          />
-          <div
-            style={{
-              position: 'absolute',
-              top: '100%',
-              left: 0,
-              width: 20,
-              height: 20,
-              background: 'var(--bs-dark)',
-              borderRadius: 10,
-              transform: 'translateX(-50%)',
-            }}
-            onTouchStart={(e) => {
-              e.preventDefault();
-              document.body.style.userSelect = 'none';
-              rightTrimLastX.current = e.touches[0].pageX;
-            }}
-            onMouseDown={(e) => {
-              document.body.style.userSelect = 'none';
-              rightTrimLastX.current = e.pageX;
-            }}
-            onTouchMove={(e) => {
-              e.preventDefault();
-              if (
-                rightTrimLastX.current === null ||
-                !pixelWidth ||
-                !monoSamples.length
-              ) {
-                return;
-              }
-              const { pageX } = e.touches[0];
-              const diff = rightTrimLastX.current - pageX;
-              if (diff) {
-                const ratio = diff / pixelWidth;
-                const frameDiff = Math.round(monoSamples.length * ratio);
-                onSetTrimFrames((trimFrames) => {
-                  let newValue = trimFrames[1] + frameDiff;
-                  // enforce at least 2000 sample selection
-                  newValue = Math.min(
-                    newValue,
-                    monoSamples.length - trimFrames[0] - 2000
-                  );
-                  newValue = Math.max(newValue, 0);
-                  return [trimFrames[0], newValue];
-                });
-                rightTrimLastX.current = pageX;
-              }
-            }}
-            onTouchEnd={() => {
-              rightTrimLastX.current = null;
-            }}
-            onTouchCancel={() => {
-              rightTrimLastX.current = null;
-            }}
-          />
+          <div className={classes.bar} />
+          <div ref={rightTrimHandleRef} className={classes.handle} />
         </div>
+        <div ref={waveformOverlayRef} className={classes.waveformOverlay} />
       </div>
     </>
   );

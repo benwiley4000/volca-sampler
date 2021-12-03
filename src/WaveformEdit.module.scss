@@ -1,0 +1,83 @@
+.scaleButtonsContainer {
+  position: relative;
+}
+
+.scaleButtons {
+  position: absolute;
+  right: 0;
+  bottom: 4px;
+}
+
+.waveformContainer {
+  position: relative;
+  background-color: #f3f3f3;
+}
+
+.trim {
+  --trim-pixels: 0px;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background-color: rgba(#f3f3f3, 0.85);
+
+  & > .bar {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--bs-dark);
+  }
+
+  & > .handle {
+    --diameter: 25px;
+    position: absolute;
+    top: 100%;
+    width: var(--diameter);
+    height: var(--diameter);
+    background: #fff;
+    border: 1px solid var(--bs-dark);
+    border-radius: 50%;
+    cursor: col-resize;
+
+    &:active {
+      cursor: grabbing;
+    }
+  }
+
+  &.left {
+    left: 0;
+    right: calc(100% - var(--trim-pixels));
+
+    & > .bar {
+      right: 0;
+    }
+
+    & > .handle {
+      right: 0;
+      transform: translateX(calc(50% - 0.5px));
+    }
+  }
+
+  &.right {
+    left: calc(100% - var(--trim-pixels));
+    right: 0;
+
+    & > .bar {
+      left: 0;
+    }
+
+    & > .handle {
+      left: 0;
+      transform: translateX(calc(-50% + 0.5px));
+    }
+  }
+}
+
+.waveformOverlay {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  cursor: text;
+}

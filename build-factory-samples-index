@@ -47,7 +47,7 @@ const factorySamplesDirLocalPath = path.join(__dirname, 'public', pathPrefix);
             // track number should be stored in first two characters
             slotNumber: Number(filename.slice(0, 2)),
             // approximate date Volca Sample was released
-            dateSampled: new Date('2014-10-01').getTime(),
+            dateSampled: new Date('2014-10-01').toISOString(),
           };
         })
     )

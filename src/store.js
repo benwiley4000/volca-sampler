@@ -21,8 +21,8 @@ import { getSamplePeaksForAudioBuffer } from './utils/waveform.js';
  * @property {string} [id]
  * @property {{ type: string; ext: string } | null} [userFileInfo]
  * @property {number} [slotNumber]
- * @property {number} [dateSampled]
- * @property {number} [dateModified]
+ * @property {string} [dateSampled]
+ * @property {string} [dateModified]
  * @property {boolean} [useCompression]
  * @property {number} [qualityBitDepth]
  * @property {number} [scaleCoefficient]
@@ -35,8 +35,8 @@ import { getSamplePeaksForAudioBuffer } from './utils/waveform.js';
  * @property {TrimInfo} trim
  * @property {{ type: string; ext: string } | null} userFileInfo
  * @property {number} slotNumber
- * @property {number} dateSampled
- * @property {number} dateModified
+ * @property {string} dateSampled
+ * @property {string} dateModified
  * @property {boolean} useCompression
  * @property {number} qualityBitDepth
  * @property {number} scaleCoefficient
@@ -77,7 +77,7 @@ export async function storeAudioSourceFile(audioFileData) {
   return id;
 }
 
-const METADATA_VERSION = '0.3.0';
+const METADATA_VERSION = '0.4.0';
 
 // These properties are considered fundamental and should never break
 /**
@@ -136,6 +136,23 @@ const metadataUpgrades = {
     };
     return newMetadata;
   },
+  '0.3.0': (oldMetadata) => {
+    /**
+     * @typedef {OldMetadata & {
+     *   dateSampled: number;
+     *   dateModified: number;
+     * }} PrevMetadata
+     */
+    const { dateSampled, dateModified, ...prevMetadata } =
+      /** @type {PrevMetadata} */ (oldMetadata);
+    const newMetadata = {
+      ...prevMetadata,
+      dateSampled: new Date(dateSampled).toISOString(),
+      dateModified: new Date(dateModified).toISOString(),
+      metadataVersion: '0.4.0',
+    };
+    return newMetadata;
+  },
 };
 
 /**
@@ -177,7 +194,7 @@ export class SampleContainer {
     id = uuidv4(),
     userFileInfo = null,
     slotNumber = 0,
-    dateSampled = Date.now(),
+    dateSampled = new Date().toISOString(),
     dateModified = dateSampled,
     useCompression = true,
     qualityBitDepth = 16,
@@ -211,7 +228,7 @@ export class SampleContainer {
     const copy = new SampleContainer.Mutable({
       ...this.metadata,
       name: `${this.metadata.name} (copy)`,
-      dateModified: Date.now(),
+      dateModified: new Date().toISOString(),
     });
     // async - does not block
     copy.persist();
@@ -260,7 +277,7 @@ export class SampleContainer {
       const newMetadata = {
         ...metadata,
         ...update,
-        dateModified: Date.now(),
+        dateModified: new Date().toISOString(),
       };
       const newContainer = new SampleContainer.Mutable({ id, ...newMetadata });
       // async - does not block
@@ -413,7 +430,7 @@ export class SampleContainer {
           return new SampleContainer.Mutable({ id, ...metadata });
         })
         .filter(Boolean)
-    ).sort((a, b) => b.metadata.dateModified - a.metadata.dateModified);
+    ).sort((a, b) => (a > b ? -1 : b > a ? 1 : 0));
     return sampleContainers;
   }
 }

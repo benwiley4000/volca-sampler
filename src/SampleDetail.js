@@ -185,8 +185,10 @@ function SampleDetail({
           onSetTrimFrames={handleSetTrimFrames}
           onSetScaleCoefficient={handleSetScaleCoefficient}
           sample={sample}
+          previewWav={audioBufferForAudioFileData}
         />
       </div>
+      <br />
       <br />
       <br />
       <Button

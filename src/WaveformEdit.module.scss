@@ -9,16 +9,48 @@
 }
 
 .waveformContainer {
+  --trim-pixels-left: 0px;
+  --trim-pixels-right: 0px;
+  --playback-progress: 0%;
+  --grayscale-filter: grayscale(100%) brightness(200%);
   position: relative;
-  background-color: #f3f3f3;
+  background-color: #fff;
+  box-shadow: 0 1px 0 #ddd inset, 0 -1px 0 #ddd inset;
+}
+
+.playbackOverlay {
+  position: absolute;
+  top: 0;
+  left: var(--trim-pixels-left);
+  width: calc(100% - var(--trim-pixels-left) - var(--trim-pixels-right));
+  will-change: left, width;
+  height: 100%;
+  display: none;
+  .waveformContainer.playbackActive & {
+    display: initial;
+  }
+
+  & > .playback {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--playback-progress);
+    will-change: left;
+    right: 0;
+    backdrop-filter: var(--grayscale-filter);
+  }
 }
 
 .trim {
-  --trim-pixels: 0px;
+  --handle-diameter: 25px;
   position: absolute;
   top: 0;
   bottom: 0;
-  background-color: rgba(#f3f3f3, 0.85);
+  background-color: rgba(#fff, 0.85);
+
+  .waveformContainer.playbackActive & {
+    backdrop-filter: var(--grayscale-filter);
+  }
 
   & > .bar {
     position: absolute;
@@ -29,11 +61,10 @@
   }
 
   & > .handle {
-    --diameter: 25px;
     position: absolute;
     top: 100%;
-    width: var(--diameter);
-    height: var(--diameter);
+    width: var(--handle-diameter);
+    height: var(--handle-diameter);
     background: #fff;
     border: 1px solid var(--bs-dark);
     border-radius: 50%;
@@ -44,9 +75,15 @@
     }
   }
 
+  & > .time {
+    position: absolute;
+    top: calc(100% + var(--handle-diameter));
+  }
+
   &.left {
     left: 0;
-    right: calc(100% - var(--trim-pixels));
+    right: calc(100% - var(--trim-pixels-left));
+    will-change: right;
 
     & > .bar {
       right: 0;
@@ -56,11 +93,17 @@
       right: 0;
       transform: translateX(calc(50% - 0.5px));
     }
+
+    & > .time {
+      right: 0;
+      transform: translateX(50%);
+    }
   }
 
   &.right {
-    left: calc(100% - var(--trim-pixels));
+    left: calc(100% - var(--trim-pixels-right));
     right: 0;
+    will-change: left;
 
     & > .bar {
       left: 0;
@@ -69,6 +112,11 @@
     & > .handle {
       left: 0;
       transform: translateX(calc(-50% + 0.5px));
+    }
+
+    & > .time {
+      left: 0;
+      transform: translateX(-50%);
     }
   }
 }
@@ -80,4 +128,36 @@
   left: 0;
   right: 0;
   cursor: text;
+}
+
+.playbackButtonContainer {
+  position: absolute;
+  left: 0.5rem;
+  top: 0.5rem;
+  display: flex;
+  align-items: center;
+  mix-blend-mode: luminosity;
+
+  & > button {
+    border-radius: 50%;
+    padding: 1.2rem;
+    position: relative;
+
+    & > img {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      filter: invert(1);
+      width: 2rem;
+    }
+  }
+
+  & > span {
+    margin-left: 0.5rem;
+    color: #fff;
+    background: var(--bs-dark);
+    padding: 0 3px;
+    border-radius: 4px;
+  }
 }

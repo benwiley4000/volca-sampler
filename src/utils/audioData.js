@@ -296,9 +296,12 @@ export function AudioPlaybackContextProvider({ children }) {
         cancelAnimationFrame(frame);
       });
       function stop() {
-        source.stop();
-        cancelAnimationFrame(frame);
-        stopped = true;
+        if (!stopped) {
+          source.stop();
+          cancelAnimationFrame(frame);
+          onEnded();
+          stopped = true;
+        }
       }
       stopCurrent.current = stop;
       return stop;

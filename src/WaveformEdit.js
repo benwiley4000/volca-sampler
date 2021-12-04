@@ -6,16 +6,31 @@ import React, {
   useState,
 } from 'react';
 import { Button } from 'react-bootstrap';
+import playIcon from '@material-design-icons/svg/filled/play_arrow.svg';
+import stopIcon from '@material-design-icons/svg/filled/stop.svg';
 
-import { findSamplePeak, getTrimmedView } from './utils/audioData.js';
+import {
+  findSamplePeak,
+  getTrimmedView,
+  useAudioPlaybackContext,
+} from './utils/audioData.js';
 import { useLoadedSample, useWaveformInfo } from './utils/waveform.js';
 import WaveformDisplay from './WaveformDisplay.js';
 
 import classes from './WaveformEdit.module.scss';
 
 /**
+ * @param {number} sec
+ * @param {number} decimals
+ */
+function formatTime(sec, decimals) {
+  return `0:${sec.toFixed(decimals).padStart(3 + decimals, '0')}`;
+}
+
+/**
  * @typedef {{
  *   sample: import('./store').SampleContainer;
+ *   previewWav: AudioBuffer | null;
  *   onSetTrimFrames: (updateTrimFrames: (old: [number, number]) => [number, number]) => void;
  *   onSetScaleCoefficient: (scaleCoefficient: number) => void;
  * }} WaveformEditProps
@@ -26,6 +41,7 @@ import classes from './WaveformEdit.module.scss';
  */
 function WaveformEdit({
   sample: _sample,
+  previewWav,
   onSetTrimFrames,
   onSetScaleCoefficient,
 }) {
@@ -310,6 +326,27 @@ function WaveformEdit({
     }, [moveCallbackParams, onSetTrimFrames]);
   }
 
+  const { playAudioBuffer } = useAudioPlaybackContext();
+
+  // to be set when playback is started
+  const stopPreviewPlayback = useRef(() => {});
+  useEffect(() => {
+    return () => stopPreviewPlayback.current();
+  }, [_sample, trimFramesLocal]);
+
+  const [callbackOnPreviewWav, setCallbackOnPreviewWav] = useState(
+    /** @type {{ fn: () => void } | null} */ (null)
+  );
+  useEffect(() => {
+    if (previewWav instanceof AudioBuffer && callbackOnPreviewWav) {
+      setCallbackOnPreviewWav(null);
+      callbackOnPreviewWav.fn();
+    }
+  }, [previewWav, callbackOnPreviewWav]);
+
+  const [playbackProgress, setPlaybackProgress] = useState(0);
+  const [isPlaybackActive, setIsPlaybackActive] = useState(false);
+
   return (
     <>
       <div className={classes.scaleButtonsContainer}>
@@ -332,29 +369,96 @@ function WaveformEdit({
           </Button>
         </div>
       </div>
-      <div className={classes.waveformContainer}>
+      <div
+        className={[
+          classes.waveformContainer,
+          isPlaybackActive ? classes.playbackActive : '',
+        ].join(' ')}
+        style={{
+          // @ts-ignore
+          '--trim-pixels-left': `${trimPixels[0]}px`,
+          // @ts-ignore
+          '--trim-pixels-right': `${trimPixels[1]}px`,
+          // @ts-ignore
+          '--playback-progress': `${100 * playbackProgress}%`,
+        }}
+      >
         <WaveformDisplay
           waveformRef={waveformRef}
           peaks={peaks}
           scaleCoefficient={scaleCoefficient}
         />
-        <div
-          className={[classes.trim, classes.left].join(' ')}
-          // @ts-ignore
-          style={{ '--trim-pixels': `${trimPixels[0]}px` }}
-        >
+        <div className={classes.playbackOverlay}>
+          <div className={classes.playback} />
+        </div>
+        <div className={[classes.trim, classes.left].join(' ')}>
           <div className={classes.bar} />
           <div ref={leftTrimHandleRef} className={classes.handle} />
+          {sourceAudioBuffer && Boolean(monoSamples.length) && (
+            <span className={classes.time}>
+              {formatTime(
+                (sourceAudioBuffer.duration * trimFramesLocal[0]) / monoSamples.length,
+                2
+              )}
+            </span>
+          )}
         </div>
-        <div
-          className={[classes.trim, classes.right].join(' ')}
-          // @ts-ignore
-          style={{ '--trim-pixels': `${trimPixels[1]}px` }}
-        >
+        <div className={[classes.trim, classes.right].join(' ')}>
           <div className={classes.bar} />
           <div ref={rightTrimHandleRef} className={classes.handle} />
+          {sourceAudioBuffer && Boolean(monoSamples.length) && (
+            <span className={classes.time}>
+              {formatTime(
+                (sourceAudioBuffer.duration *
+                  (monoSamples.length - 1 - trimFramesLocal[1])) /
+                  monoSamples.length,
+                2
+              )}
+            </span>
+          )}
         </div>
         <div ref={waveformOverlayRef} className={classes.waveformOverlay} />
+        <div className={classes.playbackButtonContainer}>
+          <Button
+            variant="dark"
+            onClick={(e) => {
+              if (isPlaybackActive) {
+                stopPreviewPlayback.current();
+                return;
+              }
+              if (previewWav) {
+                stopPreviewPlayback.current = playAudioBuffer(previewWav, {
+                  onTimeUpdate(currentTime) {
+                    setPlaybackProgress(currentTime / previewWav.duration);
+                  },
+                  onEnded() {
+                    setIsPlaybackActive(false);
+                  },
+                });
+                setPlaybackProgress(0);
+                setIsPlaybackActive(true);
+              } else {
+                const button = e.currentTarget;
+                // wait until the audio buffer is ready then simulate a click event
+                // to retry this handler. it's important that we simulate another
+                // click because otherwise iOS won't let us play the audio later.
+                setCallbackOnPreviewWav({ fn: () => button.click() });
+              }
+            }}
+          >
+            <img
+              src={isPlaybackActive ? stopIcon : playIcon}
+              alt="Play preview"
+            />
+          </Button>
+          {previewWav && (
+            <span>
+              {isPlaybackActive
+                ? formatTime(playbackProgress * previewWav.duration, 1)
+                : formatTime(previewWav.duration, 1)}
+            </span>
+          )}
+        </div>
       </div>
     </>
   );

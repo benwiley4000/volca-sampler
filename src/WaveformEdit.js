@@ -157,6 +157,11 @@ function WaveformEdit({
       /** @param {MouseEvent | TouchEvent} e */
       function onWaveformOverlayDown(e) {
         e.preventDefault();
+        if (e.detail === 2) {
+          // double-mousedown... select everything
+          onSetTrimFrames(() => [0, 0]);
+          return;
+        }
         document.body.style.userSelect = 'none';
         const { clientX } = e instanceof MouseEvent ? e : e.touches[0];
         const waveformX = clientX - waveformClientLeft;

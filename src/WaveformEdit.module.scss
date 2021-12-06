@@ -71,6 +71,7 @@
     width: var(--handle-diameter);
     height: var(--handle-diameter);
     background: var(--bs-dark);
+    outline: 1px solid #fff;
     border-radius: 50%;
     cursor: col-resize;
 
@@ -81,14 +82,23 @@
 
     &:focus,
     &:focus-visible {
-      outline: 1px solid #fff;
+      z-index: 1;
       box-shadow: 0 0 $input-btn-focus-blur $input-btn-focus-width var(--active-color);
+
+      & + .time {
+        z-index: 1;
+      }
     }
   }
 
   & > .time {
     position: absolute;
-    top: calc(100% + var(--handle-diameter));
+    top: calc(100% + var(--handle-diameter) + 5px);
+    background: var(--bs-dark);
+    color: #fff;
+    padding: 0 3px;
+    border-radius: 4px;
+    outline: 2px solid #fff;
   }
 
   &.left {
@@ -101,11 +111,13 @@
     }
 
     & > .handle {
+      z-index: 1;
       right: 0;
       transform: translateX(calc(50% - 0.5px));
     }
 
     & > .time {
+      z-index: 1;
       right: 0;
       transform: translateX(50%);
     }

@@ -79,7 +79,6 @@ function SlotNumberInput({ slotNumber, onSlotNumberUpdate }) {
         if (focusedDigit === null) {
           return;
         }
-        e.stopPropagation();
         let handled = true;
         switch (e.key) {
           // slot number down
@@ -117,6 +116,7 @@ function SlotNumberInput({ slotNumber, onSlotNumberUpdate }) {
             break;
         }
         if (handled) {
+          e.stopPropagation();
           e.preventDefault();
         }
       }

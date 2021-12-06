@@ -1,4 +1,5 @@
 import React, {
+  useCallback,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -258,7 +259,6 @@ function WaveformEdit({
         if (leftTrimLastX.current !== null) {
           return;
         }
-        e.stopPropagation();
         let handled = true;
         switch (e.key) {
           case 'ArrowLeft':
@@ -272,6 +272,7 @@ function WaveformEdit({
             break;
         }
         if (handled) {
+          e.stopPropagation();
           e.preventDefault();
           adjustedViaKeyboard = true;
         }
@@ -282,7 +283,6 @@ function WaveformEdit({
         if (rightTrimLastX.current !== null) {
           return;
         }
-        e.stopPropagation();
         let handled = true;
         switch (e.key) {
           case 'ArrowLeft':
@@ -296,6 +296,7 @@ function WaveformEdit({
             break;
         }
         if (handled) {
+          e.stopPropagation();
           e.preventDefault();
           adjustedViaKeyboard = true;
         }
@@ -414,6 +415,48 @@ function WaveformEdit({
   const [playbackProgress, setPlaybackProgress] = useState(0);
   const [isPlaybackActive, setIsPlaybackActive] = useState(false);
 
+  const handlePlay = useCallback(
+    /** @param {MouseEvent | KeyboardEvent} e */
+    (e) => {
+      if (isPlaybackActive) {
+        stopPreviewPlayback.current();
+      } else if (previewWav) {
+        stopPreviewPlayback.current = playAudioBuffer(previewWav, {
+          onTimeUpdate(currentTime) {
+            setPlaybackProgress(currentTime / previewWav.duration);
+          },
+          onEnded() {
+            setIsPlaybackActive(false);
+          },
+        });
+        setPlaybackProgress(0);
+        setIsPlaybackActive(true);
+      } else {
+        const target = /** @type {EventTarget} */ (e.target);
+        // wait until the audio buffer is ready then simulate an event
+        // to retry this handler. it's important that we simulate
+        // another action because otherwise iOS won't let us play the
+        // audio later.
+        setCallbackOnPreviewWav({
+          fn: () => target.dispatchEvent(e),
+        });
+      }
+    },
+    [isPlaybackActive, playAudioBuffer, previewWav]
+  );
+
+  useEffect(() => {
+    /** @param {KeyboardEvent} e */
+    function handleSpace(e) {
+      if (e.key === ' ') {
+        e.preventDefault();
+        handlePlay(e);
+      }
+    }
+    document.addEventListener('keydown', handleSpace);
+    return () => document.removeEventListener('keydown', handleSpace);
+  }, [handlePlay]);
+
   return (
     <>
       <div className={classes.scaleButtonsContainer}>
@@ -459,33 +502,7 @@ function WaveformEdit({
           <div className={classes.playback} />
         </div>
         <div className={classes.playbackButtonContainer}>
-          <Button
-            variant="dark"
-            onClick={(e) => {
-              if (isPlaybackActive) {
-                stopPreviewPlayback.current();
-                return;
-              }
-              if (previewWav) {
-                stopPreviewPlayback.current = playAudioBuffer(previewWav, {
-                  onTimeUpdate(currentTime) {
-                    setPlaybackProgress(currentTime / previewWav.duration);
-                  },
-                  onEnded() {
-                    setIsPlaybackActive(false);
-                  },
-                });
-                setPlaybackProgress(0);
-                setIsPlaybackActive(true);
-              } else {
-                const button = e.currentTarget;
-                // wait until the audio buffer is ready then simulate a click event
-                // to retry this handler. it's important that we simulate another
-                // click because otherwise iOS won't let us play the audio later.
-                setCallbackOnPreviewWav({ fn: () => button.click() });
-              }
-            }}
-          >
+          <Button variant="dark" onClick={(e) => handlePlay(e.nativeEvent)}>
             <img
               src={isPlaybackActive ? stopIcon : playIcon}
               alt="Play preview"

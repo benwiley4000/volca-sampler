@@ -75,26 +75,30 @@ function SlotNumberInput({ slotNumber, onSlotNumberUpdate }) {
       }
       /** @param {KeyboardEvent} e */
       function onKeyDown(e) {
-        const focusedDigit = focusedDigitRef.current;
-        if (focusedDigit === null) {
-          return;
-        }
+        const focusedDigit =
+          focusedDigitRef.current === null ? 0 : focusedDigitRef.current;
         let handled = true;
+        const beforeArrowAction = () => {
+          setFocusedDigit(focusedDigit);
+        };
         switch (e.key) {
           // slot number down
           case 'ArrowDown':
+            beforeArrowAction();
             setSlotNumberLocal((slotNumber) =>
               arrowDownCallback(focusedDigit, slotNumber)
             );
             break;
           // slot number up
           case 'ArrowUp':
+            beforeArrowAction();
             setSlotNumberLocal((slotNumber) =>
               arrowUpCallback(focusedDigit, slotNumber)
             );
             break;
           // digit navigation left
           case 'ArrowLeft':
+            beforeArrowAction();
             setFocusedDigit((digit) =>
               digit !== null && digit < 2
                 ? /** @type {1 | 2} */ (digit + 1)
@@ -103,6 +107,7 @@ function SlotNumberInput({ slotNumber, onSlotNumberUpdate }) {
             break;
           // digit navigation right
           case 'ArrowRight':
+            beforeArrowAction();
             setFocusedDigit((digit) =>
               digit ? /** @type {0 | 1} */ (digit - 1) : digit
             );
@@ -116,7 +121,6 @@ function SlotNumberInput({ slotNumber, onSlotNumberUpdate }) {
             break;
         }
         if (handled) {
-          e.stopPropagation();
           e.preventDefault();
         }
       }

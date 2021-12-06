@@ -28,6 +28,18 @@
   display: inline-flex;
   align-items: center;
   cursor: pointer;
+
+  @media screen and (min-width: 350px) {
+    font-size: 2.5rem;
+  }
+
+  @media screen and (min-width: 530px) {
+    font-size: 3rem;
+  }
+
+  @media screen and (min-width: 600px) {
+    font-size: 3.5rem;
+  }
 }
 
 .titleText {
@@ -106,7 +118,7 @@
     transform: rotate(-5deg) scale(1.1);
   }
   display: none;
-  @media screen and (min-width: 400px) {
+  @media screen and (min-width: 455px) {
     display: unset;
   }
 }

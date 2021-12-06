@@ -140,7 +140,9 @@ function WaveformEdit({
 
       /** @param {MouseEvent | TouchEvent} e */
       function onLeftHandleDown(e) {
-        e.preventDefault();
+        if (e instanceof TouchEvent) {
+          e.preventDefault();
+        }
         document.body.style.userSelect = 'none';
         const { pageX } = e instanceof MouseEvent ? e : e.touches[0];
         leftTrimLastX.current = pageX;
@@ -148,7 +150,9 @@ function WaveformEdit({
 
       /** @param {MouseEvent | TouchEvent} e */
       function onRightHandleDown(e) {
-        e.preventDefault();
+        if (e instanceof TouchEvent) {
+          e.preventDefault();
+        }
         document.body.style.userSelect = 'none';
         const { pageX } = e instanceof MouseEvent ? e : e.touches[0];
         rightTrimLastX.current = pageX;
@@ -156,7 +160,9 @@ function WaveformEdit({
 
       /** @param {MouseEvent | TouchEvent} e */
       function onWaveformOverlayDown(e) {
-        e.preventDefault();
+        if (e instanceof TouchEvent) {
+          e.preventDefault();
+        }
         if (e.detail === 2) {
           // double-mousedown... select everything
           onSetTrimFrames(() => [0, 0]);
@@ -183,28 +189,50 @@ function WaveformEdit({
         waveformOverlayDownFrame.current = frameFrom;
       }
 
+      /** @param {number} diff */
+      function moveLeftHandle(diff) {
+        const ratio = diff / pixelWidth;
+        const frameDiff = Math.round(monoSamplesLength * ratio);
+        setTrimFramesLocal((trimFrames) => {
+          let newValue = trimFrames[0] + frameDiff;
+          newValue = Math.min(
+            newValue,
+            monoSamplesLength - trimFrames[1] - minFrameWidth
+          );
+          newValue = Math.max(newValue, 0);
+          return [newValue, trimFrames[1]];
+        });
+      }
+
       /** @param {MouseEvent | TouchEvent} e */
       function onLeftHandleMove(e) {
         if (leftTrimLastX.current === null) {
           return;
         }
-        e.preventDefault();
+        if (e instanceof TouchEvent) {
+          e.preventDefault();
+        }
         const { pageX } = e instanceof MouseEvent ? e : e.touches[0];
         const diff = pageX - leftTrimLastX.current;
         if (diff) {
-          const ratio = diff / pixelWidth;
-          const frameDiff = Math.round(monoSamplesLength * ratio);
-          setTrimFramesLocal((trimFrames) => {
-            let newValue = trimFrames[0] + frameDiff;
-            newValue = Math.min(
-              newValue,
-              monoSamplesLength - trimFrames[1] - minFrameWidth
-            );
-            newValue = Math.max(newValue, 0);
-            return [newValue, trimFrames[1]];
-          });
+          moveLeftHandle(diff);
           leftTrimLastX.current = pageX;
         }
+      }
+
+      /** @param {number} diff */
+      function moveRightHandle(diff) {
+        const ratio = diff / pixelWidth;
+        const frameDiff = Math.round(monoSamplesLength * ratio);
+        setTrimFramesLocal((trimFrames) => {
+          let newValue = trimFrames[1] + frameDiff;
+          newValue = Math.min(
+            newValue,
+            monoSamplesLength - trimFrames[0] - minFrameWidth
+          );
+          newValue = Math.max(newValue, 0);
+          return [trimFrames[0], newValue];
+        });
       }
 
       /** @param {MouseEvent | TouchEvent} e */
@@ -212,22 +240,64 @@ function WaveformEdit({
         if (rightTrimLastX.current === null) {
           return;
         }
-        e.preventDefault();
+        if (e instanceof TouchEvent) {
+          e.preventDefault();
+        }
         const { pageX } = e instanceof MouseEvent ? e : e.touches[0];
         const diff = rightTrimLastX.current - pageX;
         if (diff) {
-          const ratio = diff / pixelWidth;
-          const frameDiff = Math.round(monoSamplesLength * ratio);
-          setTrimFramesLocal((trimFrames) => {
-            let newValue = trimFrames[1] + frameDiff;
-            newValue = Math.min(
-              newValue,
-              monoSamplesLength - trimFrames[0] - minFrameWidth
-            );
-            newValue = Math.max(newValue, 0);
-            return [trimFrames[0], newValue];
-          });
+          moveRightHandle(diff);
           rightTrimLastX.current = pageX;
+        }
+      }
+
+      let adjustedViaKeyboard = false;
+
+      /** @param {KeyboardEvent} e */
+      function onLeftHandleKeyDown(e) {
+        if (leftTrimLastX.current !== null) {
+          return;
+        }
+        e.stopPropagation();
+        let handled = true;
+        switch (e.key) {
+          case 'ArrowLeft':
+            moveLeftHandle(-1);
+            break;
+          case 'ArrowRight':
+            moveLeftHandle(1);
+            break;
+          default:
+            handled = false;
+            break;
+        }
+        if (handled) {
+          e.preventDefault();
+          adjustedViaKeyboard = true;
+        }
+      }
+
+      /** @param {KeyboardEvent} e */
+      function onRightHandleKeyDown(e) {
+        if (rightTrimLastX.current !== null) {
+          return;
+        }
+        e.stopPropagation();
+        let handled = true;
+        switch (e.key) {
+          case 'ArrowLeft':
+            moveRightHandle(1);
+            break;
+          case 'ArrowRight':
+            moveRightHandle(-1);
+            break;
+          default:
+            handled = false;
+            break;
+        }
+        if (handled) {
+          e.preventDefault();
+          adjustedViaKeyboard = true;
         }
       }
 
@@ -236,7 +306,9 @@ function WaveformEdit({
         if (waveformOverlayDownFrame.current === null) {
           return;
         }
-        e.preventDefault();
+        if (e instanceof TouchEvent) {
+          e.preventDefault();
+        }
         const frameFrom = waveformOverlayDownFrame.current;
         const { clientX } = e instanceof MouseEvent ? e : e.touches[0];
         const waveformX = clientX - waveformClientLeft;
@@ -270,18 +342,22 @@ function WaveformEdit({
         onWaveformOverlayMove(e);
       }
 
-      /** @param {MouseEvent | TouchEvent} e */
+      /** @param {MouseEvent | TouchEvent | KeyboardEvent} e */
       function onUp(e) {
         if (
           leftTrimLastX.current !== null ||
           rightTrimLastX.current !== null ||
-          waveformOverlayDownFrame.current !== null
+          waveformOverlayDownFrame.current !== null ||
+          adjustedViaKeyboard
         ) {
-          e.preventDefault();
+          if (e instanceof TouchEvent || e instanceof KeyboardEvent) {
+            e.preventDefault();
+          }
           onSetTrimFrames(() => trimFramesLocalRef.current);
           leftTrimLastX.current = null;
           rightTrimLastX.current = null;
           waveformOverlayDownFrame.current = null;
+          adjustedViaKeyboard = false;
         }
         document.body.style.userSelect = 'unset';
       }
@@ -297,35 +373,21 @@ function WaveformEdit({
       waveformOverlay.addEventListener('mousedown', onWaveformOverlayDown);
       leftHandle.addEventListener('touchmove', onLeftHandleMove);
       rightHandle.addEventListener('touchmove', onRightHandleMove);
+      leftHandle.addEventListener('keydown', onLeftHandleKeyDown);
+      rightHandle.addEventListener('keydown', onRightHandleKeyDown);
       waveformOverlay.addEventListener('touchmove', onWaveformOverlayMove);
       window.addEventListener('mousemove', onMouseMove);
       leftHandle.addEventListener('touchend', onUp);
       leftHandle.addEventListener('touchcancel', onUp);
+      leftHandle.addEventListener('keyup', onUp);
       rightHandle.addEventListener('touchend', onUp);
+      rightHandle.addEventListener('keyup', onUp);
       rightHandle.addEventListener('touchcancel', onUp);
       waveformOverlay.addEventListener('touchend', onUp);
       waveformOverlay.addEventListener('touchcancel', onUp);
       window.addEventListener('mouseup', onUp);
       return () => {
-        leftHandle.removeEventListener('touchstart', onLeftHandleDown);
-        leftHandle.removeEventListener('mousedown', onLeftHandleDown);
-        rightHandle.removeEventListener('touchstart', onRightHandleDown);
-        rightHandle.removeEventListener('mousedown', onRightHandleDown);
-        waveformOverlay.removeEventListener(
-          'touchstart',
-          onWaveformOverlayDown
-        );
-        waveformOverlay.removeEventListener('mousedown', onWaveformOverlayDown);
-        leftHandle.removeEventListener('touchmove', onLeftHandleMove);
-        rightHandle.removeEventListener('touchmove', onRightHandleMove);
-        waveformOverlay.removeEventListener('touchmove', onWaveformOverlayMove);
         window.removeEventListener('mousemove', onMouseMove);
-        leftHandle.removeEventListener('touchend', onUp);
-        leftHandle.removeEventListener('touchcancel', onUp);
-        rightHandle.removeEventListener('touchend', onUp);
-        rightHandle.removeEventListener('touchcancel', onUp);
-        waveformOverlay.removeEventListener('touchend', onUp);
-        waveformOverlay.removeEventListener('touchcancel', onUp);
         window.removeEventListener('mouseup', onUp);
       };
     }, [moveCallbackParams, onSetTrimFrames]);
@@ -398,11 +460,16 @@ function WaveformEdit({
         </div>
         <div className={[classes.trim, classes.left].join(' ')}>
           <div className={classes.bar} />
-          <div ref={leftTrimHandleRef} className={classes.handle} />
+          <div
+            ref={leftTrimHandleRef}
+            className={classes.handle}
+            tabIndex={0}
+          />
           {sourceAudioBuffer && Boolean(monoSamples.length) && (
             <span className={classes.time}>
               {formatTime(
-                (sourceAudioBuffer.duration * trimFramesLocal[0]) / monoSamples.length,
+                (sourceAudioBuffer.duration * trimFramesLocal[0]) /
+                  monoSamples.length,
                 2
               )}
             </span>
@@ -410,7 +477,11 @@ function WaveformEdit({
         </div>
         <div className={[classes.trim, classes.right].join(' ')}>
           <div className={classes.bar} />
-          <div ref={rightTrimHandleRef} className={classes.handle} />
+          <div
+            ref={rightTrimHandleRef}
+            className={classes.handle}
+            tabIndex={0}
+          />
           {sourceAudioBuffer && Boolean(monoSamples.length) && (
             <span className={classes.time}>
               {formatTime(

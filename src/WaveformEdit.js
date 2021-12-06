@@ -458,42 +458,6 @@ function WaveformEdit({
         <div className={classes.playbackOverlay}>
           <div className={classes.playback} />
         </div>
-        <div className={[classes.trim, classes.left].join(' ')}>
-          <div className={classes.bar} />
-          <div
-            ref={leftTrimHandleRef}
-            className={classes.handle}
-            tabIndex={0}
-          />
-          {sourceAudioBuffer && Boolean(monoSamples.length) && (
-            <span className={classes.time}>
-              {formatTime(
-                (sourceAudioBuffer.duration * trimFramesLocal[0]) /
-                  monoSamples.length,
-                2
-              )}
-            </span>
-          )}
-        </div>
-        <div className={[classes.trim, classes.right].join(' ')}>
-          <div className={classes.bar} />
-          <div
-            ref={rightTrimHandleRef}
-            className={classes.handle}
-            tabIndex={0}
-          />
-          {sourceAudioBuffer && Boolean(monoSamples.length) && (
-            <span className={classes.time}>
-              {formatTime(
-                (sourceAudioBuffer.duration *
-                  (monoSamples.length - 1 - trimFramesLocal[1])) /
-                  monoSamples.length,
-                2
-              )}
-            </span>
-          )}
-        </div>
-        <div ref={waveformOverlayRef} className={classes.waveformOverlay} />
         <div className={classes.playbackButtonContainer}>
           <Button
             variant="dark"
@@ -535,6 +499,42 @@ function WaveformEdit({
             </span>
           )}
         </div>
+        <div className={[classes.trim, classes.left].join(' ')}>
+          <div className={classes.bar} />
+          <div
+            ref={leftTrimHandleRef}
+            className={classes.handle}
+            tabIndex={0}
+          />
+          {sourceAudioBuffer && Boolean(monoSamples.length) && (
+            <span className={classes.time}>
+              {formatTime(
+                (sourceAudioBuffer.duration * trimFramesLocal[0]) /
+                  monoSamples.length,
+                2
+              )}
+            </span>
+          )}
+        </div>
+        <div className={[classes.trim, classes.right].join(' ')}>
+          <div className={classes.bar} />
+          <div
+            ref={rightTrimHandleRef}
+            className={classes.handle}
+            tabIndex={0}
+          />
+          {sourceAudioBuffer && Boolean(monoSamples.length) && (
+            <span className={classes.time}>
+              {formatTime(
+                (sourceAudioBuffer.duration *
+                  (monoSamples.length - 1 - trimFramesLocal[1])) /
+                  monoSamples.length,
+                2
+              )}
+            </span>
+          )}
+        </div>
+        <div ref={waveformOverlayRef} className={classes.waveformOverlay} />
       </div>
     </>
   );

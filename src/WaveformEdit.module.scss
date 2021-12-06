@@ -132,6 +132,7 @@
 
 .playbackButtonContainer {
   position: absolute;
+  z-index: 1;
   left: 0.5rem;
   top: 0.5rem;
   display: flex;

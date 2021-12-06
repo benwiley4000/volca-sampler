@@ -6,7 +6,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Button } from 'react-bootstrap';
+import { Button, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import playIcon from '@material-design-icons/svg/filled/play_arrow.svg';
 import stopIcon from '@material-design-icons/svg/filled/stop.svg';
 
@@ -513,12 +513,21 @@ function WaveformEdit({
           <div className={classes.playback} />
         </div>
         <div className={classes.playbackButtonContainer}>
-          <Button variant="dark" onClick={(e) => handlePlay(e.nativeEvent)}>
-            <img
-              src={isPlaybackActive ? stopIcon : playIcon}
-              alt="Play preview"
-            />
-          </Button>
+          <OverlayTrigger
+            delay={{ show: 400, hide: 0 }}
+            overlay={
+              <Tooltip>
+                Preview how your sample will sound on the Volca Sample
+              </Tooltip>
+            }
+          >
+            <Button variant="dark" onClick={(e) => handlePlay(e.nativeEvent)}>
+              <img
+                src={isPlaybackActive ? stopIcon : playIcon}
+                alt="Play preview"
+              />
+            </Button>
+          </OverlayTrigger>
           {displayedTime && <span>{displayedTime}</span>}
         </div>
         <div className={[classes.trim, classes.left].join(' ')}>

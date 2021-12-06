@@ -1,3 +1,7 @@
+@import 'bootstrap_custom_variables';
+@import '~bootstrap/scss/functions';
+@import '~bootstrap/scss/variables';
+
 .scaleButtonsContainer {
   position: relative;
 }
@@ -42,7 +46,7 @@
 }
 
 .trim {
-  --handle-diameter: 25px;
+  --handle-diameter: 23px;
   position: absolute;
   top: 0;
   bottom: 0;
@@ -61,17 +65,24 @@
   }
 
   & > .handle {
+    --active-color: #{rgba($dark, 0.5)};
     position: absolute;
     top: 100%;
     width: var(--handle-diameter);
     height: var(--handle-diameter);
-    background: #fff;
-    border: 1px solid var(--bs-dark);
+    background: var(--bs-dark);
     border-radius: 50%;
     cursor: col-resize;
 
     &:active {
       cursor: grabbing;
+      background-color: var(--active-color);
+    }
+
+    &:focus,
+    &:focus-visible {
+      outline: 1px solid #fff;
+      box-shadow: 0 0 $input-btn-focus-blur $input-btn-focus-width var(--active-color);
     }
   }
 

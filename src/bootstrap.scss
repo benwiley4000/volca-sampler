@@ -1,9 +1,2 @@
-$h1-font-size: 3.5rem;
-$primary: #e50b0b;
-$progress-bar-transition: none; // progress is incorrect otherwise
-
-:root {
-  --bs-primary-darkened: #{darken($primary, 20%)};
-}
-
-@import "~bootstrap/scss/bootstrap";
+@import 'bootstrap_custom_variables';
+@import '~bootstrap/scss/bootstrap';

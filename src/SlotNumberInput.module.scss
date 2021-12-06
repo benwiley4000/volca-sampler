@@ -1,3 +1,7 @@
+@import 'bootstrap_custom_variables';
+@import '~bootstrap/scss/functions';
+@import '~bootstrap/scss/variables';
+
 .slotNumberRow {
   display: flex;
 }
@@ -64,6 +68,12 @@
     circle.point {
       fill: var(--bs-primary);
     }
+  }
+
+  &:focus,
+  &:focus-visible {
+    outline: 0;
+    box-shadow: $input-btn-focus-box-shadow;
   }
 }
 

@@ -415,6 +415,17 @@ function WaveformEdit({
   const [playbackProgress, setPlaybackProgress] = useState(0);
   const [isPlaybackActive, setIsPlaybackActive] = useState(false);
 
+  const [displayedTime, setDisplayedTime] = useState('');
+  useEffect(() => {
+    if (previewWav) {
+      setDisplayedTime(
+        isPlaybackActive
+          ? formatTime(playbackProgress * previewWav.duration, 1)
+          : formatTime(previewWav.duration, 1)
+      );
+    }
+  }, [previewWav, isPlaybackActive, playbackProgress]);
+
   const handlePlay = useCallback(
     /** @param {MouseEvent | KeyboardEvent} e */
     (e) => {
@@ -508,13 +519,7 @@ function WaveformEdit({
               alt="Play preview"
             />
           </Button>
-          {previewWav && (
-            <span>
-              {isPlaybackActive
-                ? formatTime(playbackProgress * previewWav.duration, 1)
-                : formatTime(previewWav.duration, 1)}
-            </span>
-          )}
+          {displayedTime && <span>{displayedTime}</span>}
         </div>
         <div className={[classes.trim, classes.left].join(' ')}>
           <div className={classes.bar} />

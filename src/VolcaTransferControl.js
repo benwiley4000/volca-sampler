@@ -80,11 +80,13 @@ function VolcaTransferControl({ sample }) {
         onClick={(e) => {
           if (!(syroAudioBuffer instanceof AudioBuffer)) {
             if (!syroAudioBuffer) {
-              const button = e.currentTarget;
-              // wait until the syro buffer is ready then simulate a click event
-              // to retry this handler. it's important that we simulate another
-              // click because otherwise iOS won't let us play the audio later.
-              setCallbackOnSyroBuffer({ fn: () => button.click() });
+              const { target, nativeEvent } = e;
+              // wait until the syro buffer is ready then simulate the event to
+              // retry this handler. it's important that we simulate another
+              // action because otherwise iOS won't let us play the audio later.
+              setCallbackOnSyroBuffer({
+                fn: () => target.dispatchEvent(nativeEvent),
+              });
             }
             return;
           }

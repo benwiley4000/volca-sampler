@@ -80,7 +80,7 @@ function SlotNumberInput({ slotNumber, onSlotNumberUpdate }) {
           return;
         }
         e.stopPropagation();
-        e.preventDefault();
+        let handled = true;
         switch (e.key) {
           // slot number down
           case 'ArrowDown':
@@ -113,15 +113,17 @@ function SlotNumberInput({ slotNumber, onSlotNumberUpdate }) {
             setFocusedDigit(null);
             break;
           default:
+            handled = false;
             break;
+        }
+        if (handled) {
+          e.preventDefault();
         }
       }
       /** @param {KeyboardEvent} e */
       function onKeyUp(e) {
-        const focusedDigit = focusedDigitRef.current;
-        if (focusedDigit === null) {
-          return;
-        }
+        const focusedDigit =
+          focusedDigitRef.current === null ? 2 : focusedDigitRef.current;
         e.stopPropagation();
         e.preventDefault();
         const slotNumber = slotNumberLocalRef.current;
@@ -141,22 +143,11 @@ function SlotNumberInput({ slotNumber, onSlotNumberUpdate }) {
           onSlotNumberUpdate(slotNumber);
         }
       }
-      /** @param {MouseEvent} e */
-      function onDocumentClick(e) {
-        if (
-          slotNumberRef.current &&
-          slotNumberRef.current.contains(/** @type {Node} */ (e.target))
-        ) {
-          return;
-        }
-        setFocusedDigit(null);
-      }
-      document.addEventListener('keydown', onKeyDown, true);
-      document.addEventListener('keyup', onKeyUp, true);
-      document.addEventListener('click', onDocumentClick);
       const slotNumberElement = /** @type {HTMLDivElement} */ (
         slotNumberRef.current
       );
+      slotNumberElement.addEventListener('keydown', onKeyDown, true);
+      slotNumberElement.addEventListener('keyup', onKeyUp, true);
       let pageYStart = 0;
       let mousedown = false;
       let slotNumberDragged = false;
@@ -232,10 +223,19 @@ function SlotNumberInput({ slotNumber, onSlotNumberUpdate }) {
           e.preventDefault();
         });
       });
+      function handleFocus() {
+        if (mousedown) {
+          // we already handle this for mouse events
+          return;
+        }
+        setFocusedDigit(2);
+      }
+      function handleBlur() {
+        setFocusedDigit(null);
+      }
+      slotNumberElement.addEventListener('focus', handleFocus);
+      slotNumberElement.addEventListener('blur', handleBlur);
       return () => {
-        document.removeEventListener('keydown', onKeyDown, true);
-        document.removeEventListener('keyup', onKeyUp, true);
-        document.removeEventListener('click', onDocumentClick);
         window.removeEventListener('mousemove', handleMouseMove);
         window.removeEventListener('mouseup', handleMouseUp);
       };
@@ -274,6 +274,7 @@ function SlotNumberInput({ slotNumber, onSlotNumberUpdate }) {
             className={classes.slotNumber}
             title={`Slot ${slotNumberLocal}`}
             ref={slotNumberRef}
+            tabIndex={0}
           >
             {/* behind the real information we just put a row of faint 8s to
         simulate the effect of unilluminated character segments */}

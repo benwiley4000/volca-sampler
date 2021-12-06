@@ -93,12 +93,14 @@
 
   & > .time {
     position: absolute;
-    top: calc(100% + var(--handle-diameter) + 5px);
+    top: calc(100% + var(--handle-diameter) + 4px);
     background: var(--bs-dark);
     color: #fff;
     padding: 0 3px;
     border-radius: 4px;
-    outline: 2px solid #fff;
+    border: 1px solid #fff;
+    border-left-width: 2px;
+    border-right-width: 2px;
   }
 
   &.left {

@@ -20,6 +20,8 @@
   position: relative;
   background-color: #fff;
   box-shadow: 0 1px 0 #ddd inset, 0 -1px 0 #ddd inset;
+  width: 100%;
+  height: 100%;
 }
 
 .playbackOverlay {
@@ -83,7 +85,8 @@
     &:focus,
     &:focus-visible {
       z-index: 1;
-      box-shadow: 0 0 $input-btn-focus-blur $input-btn-focus-width var(--active-color);
+      box-shadow: 0 0 $input-btn-focus-blur $input-btn-focus-width
+        var(--active-color);
 
       & + .time {
         z-index: 1;

@@ -88,13 +88,19 @@ function drawWaveform(canvas, peaks, scaleCoefficient) {
  *   peaks: import('./utils/waveform').SamplePeaks;
  *   scaleCoefficient: number;
  *   waveformRef?: React.Ref<HTMLElement | null>;
+ *   onResize?: (size: { width: number; height: number }) => void;
  * }} WaveformProps
  */
 
 /**
  * @param {WaveformProps} props
  */
-function WaveformDisplayCanvas({ peaks, scaleCoefficient, waveformRef }) {
+function WaveformDisplayCanvas({
+  peaks,
+  scaleCoefficient,
+  waveformRef,
+  onResize,
+}) {
   /**
    * @type {React.RefObject<HTMLCanvasElement>}
    */
@@ -110,6 +116,9 @@ function WaveformDisplayCanvas({ peaks, scaleCoefficient, waveformRef }) {
     // the initial render multiple times
     sizeRef.current.width = canvasRef.current.offsetWidth;
     sizeRef.current.height = canvasRef.current.offsetHeight;
+    if (onResize) {
+      onResize({ ...sizeRef.current });
+    }
     return observeCanvas(canvasRef.current, ({ width, height }) => {
       if (
         width !== sizeRef.current.width ||
@@ -118,9 +127,12 @@ function WaveformDisplayCanvas({ peaks, scaleCoefficient, waveformRef }) {
         setLastResize(Symbol());
         sizeRef.current.width = width;
         sizeRef.current.height = height;
+        if (onResize) {
+          onResize({ ...sizeRef.current });
+        }
       }
     });
-  }, []);
+  }, [onResize]);
   useLayoutEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) {

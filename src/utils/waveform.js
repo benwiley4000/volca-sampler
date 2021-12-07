@@ -117,9 +117,10 @@ export function useWaveformInfo(sourceAudioBuffer) {
   const [waveformElement, waveformRef] = useState(
     /** @type {HTMLElement | null} */ (null)
   );
+  const [size, setSize] = useState({ width: 0, height: 0 });
   const pixelWidth = useMemo(
-    () => waveformElement && waveformElement.offsetWidth,
-    [waveformElement]
+    () => waveformElement && size.width,
+    [waveformElement, size]
   );
   const peaks = useMemo(() => {
     if (!pixelWidth || !monoSamples.length) {
@@ -135,5 +136,6 @@ export function useWaveformInfo(sourceAudioBuffer) {
     waveformRef,
     pixelWidth,
     peaks,
+    onResize: setSize,
   };
 }

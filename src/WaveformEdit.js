@@ -56,7 +56,7 @@ function WaveformEdit({
     sourceAudioBuffer,
   } = useLoadedSample(_sample);
 
-  const { monoSamples, waveformRef, pixelWidth, peaks } =
+  const { monoSamples, waveformRef, pixelWidth, peaks, onResize } =
     useWaveformInfo(sourceAudioBuffer);
 
   const trimmedSamplePeak = useMemo(() => {
@@ -508,6 +508,7 @@ function WaveformEdit({
           waveformRef={waveformRef}
           peaks={peaks}
           scaleCoefficient={scaleCoefficient}
+          onResize={onResize}
         />
         <div className={classes.playbackOverlay}>
           <div className={classes.playback} />

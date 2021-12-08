@@ -430,7 +430,10 @@ export class SampleContainer {
           return new SampleContainer.Mutable({ id, ...metadata });
         })
         .filter(Boolean)
-    ).sort((a, b) => (a > b ? -1 : b > a ? 1 : 0));
+    ).sort(
+      ({ metadata: { dateModified: a } }, { metadata: { dateModified: b } }) =>
+        a > b ? -1 : b > a ? 1 : 0
+    );
     return sampleContainers;
   }
 }

@@ -388,7 +388,26 @@ function WaveformEdit({
       waveformOverlay.addEventListener('touchcancel', onUp);
       window.addEventListener('mouseup', onUp);
       return () => {
+        leftHandle.removeEventListener('touchstart', onLeftHandleDown);
+        leftHandle.removeEventListener('mousedown', onLeftHandleDown);
+        rightHandle.removeEventListener('touchstart', onRightHandleDown);
+        rightHandle.removeEventListener('mousedown', onRightHandleDown);
+        waveformOverlay.removeEventListener('touchstart', onWaveformOverlayDown);
+        waveformOverlay.removeEventListener('mousedown', onWaveformOverlayDown);
+        leftHandle.removeEventListener('touchmove', onLeftHandleMove);
+        rightHandle.removeEventListener('touchmove', onRightHandleMove);
+        leftHandle.removeEventListener('keydown', onLeftHandleKeyDown);
+        rightHandle.removeEventListener('keydown', onRightHandleKeyDown);
+        waveformOverlay.removeEventListener('touchmove', onWaveformOverlayMove);
         window.removeEventListener('mousemove', onMouseMove);
+        leftHandle.removeEventListener('touchend', onUp);
+        leftHandle.removeEventListener('touchcancel', onUp);
+        leftHandle.removeEventListener('keyup', onUp);
+        rightHandle.removeEventListener('touchend', onUp);
+        rightHandle.removeEventListener('keyup', onUp);
+        rightHandle.removeEventListener('touchcancel', onUp);
+        waveformOverlay.removeEventListener('touchend', onUp);
+        waveformOverlay.removeEventListener('touchcancel', onUp);
         window.removeEventListener('mouseup', onUp);
       };
     }, [moveCallbackParams, onSetTrimFrames]);

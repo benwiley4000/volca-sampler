@@ -238,6 +238,38 @@ function useMediaRecording(onRecordUpdate, onRecordFinish) {
     onRecordUpdate,
     onRecordFinish,
   ]);
+  /** @type {React.ChangeEventHandler<HTMLInputElement>} */
+  const importFile = useCallback(
+    (e) => {
+      if (e.target.files && e.target.files.length) {
+        const file = e.target.files[0];
+        file.arrayBuffer().then(async (arrayBuffer) => {
+          const audioFileBuffer = new Uint8Array(arrayBuffer);
+          /**
+           * @type {AudioBuffer}
+           */
+          let audioBuffer;
+          try {
+            audioBuffer = await getAudioBufferForAudioFileData(audioFileBuffer);
+          } catch (err) {
+            alert('Unsupported audio format detected');
+            return;
+          }
+          if (audioBuffer.length > 10 * audioBuffer.sampleRate) {
+            alert('Please select an audio file no more than 10 seconds long');
+            return;
+          }
+          setCaptureState('finalizing');
+          const result = await onRecordFinish(audioFileBuffer, file);
+          setCaptureState('ready');
+          if (result === 'silent') {
+            setShowSilenceWarning(true);
+          }
+        });
+      }
+    },
+    [onRecordFinish]
+  );
   return {
     captureDevices,
     accessState,
@@ -253,6 +285,7 @@ function useMediaRecording(onRecordUpdate, onRecordFinish) {
     setSelectedChannelCount,
     beginRecording: handleBeginRecording,
     stopRecording: stop.fn,
+    importFile,
     dismissSilenceWarning,
   };
 }
@@ -373,6 +406,7 @@ function SampleRecord({ onRecordFinish }) {
     setSelectedChannelCount,
     beginRecording,
     stopRecording,
+    importFile,
     dismissSilenceWarning,
   } = useMediaRecording(onRecordUpdate, onRecordFinish);
   sampleRateRef.current = sampleRate;
@@ -591,33 +625,7 @@ function SampleRecord({ onRecordFinish }) {
           hidden
           type="file"
           accept="audio/*,.wav,.mp3,.ogg"
-          onChange={(e) => {
-            if (e.target.files && e.target.files.length) {
-              const file = e.target.files[0];
-              file.arrayBuffer().then(async (arrayBuffer) => {
-                const audioFileBuffer = new Uint8Array(arrayBuffer);
-                /**
-                 * @type {AudioBuffer}
-                 */
-                let audioBuffer;
-                try {
-                  audioBuffer = await getAudioBufferForAudioFileData(
-                    audioFileBuffer
-                  );
-                } catch (err) {
-                  alert('Unsupported audio format detected');
-                  return;
-                }
-                if (audioBuffer.length > 10 * audioBuffer.sampleRate) {
-                  alert(
-                    'Please select an audio file no more than 10 seconds long'
-                  );
-                  return;
-                }
-                onRecordFinish(audioFileBuffer, file);
-              });
-            }
-          }}
+          onChange={importFile}
         />
       </Button>
     </Container>

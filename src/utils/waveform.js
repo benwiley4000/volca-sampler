@@ -119,7 +119,8 @@ export function useWaveformInfo(sourceAudioBuffer) {
   );
   const [size, setSize] = useState({ width: 0, height: 0 });
   const pixelWidth = useMemo(
-    () => waveformElement && size.width,
+    // size will initially be 0 so use waveform element width if size isn't set
+    () => waveformElement && (size.width || waveformElement.offsetWidth),
     [waveformElement, size]
   );
   const peaks = useMemo(() => {

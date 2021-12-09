@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   Container,
   Dropdown,
@@ -8,13 +8,13 @@ import {
   OverlayTrigger,
   Tooltip,
 } from 'react-bootstrap';
+import RangeSlider from 'react-bootstrap-range-slider';
 
 import WaveformEdit from './WaveformEdit.js';
 import VolcaTransferControl from './VolcaTransferControl.js';
 import {
   getTargetWavForSample,
   getAudioBufferForAudioFileData,
-  useAudioPlaybackContext,
 } from './utils/audioData.js';
 import { SampleContainer } from './store.js';
 import SlotNumberInput from './SlotNumberInput.js';
@@ -51,6 +51,12 @@ function SampleDetail({
   onSampleDuplicate,
   onSampleDelete,
 }) {
+  const [localQualityBitDepth, setLocalQualityBitDepth] = useState(
+    sample.metadata.qualityBitDepth
+  );
+  useEffect(() => {
+    setLocalQualityBitDepth(sample.metadata.qualityBitDepth);
+  }, [sample.metadata.qualityBitDepth]);
   const sampleId = sample && sample.id;
   /**
    * @type {(updateTrimFrames: (old: [number, number]) => [number, number]) => void}
@@ -105,12 +111,6 @@ function SampleDetail({
       });
     }
   }, [targetWav]);
-  const { playAudioBuffer } = useAudioPlaybackContext();
-  // to be set when playback is started
-  const stopPreviewPlayback = useRef(() => {});
-  useEffect(() => {
-    return () => stopPreviewPlayback.current();
-  }, [sample]);
   /**
    * @type {(update: number | ((slotNumber: number) => number)) => void}
    */
@@ -127,7 +127,7 @@ function SampleDetail({
       <h2>
         {sample.metadata.name}
         <DropdownButton
-          style={{ display: 'inline-block', float: 'right' }}
+          className={classes.optionsButton}
           variant="light"
           align="end"
           title="options"
@@ -173,7 +173,60 @@ function SampleDetail({
         {new Date(sample.metadata.dateModified).toLocaleString()}
       </p>
       <br />
-      <div>
+      <Form.Group className={classes.qualityBitDepthWrapper}>
+        <Form.Label className={classes.label}>Quality bit depth</Form.Label>
+        <div className={classes.ticks}>
+          {[8, 9, 10, 11, 12, 13, 14, 15, 16].map((value, i, { length }) => {
+            const left = `calc(${(i * 100) / (length - 1)}% + ${12 - 3 * i}px)`;
+            const hidden = localQualityBitDepth === value;
+            return (
+              <React.Fragment key={value}>
+                <label
+                  className={['small', classes.tickLabel].join(' ')}
+                  style={{
+                    left,
+                    visibility: hidden ? 'hidden' : undefined,
+                  }}
+                >
+                  {value}
+                </label>
+                <span
+                  className={classes.tickMark}
+                  style={{
+                    left,
+                    visibility: hidden ? 'hidden' : undefined,
+                  }}
+                />
+              </React.Fragment>
+            );
+          })}
+        </div>
+        <RangeSlider
+          value={localQualityBitDepth}
+          step={1}
+          min={8}
+          max={16}
+          size="lg"
+          tooltip="on"
+          tooltipPlacement="top"
+          onChange={(e) => {
+            const qualityBitDepth = Number(e.target.value);
+            setLocalQualityBitDepth(qualityBitDepth);
+          }}
+          ref={(input) =>
+            input &&
+            input.addEventListener('change', () => {
+              const qualityBitDepth = Number(input.value);
+              onSampleUpdate(sample.id, { qualityBitDepth });
+            })
+          }
+        />
+        <div className={classes.annotations}>
+          <label className="small">Faster transfer</label>
+          <label className="small">Higher quality</label>
+        </div>
+      </Form.Group>
+      <Form.Group>
         <OverlayTrigger
           delay={{ show: 400, hide: 0 }}
           overlay={
@@ -185,7 +238,17 @@ function SampleDetail({
         >
           <div className={classes.normalizeControlWrapper}>
             <Form.Switch
-              label="Normalize"
+              label={
+                <span
+                  onClick={() =>
+                    onSampleUpdate(sample.id, (metadata) => ({
+                      normalize: !metadata.normalize,
+                    }))
+                  }
+                >
+                  Normalize
+                </span>
+              }
               checked={sample.metadata.normalize}
               onChange={(e) =>
                 onSampleUpdate(sample.id, { normalize: e.target.checked })
@@ -193,8 +256,7 @@ function SampleDetail({
             />
           </div>
         </OverlayTrigger>
-      </div>
-      <br />
+      </Form.Group>
       <div className={classes.waveformBoundingBox}>
         <WaveformEdit
           onSetTrimFrames={handleSetTrimFrames}
@@ -202,29 +264,6 @@ function SampleDetail({
           previewWav={audioBufferForAudioFileData}
         />
       </div>
-      <br />
-      <br />
-      <br />
-      <Button
-        type="button"
-        variant="secondary"
-        size="sm"
-        onClick={(e) => {
-          if (audioBufferForAudioFileData) {
-            stopPreviewPlayback.current = playAudioBuffer(
-              audioBufferForAudioFileData
-            );
-          } else {
-            const button = e.currentTarget;
-            // wait until the audio buffer is ready then simulate a click event
-            // to retry this handler. it's important that we simulate another
-            // click because otherwise iOS won't let us play the audio later.
-            setCallbackOnAudioBuffer({ fn: () => button.click() });
-          }
-        }}
-      >
-        Play audio preview
-      </Button>
       {/* {' '}
       <Button
         type="button"
@@ -261,26 +300,10 @@ function SampleDetail({
       </Button>
       <br />
       <br />
-      <Form.Group>
-        <Form.Label>
-          Quality bit depth ({sample.metadata.qualityBitDepth})
-        </Form.Label>
-        <Form.Range
-          value={sample.metadata.qualityBitDepth}
-          step={1}
-          min={8}
-          max={16}
-          onChange={(e) => {
-            const qualityBitDepth = Number(e.target.value);
-            onSampleUpdate(sample.id, { qualityBitDepth });
-          }}
-        />
-      </Form.Group>
       <SlotNumberInput
         slotNumber={sample.metadata.slotNumber}
         onSlotNumberUpdate={handleSlotNumberUpdate}
       />
-      <br />
       <VolcaTransferControl sample={sample} />
     </Container>
   );

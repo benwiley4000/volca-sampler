@@ -48,7 +48,7 @@
 }
 
 .trim {
-  --handle-diameter: 23px;
+  --handle-diameter: 24px;
   position: absolute;
   top: 0;
   bottom: 0;
@@ -67,7 +67,6 @@
   }
 
   & > .handle {
-    --active-color: #{rgba($dark, 0.5)};
     position: absolute;
     top: 100%;
     width: var(--handle-diameter);
@@ -79,14 +78,13 @@
 
     &:active {
       cursor: grabbing;
-      background-color: var(--active-color);
     }
 
     &:focus,
     &:focus-visible {
       z-index: 1;
       box-shadow: 0 0 $input-btn-focus-blur $input-btn-focus-width
-        var(--active-color);
+        rgba($dark, 0.5);
 
       & + .time {
         z-index: 1;

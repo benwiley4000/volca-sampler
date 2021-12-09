@@ -97,15 +97,29 @@ function WaveformEdit({
   /** @type {React.RefObject<HTMLDivElement>} */
   const rightTrimHandleRef = useRef(null);
 
-  const leftTrimLastX = useRef(/** @type {number | null} */ (null));
-  const rightTrimLastX = useRef(/** @type {number | null} */ (null));
-
   /** @type {React.RefObject<HTMLDivElement>} */
   const waveformOverlayRef = useRef(null);
 
-  const waveformOverlayDownFrame = useRef(/** @type {number | null} */ (null));
-
   {
+    const leftTrimLastX = useRef(/** @type {number | null} */ (null));
+    const rightTrimLastX = useRef(/** @type {number | null} */ (null));
+
+    const waveformOverlayDownFrame = useRef(
+      /** @type {number | null} */ (null)
+    );
+    const waveformOverlayDragged = useRef(false);
+
+    const trimFramesUpdateTimeout = useRef(
+      /** @type {NodeJS.Timeout | null} */ (null)
+    );
+
+    useLayoutEffect(() => {
+      if (trimFramesUpdateTimeout.current) {
+        clearTimeout(trimFramesUpdateTimeout.current);
+        trimFramesUpdateTimeout.current = null;
+      }
+    }, [trimFramesLocal]);
+
     const moveCallbackParams = useMemo(() => {
       if (!pixelWidth || !monoSamples.length) {
         return null;
@@ -319,6 +333,7 @@ function WaveformEdit({
           Math.min(monoSamplesLength - 1, Math.round(monoSamplesLength * ratio))
         );
         if (frameToTentative !== waveformOverlayDownFrame.current) {
+          waveformOverlayDragged.current = true;
           const aboveFrameMin = frameFrom + minFrameWidth;
           const belowFrameMax = frameFrom - minFrameWidth;
           const frameTo =
@@ -354,10 +369,26 @@ function WaveformEdit({
           if (e instanceof TouchEvent || e instanceof KeyboardEvent) {
             e.preventDefault();
           }
-          onSetTrimFrames(() => trimFramesLocalRef.current);
+          if (
+            waveformOverlayDownFrame.current &&
+            !waveformOverlayDragged.current &&
+            e.detail === 1
+          ) {
+            // we might be doing a double click so let's delay the trim frames
+            // update by 250ms. this avoids annoying/unnecessary visual updates.
+            // note: a dblclick might take longer (up to 500ms normally) but I
+            // think most users will do it in in under 250ms.
+            trimFramesUpdateTimeout.current = setTimeout(() => {
+              trimFramesUpdateTimeout.current = null;
+              onSetTrimFrames(() => trimFramesLocalRef.current);
+            }, 250);
+          } else {
+            onSetTrimFrames(() => trimFramesLocalRef.current);
+          }
           leftTrimLastX.current = null;
           rightTrimLastX.current = null;
           waveformOverlayDownFrame.current = null;
+          waveformOverlayDragged.current = false;
           adjustedViaKeyboard = false;
         }
         document.body.style.userSelect = 'unset';
@@ -366,6 +397,19 @@ function WaveformEdit({
       const leftHandle = leftTrimHandleRef.current;
       const rightHandle = rightTrimHandleRef.current;
       const waveformOverlay = waveformOverlayRef.current;
+
+      /** @param {MouseEvent | TouchEvent | KeyboardEvent} e */
+      function onActionOutsideWaveformOverlay(e) {
+        if (e.target instanceof Node && waveformOverlay.contains(e.target)) {
+          return;
+        }
+        if (trimFramesUpdateTimeout.current) {
+          clearTimeout(trimFramesUpdateTimeout.current);
+          trimFramesUpdateTimeout.current = null;
+          onSetTrimFrames(() => trimFramesLocalRef.current);
+        }
+      }
+
       leftHandle.addEventListener('touchstart', onLeftHandleDown);
       leftHandle.addEventListener('mousedown', onLeftHandleDown);
       rightHandle.addEventListener('touchstart', onRightHandleDown);
@@ -387,12 +431,24 @@ function WaveformEdit({
       waveformOverlay.addEventListener('touchend', onUp);
       waveformOverlay.addEventListener('touchcancel', onUp);
       window.addEventListener('mouseup', onUp);
+      window.addEventListener('touchstart', onActionOutsideWaveformOverlay, {
+        capture: true,
+      });
+      window.addEventListener('mousedown', onActionOutsideWaveformOverlay, {
+        capture: true,
+      });
+      window.addEventListener('keydown', onActionOutsideWaveformOverlay, {
+        capture: true,
+      });
       return () => {
         leftHandle.removeEventListener('touchstart', onLeftHandleDown);
         leftHandle.removeEventListener('mousedown', onLeftHandleDown);
         rightHandle.removeEventListener('touchstart', onRightHandleDown);
         rightHandle.removeEventListener('mousedown', onRightHandleDown);
-        waveformOverlay.removeEventListener('touchstart', onWaveformOverlayDown);
+        waveformOverlay.removeEventListener(
+          'touchstart',
+          onWaveformOverlayDown
+        );
         waveformOverlay.removeEventListener('mousedown', onWaveformOverlayDown);
         leftHandle.removeEventListener('touchmove', onLeftHandleMove);
         rightHandle.removeEventListener('touchmove', onRightHandleMove);
@@ -409,6 +465,19 @@ function WaveformEdit({
         waveformOverlay.removeEventListener('touchend', onUp);
         waveformOverlay.removeEventListener('touchcancel', onUp);
         window.removeEventListener('mouseup', onUp);
+        window.removeEventListener(
+          'touchstart',
+          onActionOutsideWaveformOverlay,
+          { capture: true }
+        );
+        window.removeEventListener(
+          'mousedown',
+          onActionOutsideWaveformOverlay,
+          { capture: true }
+        );
+        window.removeEventListener('keydown', onActionOutsideWaveformOverlay, {
+          capture: true,
+        });
       };
     }, [moveCallbackParams, onSetTrimFrames]);
   }

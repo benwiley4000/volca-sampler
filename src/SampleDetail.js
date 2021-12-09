@@ -180,7 +180,7 @@ function SampleDetail({
       </p>
       <br />
       <br />
-      <div className={classes.waveformContainer}>
+      <div className={classes.waveformBoundingBox}>
         <WaveformEdit
           onSetTrimFrames={handleSetTrimFrames}
           onSetScaleCoefficient={handleSetScaleCoefficient}

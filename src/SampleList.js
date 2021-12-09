@@ -65,7 +65,6 @@ const SampleListItem = React.memo(
           {waveformSeen && (
             <WaveformDisplay
               peaks={sample.metadata.trim.waveformPeaks}
-              scaleCoefficient={sample.metadata.scaleCoefficient}
             />
           )}
         </WaveformContainer>

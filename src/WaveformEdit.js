@@ -33,24 +33,18 @@ function formatTime(sec, decimals) {
  *   sample: import('./store').SampleContainer;
  *   previewWav: AudioBuffer | null;
  *   onSetTrimFrames: (updateTrimFrames: (old: [number, number]) => [number, number]) => void;
- *   onSetScaleCoefficient: (scaleCoefficient: number) => void;
  * }} WaveformEditProps
  */
 
 /**
  * @param {WaveformEditProps} props
  */
-function WaveformEdit({
-  sample: _sample,
-  previewWav,
-  onSetTrimFrames,
-  onSetScaleCoefficient,
-}) {
+function WaveformEdit({ sample: _sample, previewWav, onSetTrimFrames }) {
   const {
     sample: {
       metadata: {
         trim: { frames: trimFrames },
-        scaleCoefficient,
+        normalize,
       },
     },
     sourceAudioBuffer,
@@ -68,16 +62,7 @@ function WaveformEdit({
     return samplePeak;
   }, [sourceAudioBuffer, monoSamples, trimFrames]);
 
-  const maxCoefficient = 1 / trimmedSamplePeak;
-
-  // ensure that our max scaled sample in our trimmed view doesn't exceed 1 / -1
-  useLayoutEffect(() => {
-    if (scaleCoefficient > maxCoefficient) {
-      onSetScaleCoefficient(maxCoefficient);
-    }
-  }, [scaleCoefficient, maxCoefficient, onSetScaleCoefficient]);
-
-  // const peakTarget = scaleCoefficient * trimmedSamplePeak;
+  const normalizationCoefficient = 1 / trimmedSamplePeak;
 
   const [trimFramesLocal, setTrimFramesLocal] = useState(trimFrames);
   useEffect(() => {
@@ -557,106 +542,76 @@ function WaveformEdit({
   }, [handlePlay]);
 
   return (
-    <>
-      <div className={classes.scaleButtonsContainer}>
-        <div className={classes.scaleButtons}>
-          <Button
-            type="button"
-            variant="light"
-            disabled={scaleCoefficient === maxCoefficient}
-            onClick={() => onSetScaleCoefficient(maxCoefficient)}
-          >
-            Normalize
-          </Button>{' '}
-          <Button
-            type="button"
-            variant="light"
-            disabled={scaleCoefficient === 1}
-            onClick={() => onSetScaleCoefficient(1)}
-          >
-            Original level
+    <div
+      className={[
+        classes.waveformContainer,
+        isPlaybackActive ? classes.playbackActive : '',
+      ].join(' ')}
+      style={{
+        // @ts-ignore
+        '--trim-pixels-left': `${trimPixels[0]}px`,
+        // @ts-ignore
+        '--trim-pixels-right': `${trimPixels[1]}px`,
+        // @ts-ignore
+        '--playback-progress': `${100 * playbackProgress}%`,
+      }}
+    >
+      <WaveformDisplay
+        waveformRef={waveformRef}
+        peaks={peaks}
+        scaleCoefficient={normalize ? normalizationCoefficient : 1}
+        onResize={onResize}
+      />
+      <div className={classes.playbackOverlay}>
+        <div className={classes.playback} />
+      </div>
+      <div className={classes.playbackButtonContainer}>
+        <OverlayTrigger
+          delay={{ show: 400, hide: 0 }}
+          overlay={
+            <Tooltip>
+              Preview how your sample will sound on the Volca Sample
+            </Tooltip>
+          }
+        >
+          <Button variant="dark" onClick={(e) => handlePlay(e.nativeEvent)}>
+            <img
+              src={isPlaybackActive ? stopIcon : playIcon}
+              alt="Play preview"
+            />
           </Button>
-        </div>
+        </OverlayTrigger>
+        {displayedTime && <span>{displayedTime}</span>}
       </div>
-      <div
-        className={[
-          classes.waveformContainer,
-          isPlaybackActive ? classes.playbackActive : '',
-        ].join(' ')}
-        style={{
-          // @ts-ignore
-          '--trim-pixels-left': `${trimPixels[0]}px`,
-          // @ts-ignore
-          '--trim-pixels-right': `${trimPixels[1]}px`,
-          // @ts-ignore
-          '--playback-progress': `${100 * playbackProgress}%`,
-        }}
-      >
-        <WaveformDisplay
-          waveformRef={waveformRef}
-          peaks={peaks}
-          scaleCoefficient={scaleCoefficient}
-          onResize={onResize}
-        />
-        <div className={classes.playbackOverlay}>
-          <div className={classes.playback} />
-        </div>
-        <div className={classes.playbackButtonContainer}>
-          <OverlayTrigger
-            delay={{ show: 400, hide: 0 }}
-            overlay={
-              <Tooltip>
-                Preview how your sample will sound on the Volca Sample
-              </Tooltip>
-            }
-          >
-            <Button variant="dark" onClick={(e) => handlePlay(e.nativeEvent)}>
-              <img
-                src={isPlaybackActive ? stopIcon : playIcon}
-                alt="Play preview"
-              />
-            </Button>
-          </OverlayTrigger>
-          {displayedTime && <span>{displayedTime}</span>}
-        </div>
-        <div className={[classes.trim, classes.left].join(' ')}>
-          <div className={classes.bar} />
-          <div
-            ref={leftTrimHandleRef}
-            className={classes.handle}
-            tabIndex={0}
-          />
-          {sourceAudioBuffer && Boolean(monoSamples.length) && (
-            <span className={classes.time}>
-              {formatTime(
-                (sourceAudioBuffer.duration * trimFramesLocal[0]) /
-                  monoSamples.length,
-                2
-              )}
-            </span>
-          )}
-        </div>
-        <div className={[classes.trim, classes.right].join(' ')}>
-          <div className={classes.bar} />
-          <div
-            ref={rightTrimHandleRef}
-            className={classes.handle}
-            tabIndex={0}
-          />
-          {sourceAudioBuffer && Boolean(monoSamples.length) && (
-            <span className={classes.time}>
-              {formatTime(
-                (sourceAudioBuffer.duration *
-                  (monoSamples.length - 1 - trimFramesLocal[1])) /
-                  monoSamples.length,
-                2
-              )}
-            </span>
-          )}
-        </div>
-        <div ref={waveformOverlayRef} className={classes.waveformOverlay} />
+      <div className={[classes.trim, classes.left].join(' ')}>
+        <div className={classes.bar} />
+        <div ref={leftTrimHandleRef} className={classes.handle} tabIndex={0} />
+        {sourceAudioBuffer && Boolean(monoSamples.length) && (
+          <span className={classes.time}>
+            {formatTime(
+              (sourceAudioBuffer.duration * trimFramesLocal[0]) /
+                monoSamples.length,
+              2
+            )}
+          </span>
+        )}
       </div>
-    </>
+      <div className={[classes.trim, classes.right].join(' ')}>
+        <div className={classes.bar} />
+        <div ref={rightTrimHandleRef} className={classes.handle} tabIndex={0} />
+        {sourceAudioBuffer && Boolean(monoSamples.length) && (
+          <span className={classes.time}>
+            {formatTime(
+              (sourceAudioBuffer.duration *
+                (monoSamples.length - 1 - trimFramesLocal[1])) /
+                monoSamples.length,
+              2
+            )}
+          </span>
+        )}
+      </div>
+      <div ref={waveformOverlayRef} className={classes.waveformOverlay} />
+    </div>
   );
 }
 

@@ -415,6 +415,7 @@ test('getSampleBuffer', async (t) => {
                   negative: new Float32Array(),
                 },
               },
+              normalize: false,
             });
           },
           sourceFileId,

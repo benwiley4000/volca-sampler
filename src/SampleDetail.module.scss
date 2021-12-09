@@ -1,9 +1,5 @@
-.buttonLink {
-  white-space: nowrap;
-  & > button {
-    padding: 0;
-    vertical-align: unset;
-  }
+.normalizeControlWrapper {
+  display: inline-block;
 }
 
 .waveformBoundingBox {

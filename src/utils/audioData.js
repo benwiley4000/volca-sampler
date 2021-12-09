@@ -74,6 +74,16 @@ function scaleSamples(samples, coef) {
 }
 
 /**
+ * Normalizes an array of samples so the peak value is 1 or -1.
+ * Note: mutates input array (no return value).
+ * @param {Float32Array} samples array of floats
+ */
+function normalizeSamples(samples) {
+  const peak = findSamplePeak(samples);
+  scaleSamples(samples, 1 / peak);
+}
+
+/**
  * Reduces precision of samples by converting them to integers of a given bit
  * depth then back to floats. Note: mutates input array (no return value).
  * @param {Float32Array} samples array of floats between -1 and 1
@@ -200,7 +210,7 @@ export async function getTargetWavForSample(sampleContainer) {
     qualityBitDepth,
     sourceFileId,
     userFileInfo,
-    scaleCoefficient,
+    normalize,
     trim: { frames: trimFrames },
   } = sampleContainer.metadata;
   if (
@@ -220,8 +230,8 @@ export async function getTargetWavForSample(sampleContainer) {
     sourceAudioBuffer.numberOfChannels === 1
       ? getTrimmedView(sourceAudioBuffer.getChannelData(0), trimFrames)
       : getMonoSamplesFromAudioBuffer(sourceAudioBuffer, trimFrames);
-  if (scaleCoefficient !== 1) {
-    scaleSamples(samples, scaleCoefficient);
+  if (normalize) {
+    normalizeSamples(samples);
   }
   if (qualityBitDepth < 16) {
     applyQualityBitDepthToSamples(samples, qualityBitDepth);

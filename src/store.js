@@ -3,7 +3,11 @@ import { v4 as uuidv4 } from 'uuid';
 import { decode as decodeBase64 } from 'base64-arraybuffer';
 
 import { SAMPLE_RATE } from './utils/constants.js';
-import { getSourceAudioBuffer } from './utils/audioData.js';
+import {
+  findSamplePeak,
+  getMonoSamplesFromAudioBuffer,
+  getSourceAudioBuffer,
+} from './utils/audioData.js';
 import { getSamplePeaksForAudioBuffer } from './utils/waveform.js';
 
 /**
@@ -25,7 +29,7 @@ import { getSamplePeaksForAudioBuffer } from './utils/waveform.js';
  * @property {string} [dateModified]
  * @property {boolean} [useCompression]
  * @property {number} [qualityBitDepth]
- * @property {number} [scaleCoefficient]
+ * @property {boolean} [normalize]
  */
 
 /**
@@ -39,7 +43,7 @@ import { getSamplePeaksForAudioBuffer } from './utils/waveform.js';
  * @property {string} dateModified
  * @property {boolean} useCompression
  * @property {number} qualityBitDepth
- * @property {number} scaleCoefficient
+ * @property {boolean} normalize
  * @property {string} metadataVersion
  */
 
@@ -50,7 +54,7 @@ import { getSamplePeaksForAudioBuffer } from './utils/waveform.js';
  * @property {number} [slotNumber]
  * @property {boolean} [useCompression]
  * @property {number} [qualityBitDepth]
- * @property {number} [scaleCoefficient]
+ * @property {boolean} [normalize]
  */
 
 /**
@@ -77,7 +81,7 @@ export async function storeAudioSourceFile(audioFileData) {
   return id;
 }
 
-const METADATA_VERSION = '0.4.0';
+const METADATA_VERSION = '0.5.0';
 
 // These properties are considered fundamental and should never break
 /**
@@ -153,6 +157,43 @@ const metadataUpgrades = {
     };
     return newMetadata;
   },
+  '0.4.0': async (oldMetadata) => {
+    /**
+     * @typedef {OldMetadata & {
+     *   scaleCoefficient: number;
+     *   trim: Omit<TrimInfo, 'waveformPeaks'> & {
+     *     waveformPeaks: Omit<
+     *       TrimInfo['waveformPeaks'],
+     *       'normalizationCoefficient'
+     *     >
+     *   }
+     * }} PrevMetadata
+     */
+    const {
+      scaleCoefficient,
+      trim: { frames: trimFrames, waveformPeaks },
+      ...prevMetadata
+    } = /** @type {PrevMetadata} */ (oldMetadata);
+    const audioBuffer = await getSourceAudioBuffer(
+      prevMetadata.sourceFileId,
+      false
+    );
+    const monoSamples = getMonoSamplesFromAudioBuffer(audioBuffer, trimFrames);
+    const samplePeak = findSamplePeak(monoSamples);
+    const newMetadata = {
+      ...prevMetadata,
+      normalize: scaleCoefficient !== 1,
+      trim: {
+        frames: trimFrames,
+        waveformPeaks: {
+          ...waveformPeaks,
+          normalizationCoefficient: 1 / samplePeak,
+        },
+      },
+      metadataVersion: '0.5.0',
+    };
+    return newMetadata;
+  },
 };
 
 /**
@@ -165,7 +206,7 @@ async function upgradeMetadata(oldMetadata) {
     /**
      * @type {(typeof metadataUpgrades)[string] | undefined}
      */
-    const matchedUpgrade = metadataUpgrades[oldMetadata.metadataVersion];
+    const matchedUpgrade = metadataUpgrades[prevMetadata.metadataVersion];
     if (!matchedUpgrade) {
       console.warn(
         `Failed to properly upgrade metadata for sample "${prevMetadata.name}"`
@@ -198,7 +239,7 @@ export class SampleContainer {
     dateModified = dateSampled,
     useCompression = true,
     qualityBitDepth = 16,
-    scaleCoefficient = 1,
+    normalize = true,
   }) {
     /** @readonly */
     this.id = id;
@@ -216,7 +257,7 @@ export class SampleContainer {
       dateModified,
       useCompression,
       qualityBitDepth,
-      scaleCoefficient,
+      normalize,
       metadataVersion: METADATA_VERSION,
     };
   }
@@ -458,9 +499,11 @@ export async function getFactorySamples() {
       params.id,
       new SampleContainer({
         ...params,
+        normalize: false,
         trim: {
           frames: [params.trim.frames[0], params.trim.frames[1]],
           waveformPeaks: {
+            ...params.trim.waveformPeaks,
             positive: new Float32Array(
               decodeBase64(params.trim.waveformPeaks.positive)
             ),

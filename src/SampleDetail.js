@@ -5,6 +5,8 @@ import {
   DropdownButton,
   Button,
   Form,
+  OverlayTrigger,
+  Tooltip,
 } from 'react-bootstrap';
 
 import WaveformEdit from './WaveformEdit.js';
@@ -50,14 +52,6 @@ function SampleDetail({
   onSampleDelete,
 }) {
   const sampleId = sample && sample.id;
-  /**
-   * @type {(scaleCoefficient: number) => void}
-   */
-  const handleSetScaleCoefficient = useCallback(
-    (scaleCoefficient) =>
-      sampleId && onSampleUpdate(sampleId, { scaleCoefficient }),
-    [sampleId, onSampleUpdate]
-  );
   /**
    * @type {(updateTrimFrames: (old: [number, number]) => [number, number]) => void}
    */
@@ -179,11 +173,31 @@ function SampleDetail({
         {new Date(sample.metadata.dateModified).toLocaleString()}
       </p>
       <br />
+      <div>
+        <OverlayTrigger
+          delay={{ show: 400, hide: 0 }}
+          overlay={
+            <Tooltip>
+              Boosts your sample's volume so its peak is at the same level as
+              your other normalized samples
+            </Tooltip>
+          }
+        >
+          <div className={classes.normalizeControlWrapper}>
+            <Form.Switch
+              label="Normalize"
+              checked={sample.metadata.normalize}
+              onChange={(e) =>
+                onSampleUpdate(sample.id, { normalize: e.target.checked })
+              }
+            />
+          </div>
+        </OverlayTrigger>
+      </div>
       <br />
       <div className={classes.waveformBoundingBox}>
         <WaveformEdit
           onSetTrimFrames={handleSetTrimFrames}
-          onSetScaleCoefficient={handleSetScaleCoefficient}
           sample={sample}
           previewWav={audioBufferForAudioFileData}
         />

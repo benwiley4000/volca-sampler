@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   getMonoSamplesFromAudioBuffer,
   getSourceAudioBuffer,
+  findSamplePeak,
 } from './audioData.js';
 
 export const GROUP_PIXEL_WIDTH = 6;
@@ -10,7 +11,11 @@ export const GROUP_PIXEL_WIDTH = 6;
 export const WAVEFORM_CACHED_WIDTH = GROUP_PIXEL_WIDTH * 44; // 264
 
 /**
- * @typedef {{ positive: Float32Array; negative: Float32Array }} SamplePeaks
+ * @typedef {{
+ *   positive: Float32Array;
+ *   negative: Float32Array;
+ *   normalizationCoefficient: number
+ * }} SamplePeaks
  */
 
 /**
@@ -46,7 +51,26 @@ export function getPeaksForSamples(samples, containerPixelWidth) {
     positive[i] = Math.min(1, max);
     negative[i] = Math.max(-1, min);
   }
-  return { positive, negative };
+  const ignoredSamplesCount = samples.length % groupSize;
+  const peakSearchArray = new Float32Array(
+    positive.length + negative.length + ignoredSamplesCount
+  );
+  peakSearchArray.set(positive, 0);
+  peakSearchArray.set(negative, positive.length);
+  peakSearchArray.set(
+    new Float32Array(
+      samples.buffer,
+      (samples.length - ignoredSamplesCount) * 4,
+      ignoredSamplesCount
+    ),
+    positive.length + negative.length
+  );
+  const samplePeak = findSamplePeak(peakSearchArray);
+  return {
+    positive,
+    negative,
+    normalizationCoefficient: 1 / samplePeak,
+  };
 }
 
 /**
@@ -128,6 +152,7 @@ export function useWaveformInfo(sourceAudioBuffer) {
       return {
         positive: new Float32Array(),
         negative: new Float32Array(),
+        normalizationCoefficient: Infinity,
       };
     }
     return getPeaksForSamples(monoSamples, pixelWidth);

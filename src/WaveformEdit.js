@@ -133,10 +133,20 @@ const WaveformEdit = React.memo(
         ) {
           return;
         }
+
+        const leftHandle = leftTrimHandleRef.current;
+        const rightHandle = rightTrimHandleRef.current;
+        const waveformOverlay = waveformOverlayRef.current;
+
         const { pixelWidth, monoSamplesLength, minFrameWidth } =
           moveCallbackParams;
-        const { left: waveformClientLeft } =
-          waveformOverlayRef.current.getBoundingClientRect();
+        let waveformClientLeft = 0;
+        // we'll update this as needed (on mousedown/touchstart). this is
+        // partially because on resize, the page layout is still shifting and
+        // reading the value early can be unreliable.
+        function updateWaveformClientLeft() {
+          waveformClientLeft = waveformOverlay.getBoundingClientRect().left;
+        }
 
         /** @param {MouseEvent | TouchEvent} e */
         function onLeftHandleDown(e) {
@@ -170,6 +180,7 @@ const WaveformEdit = React.memo(
           }
           document.body.style.userSelect = 'none';
           const { clientX } = e instanceof MouseEvent ? e : e.touches[0];
+          updateWaveformClientLeft();
           const waveformX = Math.max(
             0,
             Math.min(pixelWidth, clientX - waveformClientLeft)
@@ -399,10 +410,6 @@ const WaveformEdit = React.memo(
           }
           document.body.style.userSelect = 'unset';
         }
-
-        const leftHandle = leftTrimHandleRef.current;
-        const rightHandle = rightTrimHandleRef.current;
-        const waveformOverlay = waveformOverlayRef.current;
 
         /** @param {MouseEvent | TouchEvent | KeyboardEvent} e */
         function onActionOutsideWaveformOverlay(e) {

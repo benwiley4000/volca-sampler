@@ -1,5 +1,4 @@
 import React, { useLayoutEffect, useRef, useState } from 'react';
-import { ListGroup } from 'react-bootstrap';
 import { styled } from 'tonami';
 import { WAVEFORM_CACHED_WIDTH } from './utils/waveform';
 import WaveformDisplay from './WaveformDisplay';
@@ -20,7 +19,7 @@ const SampleListItem = React.memo(
    *   onSampleSelect: (id: string) => void;
    * }} props
    */
-  ({ sample, selected, onSampleSelect }) => {
+  function SampleListItem({ sample, selected, onSampleSelect }) {
     /**
      * @type {React.RefObject<HTMLDivElement>}
      */
@@ -56,19 +55,17 @@ const SampleListItem = React.memo(
       return () => observer.disconnect();
     }, []);
     return (
-      <ListGroup.Item
-        active={selected}
+      <li
+        className={['list-group-item', selected ? 'active' : ''].join(' ')}
         onClick={() => onSampleSelect(sample.id)}
       >
         <div>{sample.metadata.name}</div>
         <WaveformContainer ref={waveformContainerRef}>
           {waveformSeen && (
-            <WaveformDisplay
-              peaks={sample.metadata.trim.waveformPeaks}
-            />
+            <WaveformDisplay peaks={sample.metadata.trim.waveformPeaks} />
           )}
         </WaveformContainer>
-      </ListGroup.Item>
+      </li>
     );
   }
 );
@@ -80,23 +77,30 @@ const SampleListItem = React.memo(
  *   onSampleSelect: (id: string) => void;
  * }} props
  */
-function SampleList({
-  samples,
-  selectedSampleId,
-  onSampleSelect,
-}) {
-  return (
-    <ListGroup variant="flush">
-      {[...samples].map(([id, sample]) => (
+function SampleList({ samples, selectedSampleId, onSampleSelect }) {
+  const elementsMap = useRef(
+    /** @type {WeakMap<import('./store').SampleContainer, React.ReactElement>} */ (
+      new WeakMap()
+    )
+  );
+  /** @type {React.ReactElement[]} */
+  const elementsList = [];
+  for (const sample of samples.values()) {
+    let element = elementsMap.current.get(sample);
+    if (!element) {
+      element = (
         <SampleListItem
-          key={id}
+          key={sample.id}
           sample={sample}
-          selected={id === selectedSampleId}
+          selected={sample.id === selectedSampleId}
           onSampleSelect={onSampleSelect}
         />
-      ))}
-    </ListGroup>
-  );
+      );
+      elementsMap.current.set(sample, element);
+    }
+    elementsList.push(element);
+  }
+  return <ul className="list-group list-group-flush">{elementsList}</ul>;
 }
 
 export default SampleList;

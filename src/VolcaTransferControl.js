@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Button, ProgressBar } from 'react-bootstrap';
 
 import {
@@ -72,40 +72,46 @@ function VolcaTransferControl({ sample }) {
     return () => stop.current();
   }, [sample]);
   const { playAudioBuffer } = useAudioPlaybackContext();
+  /** @type {React.MouseEventHandler} */
+  const handleTransfer = useCallback(
+    (e) => {
+      if (!(syroAudioBuffer instanceof AudioBuffer)) {
+        if (!syroAudioBuffer) {
+          const { target, nativeEvent } = e;
+          // wait until the syro buffer is ready then simulate the event to
+          // retry this handler. it's important that we simulate another
+          // action because otherwise iOS won't let us play the audio later.
+          setCallbackOnSyroBuffer({
+            fn: () => target.dispatchEvent(nativeEvent),
+          });
+        }
+        return;
+      }
+      try {
+        setSyroTransferState('transferring');
+        const stopPlayback = playAudioBuffer(syroAudioBuffer, {
+          onTimeUpdate: (currentTime) =>
+            setSyroProgress(currentTime / syroAudioBuffer.duration),
+          onEnded: () => setSyroTransferState('idle'),
+        });
+        stop.current = () => {
+          stopPlayback();
+          setSyroTransferState('idle');
+        };
+      } catch (err) {
+        console.error(err);
+        setSyroTransferState('error');
+      }
+    },
+    [playAudioBuffer, syroAudioBuffer]
+  );
+  const handleCancel = useCallback(() => stop.current(), []);
   return (
     <>
       <Button
         type="button"
         variant="primary"
-        onClick={(e) => {
-          if (!(syroAudioBuffer instanceof AudioBuffer)) {
-            if (!syroAudioBuffer) {
-              const { target, nativeEvent } = e;
-              // wait until the syro buffer is ready then simulate the event to
-              // retry this handler. it's important that we simulate another
-              // action because otherwise iOS won't let us play the audio later.
-              setCallbackOnSyroBuffer({
-                fn: () => target.dispatchEvent(nativeEvent),
-              });
-            }
-            return;
-          }
-          try {
-            setSyroTransferState('transferring');
-            const stopPlayback = playAudioBuffer(syroAudioBuffer, {
-              onTimeUpdate: (currentTime) =>
-                setSyroProgress(currentTime / syroAudioBuffer.duration),
-              onEnded: () => setSyroTransferState('idle'),
-            });
-            stop.current = () => {
-              stopPlayback();
-              setSyroTransferState('idle');
-            };
-          } catch (err) {
-            console.error(err);
-            setSyroTransferState('error');
-          }
-        }}
+        onClick={handleTransfer}
         disabled={
           syroAudioBuffer instanceof Error ||
           syroTransferState === 'transferring'
@@ -128,7 +134,7 @@ function VolcaTransferControl({ sample }) {
           </p>
           <ProgressBar now={100 * syroProgress} />
           <br />
-          <Button type="button" variant="light" onClick={() => stop.current()}>
+          <Button type="button" variant="light" onClick={handleCancel}>
             Cancel
           </Button>
         </>

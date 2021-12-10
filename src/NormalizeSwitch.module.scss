@@ -1,0 +1,8 @@
+@import 'bootstrap_custom_variables';
+@import '~bootstrap/scss/functions';
+@import '~bootstrap/scss/variables';
+
+.normalizeControlWrapper {
+  display: inline-block;
+  margin-bottom: $spacer * 2;
+}

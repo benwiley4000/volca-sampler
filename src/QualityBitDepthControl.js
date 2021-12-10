@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Form } from 'react-bootstrap';
 import RangeSlider from 'react-bootstrap-range-slider';
 
-import classes from './QualityBitDepthControl.module.scss'; 
+import classes from './QualityBitDepthControl.module.scss';
 
 const QualityBitDepthControl = React.memo(
   /**
@@ -42,6 +42,9 @@ const QualityBitDepthControl = React.memo(
                     left,
                     visibility: hidden ? 'hidden' : undefined,
                   }}
+                  onClick={() =>
+                    onSampleUpdate(sampleId, { qualityBitDepth: value })
+                  }
                 >
                   {value}
                 </label>

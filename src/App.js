@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { Accordion, ListGroup, Offcanvas } from 'react-bootstrap';
 
 import Header from './Header.js';
@@ -125,6 +131,65 @@ function App() {
     });
   }, []);
 
+  const allSamplesRef = useRef(allSamples);
+  allSamplesRef.current = allSamples;
+  const handleSampleDuplicate = useCallback(
+    /**
+     * @param {string} id
+     */
+    (id) => {
+      const sample = allSamplesRef.current.get(id);
+      if (sample) {
+        const newSample = sample.duplicate();
+        setUserSamples(
+          (samples) => new Map([[newSample.id, newSample], ...samples])
+        );
+        // TODO: scroll new sample into view
+        setFocusedSampleId(newSample.id);
+      }
+    },
+    []
+  );
+
+  const userSamplesRef = useRef(userSamples);
+  userSamplesRef.current = userSamples;
+  const handleSampleDelete = useCallback(
+    /**
+     * @param {string} id
+     */
+    (id) => {
+      const userSamples = userSamplesRef.current;
+      const sample = userSamples.get(id);
+      if (sample && sample instanceof SampleContainer.Mutable) {
+        sample.remove();
+        /** @type {string | null} */
+        let nextFocusedSampleId = null;
+        let awaitingNextBeforeBreak = false;
+        for (const [, sample] of userSamples) {
+          if (awaitingNextBeforeBreak) {
+            nextFocusedSampleId = sample.id;
+            break;
+          }
+          if (sample.id === id) {
+            if (!nextFocusedSampleId) {
+              awaitingNextBeforeBreak = true;
+              continue;
+            }
+            break;
+          }
+          nextFocusedSampleId = sample.id;
+        }
+        setFocusedSampleId(nextFocusedSampleId);
+        setUserSamples((samples) => {
+          const newSamples = new Map(samples);
+          newSamples.delete(sample.id);
+          return newSamples;
+        });
+      }
+    },
+    []
+  );
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const handleSampleSelect = useCallback(
     /**
@@ -137,12 +202,12 @@ function App() {
     []
   );
 
+  const handleMenuOpen = useCallback(() => setSidebarOpen(true), []);
+  const handleHeaderClick = useCallback(() => setFocusedSampleId(null), []);
+
   return (
     <div>
-      <Header
-        onMenuOpen={() => setSidebarOpen(true)}
-        onHeaderClick={() => setFocusedSampleId(null)}
-      />
+      <Header onMenuOpen={handleMenuOpen} onHeaderClick={handleHeaderClick} />
       <Offcanvas show={sidebarOpen} onHide={() => setSidebarOpen(false)}>
         <Offcanvas.Header closeButton />
         <Offcanvas.Body>
@@ -191,63 +256,20 @@ function App() {
               if (!sample) {
                 return null;
               }
-              /**
-               * @param {string} id
-               */
-              const onSampleDuplicate = (id) => {
-                const sample = allSamples.get(id);
-                if (sample) {
-                  const newSample = sample.duplicate();
-                  setUserSamples(
-                    (samples) =>
-                      new Map([[newSample.id, newSample], ...samples])
-                  );
-                  // TODO: scroll new sample into view
-                  setFocusedSampleId(newSample.id);
-                }
-              };
               if (sample instanceof SampleContainer.Mutable) {
                 return (
                   <SampleDetail
                     sample={sample}
                     onSampleUpdate={handleSampleUpdate}
-                    onSampleDuplicate={onSampleDuplicate}
-                    onSampleDelete={(id) => {
-                      const sample = userSamples.get(id);
-                      if (sample && sample instanceof SampleContainer.Mutable) {
-                        sample.remove();
-                        /** @type {string | null} */
-                        let nextFocusedSampleId = null;
-                        let awaitingNextBeforeBreak = false;
-                        for (const [, sample] of userSamples) {
-                          if (awaitingNextBeforeBreak) {
-                            nextFocusedSampleId = sample.id;
-                            break;
-                          }
-                          if (sample.id === id) {
-                            if (!nextFocusedSampleId) {
-                              awaitingNextBeforeBreak = true;
-                              continue;
-                            }
-                            break;
-                          }
-                          nextFocusedSampleId = sample.id;
-                        }
-                        setFocusedSampleId(nextFocusedSampleId);
-                        setUserSamples((samples) => {
-                          const newSamples = new Map(samples);
-                          newSamples.delete(sample.id);
-                          return newSamples;
-                        });
-                      }
-                    }}
+                    onSampleDuplicate={handleSampleDuplicate}
+                    onSampleDelete={handleSampleDelete}
                   />
                 );
               }
               return (
                 <SampleDetailReadonly
                   sample={sample}
-                  onSampleDuplicate={onSampleDuplicate}
+                  onSampleDuplicate={handleSampleDuplicate}
                 />
               );
             })()}

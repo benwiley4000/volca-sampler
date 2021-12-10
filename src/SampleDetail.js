@@ -4,11 +4,7 @@ import {
   Dropdown,
   DropdownButton,
   Button,
-  Form,
-  OverlayTrigger,
-  Tooltip,
 } from 'react-bootstrap';
-import RangeSlider from 'react-bootstrap-range-slider';
 
 import WaveformEdit from './WaveformEdit.js';
 import VolcaTransferControl from './VolcaTransferControl.js';
@@ -17,6 +13,8 @@ import {
   getAudioBufferForAudioFileData,
 } from './utils/audioData.js';
 import { SampleContainer } from './store.js';
+import QualityBitDepthControl from './QualityBitDepthControl.js';
+import NormalizeSwitch from './NormalizeSwitch.js';
 import SlotNumberInput from './SlotNumberInput.js';
 
 import classes from './SampleDetail.module.scss';
@@ -37,234 +35,125 @@ function downloadBlob(blob, filename) {
   URL.revokeObjectURL(url);
 }
 
-/**
- * @param {{
- *   sample: import('./store').SampleContainer;
- *   onSampleUpdate: (id: string, update: import('./store').SampleMetadataUpdateArg) => void;
- *   onSampleDuplicate: (id: string) => void;
- *   onSampleDelete: (id: string) => void;
- * }} props
- */
-function SampleDetail({
-  sample,
-  onSampleUpdate,
-  onSampleDuplicate,
-  onSampleDelete,
-}) {
-  const [localQualityBitDepth, setLocalQualityBitDepth] = useState(
-    sample.metadata.qualityBitDepth
-  );
-  useEffect(() => {
-    setLocalQualityBitDepth(sample.metadata.qualityBitDepth);
-  }, [sample.metadata.qualityBitDepth]);
-  const sampleId = sample && sample.id;
+const SampleDetail = React.memo(
   /**
-   * @type {(updateTrimFrames: (old: [number, number]) => [number, number]) => void}
+   * @param {{
+   *   sample: import('./store').SampleContainer;
+   *   onSampleUpdate: (id: string, update: import('./store').SampleMetadataUpdateArg) => void;
+   *   onSampleDuplicate: (id: string) => void;
+   *   onSampleDelete: (id: string) => void;
+   * }} props
    */
-  const handleSetTrimFrames = useCallback(
-    (updateTrimFrames) =>
-      sampleId &&
-      onSampleUpdate(sampleId, (metadata) => ({
-        ...metadata,
-        trim: {
-          ...metadata.trim,
-          frames: updateTrimFrames(metadata.trim.frames),
-        },
-      })),
-    [sampleId, onSampleUpdate]
-  );
-  const [targetWav, setTargetWav] = useState(
-    /** @type {Uint8Array | null} */ (null)
-  );
-  const [audioBufferForAudioFileData, setAudioBufferForAudioFileData] =
-    useState(/** @type {AudioBuffer | null} */ (null));
-  const [callbackOnAudioBuffer, setCallbackOnAudioBuffer] = useState(
-    /** @type {{ fn: () => void } | null} */ (null)
-  );
-  useEffect(() => {
-    if (
-      audioBufferForAudioFileData instanceof AudioBuffer &&
-      callbackOnAudioBuffer
-    ) {
-      setCallbackOnAudioBuffer(null);
-      callbackOnAudioBuffer.fn();
-    }
-  }, [audioBufferForAudioFileData, callbackOnAudioBuffer]);
-  useEffect(() => {
-    setTargetWav(null);
-    setCallbackOnAudioBuffer(null);
-    let cancelled = false;
-    getTargetWavForSample(sample).then(({ data }) => {
-      if (!cancelled) {
-        setTargetWav(data);
+  function SampleDetail({
+    sample,
+    onSampleUpdate,
+    onSampleDuplicate,
+    onSampleDelete,
+  }) {
+    const sampleId = sample && sample.id;
+    /**
+     * @type {(updateTrimFrames: (old: [number, number]) => [number, number]) => void}
+     */
+    const handleSetTrimFrames = useCallback(
+      (updateTrimFrames) =>
+        sampleId &&
+        onSampleUpdate(sampleId, (metadata) => ({
+          ...metadata,
+          trim: {
+            ...metadata.trim,
+            frames: updateTrimFrames(metadata.trim.frames),
+          },
+        })),
+      [sampleId, onSampleUpdate]
+    );
+    const [targetWav, setTargetWav] = useState(
+      /** @type {Uint8Array | null} */ (null)
+    );
+    const [audioBufferForAudioFileData, setAudioBufferForAudioFileData] =
+      useState(/** @type {AudioBuffer | null} */ (null));
+    const [callbackOnAudioBuffer, setCallbackOnAudioBuffer] = useState(
+      /** @type {{ fn: () => void } | null} */ (null)
+    );
+    useEffect(() => {
+      if (
+        audioBufferForAudioFileData instanceof AudioBuffer &&
+        callbackOnAudioBuffer
+      ) {
+        setCallbackOnAudioBuffer(null);
+        callbackOnAudioBuffer.fn();
       }
-    });
-  }, [sample]);
-  useEffect(() => {
-    setAudioBufferForAudioFileData(null);
-    if (targetWav) {
+    }, [audioBufferForAudioFileData, callbackOnAudioBuffer]);
+    useEffect(() => {
+      setTargetWav(null);
+      setCallbackOnAudioBuffer(null);
       let cancelled = false;
-      getAudioBufferForAudioFileData(targetWav).then((audioBuffer) => {
+      getTargetWavForSample(sample).then(({ data }) => {
         if (!cancelled) {
-          setAudioBufferForAudioFileData(audioBuffer);
+          setTargetWav(data);
         }
       });
-    }
-  }, [targetWav]);
-  /**
-   * @type {(update: number | ((slotNumber: number) => number)) => void}
-   */
-  const handleSlotNumberUpdate = useCallback(
-    (update) => {
-      onSampleUpdate(sample.id, ({ slotNumber }) => ({
-        slotNumber: typeof update === 'function' ? update(slotNumber) : update,
-      }));
-    },
-    [sample.id, onSampleUpdate]
-  );
-  return (
-    <Container fluid="sm">
-      <h2>
-        {sample.metadata.name}
-        <DropdownButton
-          className={classes.optionsButton}
-          variant="light"
-          align="end"
-          title="options"
-        >
-          <Dropdown.Item
-            onClick={() => {
-              const newName = prompt(
-                `Choose a new name for the sample "${sample.metadata.name}":`,
-                sample.metadata.name
-              );
-              const newNameTrimmed = newName && newName.trim();
-              if (newNameTrimmed) {
-                onSampleUpdate(sample.id, { name: newNameTrimmed });
-              }
-            }}
-          >
-            Rename
-          </Dropdown.Item>
-          <Dropdown.Item onClick={() => onSampleDuplicate(sample.id)}>
-            Duplicate
-          </Dropdown.Item>
-          <Dropdown.Divider />
-          <Dropdown.Item
-            onClick={() => {
-              if (
-                window.confirm(
-                  `Are you sure you want to delete ${sample.metadata.name}?`
-                )
-              ) {
-                onSampleDelete(sample.id);
-              }
-            }}
-          >
-            Delete
-          </Dropdown.Item>
-        </DropdownButton>
-      </h2>
-      <p>
-        <strong>Sampled:</strong>{' '}
-        {new Date(sample.metadata.dateSampled).toLocaleString()}
+    }, [sample]);
+    useEffect(() => {
+      setAudioBufferForAudioFileData(null);
+      if (targetWav) {
+        let cancelled = false;
+        getAudioBufferForAudioFileData(targetWav).then((audioBuffer) => {
+          if (!cancelled) {
+            setAudioBufferForAudioFileData(audioBuffer);
+          }
+        });
+      }
+    }, [targetWav]);
+    /**
+     * @type {(update: number | ((slotNumber: number) => number)) => void}
+     */
+    const handleSlotNumberUpdate = useCallback(
+      (update) => {
+        onSampleUpdate(sample.id, ({ slotNumber }) => ({
+          slotNumber:
+            typeof update === 'function' ? update(slotNumber) : update,
+        }));
+      },
+      [sample.id, onSampleUpdate]
+    );
+    return (
+      <Container fluid="sm">
+        <h2>
+          {sample.metadata.name}
+          <SampleDetailActions
+            sampleId={sample.id}
+            name={sample.metadata.name}
+            onSampleUpdate={onSampleUpdate}
+            onSampleDuplicate={onSampleDuplicate}
+            onSampleDelete={onSampleDelete}
+          />
+        </h2>
+        <p>
+          <strong>Sampled:</strong>{' '}
+          {new Date(sample.metadata.dateSampled).toLocaleString()}
+          <br />
+          <strong>Updated:</strong>{' '}
+          {new Date(sample.metadata.dateModified).toLocaleString()}
+        </p>
         <br />
-        <strong>Updated:</strong>{' '}
-        {new Date(sample.metadata.dateModified).toLocaleString()}
-      </p>
-      <br />
-      <Form.Group className={classes.qualityBitDepthWrapper}>
-        <Form.Label className={classes.label}>Quality bit depth</Form.Label>
-        <div className={classes.ticks}>
-          {[8, 9, 10, 11, 12, 13, 14, 15, 16].map((value, i, { length }) => {
-            const left = `calc(${(i * 100) / (length - 1)}% + ${12 - 3 * i}px)`;
-            const hidden = localQualityBitDepth === value;
-            return (
-              <React.Fragment key={value}>
-                <label
-                  className={['small', classes.tickLabel].join(' ')}
-                  style={{
-                    left,
-                    visibility: hidden ? 'hidden' : undefined,
-                  }}
-                >
-                  {value}
-                </label>
-                <span
-                  className={classes.tickMark}
-                  style={{
-                    left,
-                    visibility: hidden ? 'hidden' : undefined,
-                  }}
-                />
-              </React.Fragment>
-            );
-          })}
-        </div>
-        <RangeSlider
-          value={localQualityBitDepth}
-          step={1}
-          min={8}
-          max={16}
-          size="lg"
-          tooltip="on"
-          tooltipPlacement="top"
-          onChange={(e) => {
-            const qualityBitDepth = Number(e.target.value);
-            setLocalQualityBitDepth(qualityBitDepth);
-          }}
-          ref={(input) =>
-            input &&
-            input.addEventListener('change', () => {
-              const qualityBitDepth = Number(input.value);
-              onSampleUpdate(sample.id, { qualityBitDepth });
-            })
-          }
+        <QualityBitDepthControl
+          sampleId={sample.id}
+          qualityBitDepth={sample.metadata.qualityBitDepth}
+          onSampleUpdate={onSampleUpdate}
         />
-        <div className={classes.annotations}>
-          <label className="small">Faster transfer</label>
-          <label className="small">Higher quality</label>
-        </div>
-      </Form.Group>
-      <Form.Group>
-        <OverlayTrigger
-          delay={{ show: 400, hide: 0 }}
-          overlay={
-            <Tooltip>
-              Boosts your sample's volume so its peak is at the same level as
-              your other normalized samples
-            </Tooltip>
-          }
-        >
-          <div className={classes.normalizeControlWrapper}>
-            <Form.Switch
-              label={
-                <span
-                  onClick={() =>
-                    onSampleUpdate(sample.id, (metadata) => ({
-                      normalize: !metadata.normalize,
-                    }))
-                  }
-                >
-                  Normalize
-                </span>
-              }
-              checked={sample.metadata.normalize}
-              onChange={(e) =>
-                onSampleUpdate(sample.id, { normalize: e.target.checked })
-              }
-            />
-          </div>
-        </OverlayTrigger>
-      </Form.Group>
-      <div className={classes.waveformBoundingBox}>
-        <WaveformEdit
-          onSetTrimFrames={handleSetTrimFrames}
-          sample={sample}
-          previewWav={audioBufferForAudioFileData}
+        <NormalizeSwitch
+          sampleId={sample.id}
+          normalize={sample.metadata.normalize}
+          onSampleUpdate={onSampleUpdate}
         />
-      </div>
-      {/* {' '}
+        <div className={classes.waveformBoundingBox}>
+          <WaveformEdit
+            onSetTrimFrames={handleSetTrimFrames}
+            sample={sample}
+            previewWav={audioBufferForAudioFileData}
+          />
+        </div>
+        {/* {' '}
       <Button
         type="button"
         variant="secondary"
@@ -280,33 +169,86 @@ function SampleDetail({
       >
         Download preview audio
       </Button> */}{' '}
-      <Button
-        type="button"
-        variant="secondary"
-        size="sm"
-        onClick={async () => {
-          const { sourceFileId, userFileInfo } = sample.metadata;
-          const data = await SampleContainer.getSourceFileData(sourceFileId);
-          const blob = new Blob([data], {
-            type: userFileInfo ? userFileInfo.type : 'audio/x-wav',
-          });
-          downloadBlob(
-            blob,
-            `${sample.metadata.name}${userFileInfo ? userFileInfo.ext : '.wav'}`
-          );
-        }}
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          onClick={async () => {
+            const { sourceFileId, userFileInfo } = sample.metadata;
+            const data = await SampleContainer.getSourceFileData(sourceFileId);
+            const blob = new Blob([data], {
+              type: userFileInfo ? userFileInfo.type : 'audio/x-wav',
+            });
+            downloadBlob(
+              blob,
+              `${sample.metadata.name}${
+                userFileInfo ? userFileInfo.ext : '.wav'
+              }`
+            );
+          }}
+        >
+          Download original file
+        </Button>
+        <br />
+        <br />
+        <SlotNumberInput
+          slotNumber={sample.metadata.slotNumber}
+          onSlotNumberUpdate={handleSlotNumberUpdate}
+        />
+        <VolcaTransferControl sample={sample} />
+      </Container>
+    );
+  }
+);
+
+const SampleDetailActions = React.memo(
+  /**
+   * @param {{
+   *   sampleId: string;
+   *   name: string;
+   *   onSampleUpdate: (id: string, update: import('./store').SampleMetadataUpdateArg) => void;
+   *   onSampleDuplicate: (id: string) => void;
+   *   onSampleDelete: (id: string) => void;
+   * }} props
+   */
+  ({ sampleId, name, onSampleUpdate, onSampleDuplicate, onSampleDelete }) => {
+    return (
+      <DropdownButton
+        className={classes.optionsButton}
+        variant="light"
+        align="end"
+        title="options"
       >
-        Download original file
-      </Button>
-      <br />
-      <br />
-      <SlotNumberInput
-        slotNumber={sample.metadata.slotNumber}
-        onSlotNumberUpdate={handleSlotNumberUpdate}
-      />
-      <VolcaTransferControl sample={sample} />
-    </Container>
-  );
-}
+        <Dropdown.Item
+          onClick={() => {
+            const newName = prompt(
+              `Choose a new name for the sample "${name}":`,
+              name
+            );
+            const newNameTrimmed = newName && newName.trim();
+            if (newNameTrimmed) {
+              onSampleUpdate(sampleId, { name: newNameTrimmed });
+            }
+          }}
+        >
+          Rename
+        </Dropdown.Item>
+        <Dropdown.Item onClick={() => onSampleDuplicate(sampleId)}>
+          Duplicate
+        </Dropdown.Item>
+        <Dropdown.Divider />
+        <Dropdown.Item
+          onClick={() => {
+            if (window.confirm(`Are you sure you want to delete ${name}?`)) {
+              onSampleDelete(sampleId);
+            }
+          }}
+        >
+          Delete
+        </Dropdown.Item>
+      </DropdownButton>
+    );
+  }
+);
 
 export default SampleDetail;

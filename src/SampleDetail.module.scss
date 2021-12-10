@@ -6,42 +6,6 @@
   float: right;
 }
 
-.qualityBitDepthWrapper {
-  max-width: 400px;
-  margin-bottom: $spacer * 2;
-
-  .label {
-    margin-bottom: 2rem;
-  }
-
-  .ticks {
-    position: relative;
-  }
-
-  .tickLabel {
-    color: $text-muted;
-    position: absolute;
-    bottom: 0;
-    transform: translateX(-50%);
-  }
-
-  .tickMark {
-    position: absolute;
-    top: 0.5rem;
-    width: 1px;
-    height: 0.25rem;
-    background-color: $text-muted;
-  }
-
-  .annotations {
-    transform: translateY(-50%);
-    margin-bottom: -0.5em;
-    display: flex;
-    justify-content: space-between;
-    color: $text-muted;
-  }
-}
-
 .normalizeControlWrapper {
   display: inline-block;
   margin-bottom: $spacer * 2;

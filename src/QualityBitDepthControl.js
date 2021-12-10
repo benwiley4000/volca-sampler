@@ -67,6 +67,8 @@ const QualityBitDepthControl = React.memo(
           size="lg"
           tooltip="on"
           tooltipPlacement="top"
+          // fixes a z-fighting issue with other parts of the UI
+          tooltipStyle={{ zIndex: 1020 }}
           onChange={handleChange}
           ref={(input) =>
             input &&

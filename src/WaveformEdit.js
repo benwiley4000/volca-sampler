@@ -64,9 +64,12 @@ function WaveformEdit({ sample: _sample, previewWav, onSetTrimFrames }) {
 
   const normalizationCoefficient = 1 / trimmedSamplePeak;
 
-  const [trimFramesLocal, setTrimFramesLocal] = useState(trimFrames);
+  const [trimFramesLocal, setTrimFramesLocal] = useState({
+    trimFrames,
+    cursor: /** @type {number | null} */ (null),
+  });
   useEffect(() => {
-    setTrimFramesLocal(trimFrames);
+    setTrimFramesLocal({ trimFrames, cursor: null });
   }, [trimFrames]);
 
   const trimPixels = useMemo(() => {
@@ -74,8 +77,8 @@ function WaveformEdit({ sample: _sample, previewWav, onSetTrimFrames }) {
       return [0, 0];
     }
     const factor = pixelWidth / monoSamples.length;
-    return trimFramesLocal.map((frames) => frames * factor);
-  }, [pixelWidth, monoSamples.length, trimFramesLocal]);
+    return trimFramesLocal.trimFrames.map((frames) => frames * factor);
+  }, [pixelWidth, monoSamples.length, trimFramesLocal.trimFrames]);
 
   /** @type {React.RefObject<HTMLDivElement>} */
   const leftTrimHandleRef = useRef(null);
@@ -170,7 +173,10 @@ function WaveformEdit({ sample: _sample, previewWav, onSetTrimFrames }) {
         }
         document.body.style.userSelect = 'none';
         const { clientX } = e instanceof MouseEvent ? e : e.touches[0];
-        const waveformX = clientX - waveformClientLeft;
+        const waveformX = Math.max(
+          0,
+          Math.min(pixelWidth, clientX - waveformClientLeft)
+        );
         const ratio = waveformX / pixelWidth;
         const frameFrom = Math.round(monoSamplesLength * ratio);
         const frameToTentative = frameFrom + minFrameWidth;
@@ -182,10 +188,13 @@ function WaveformEdit({ sample: _sample, previewWav, onSetTrimFrames }) {
           // looks like we don't have enough room to make the minimum selection
           return;
         }
-        setTrimFramesLocal([
-          Math.min(frameFrom, frameTo),
-          monoSamplesLength - 1 - Math.max(frameFrom, frameTo),
-        ]);
+        setTrimFramesLocal({
+          trimFrames: [
+            Math.min(frameFrom, frameTo),
+            monoSamplesLength - 1 - Math.max(frameFrom, frameTo),
+          ],
+          cursor: waveformX - 1,
+        });
         waveformOverlayDownFrame.current = frameFrom;
       }
 
@@ -193,14 +202,17 @@ function WaveformEdit({ sample: _sample, previewWav, onSetTrimFrames }) {
       function moveLeftHandle(diff) {
         const ratio = diff / pixelWidth;
         const frameDiff = Math.round(monoSamplesLength * ratio);
-        setTrimFramesLocal((trimFrames) => {
+        setTrimFramesLocal(({ trimFrames }) => {
           let newValue = trimFrames[0] + frameDiff;
           newValue = Math.min(
             newValue,
             monoSamplesLength - trimFrames[1] - minFrameWidth
           );
           newValue = Math.max(newValue, 0);
-          return [newValue, trimFrames[1]];
+          return {
+            trimFrames: [newValue, trimFrames[1]],
+            cursor: null,
+          };
         });
       }
 
@@ -224,14 +236,17 @@ function WaveformEdit({ sample: _sample, previewWav, onSetTrimFrames }) {
       function moveRightHandle(diff) {
         const ratio = diff / pixelWidth;
         const frameDiff = Math.round(monoSamplesLength * ratio);
-        setTrimFramesLocal((trimFrames) => {
+        setTrimFramesLocal(({ trimFrames }) => {
           let newValue = trimFrames[1] + frameDiff;
           newValue = Math.min(
             newValue,
             monoSamplesLength - trimFrames[0] - minFrameWidth
           );
           newValue = Math.max(newValue, 0);
-          return [trimFrames[0], newValue];
+          return {
+            trimFrames: [trimFrames[0], newValue],
+            cursor: null,
+          };
         });
       }
 
@@ -311,7 +326,10 @@ function WaveformEdit({ sample: _sample, previewWav, onSetTrimFrames }) {
         }
         const frameFrom = waveformOverlayDownFrame.current;
         const { clientX } = e instanceof MouseEvent ? e : e.touches[0];
-        const waveformX = clientX - waveformClientLeft;
+        const waveformX = Math.max(
+          0,
+          Math.min(pixelWidth, clientX - waveformClientLeft)
+        );
         const ratio = waveformX / pixelWidth;
         const frameToTentative = Math.max(
           0,
@@ -329,10 +347,13 @@ function WaveformEdit({ sample: _sample, previewWav, onSetTrimFrames }) {
               : belowFrameMax >= 0
               ? Math.min(frameToTentative, belowFrameMax)
               : aboveFrameMin;
-          setTrimFramesLocal([
-            Math.min(frameFrom, frameTo),
-            monoSamplesLength - 1 - Math.max(frameFrom, frameTo),
-          ]);
+          setTrimFramesLocal({
+            trimFrames: [
+              Math.min(frameFrom, frameTo),
+              monoSamplesLength - 1 - Math.max(frameFrom, frameTo),
+            ],
+            cursor: frameFrom < frameTo ? waveformX : waveformX - 1,
+          });
         }
       }
 
@@ -365,10 +386,10 @@ function WaveformEdit({ sample: _sample, previewWav, onSetTrimFrames }) {
             // think most users will do it in in under 250ms.
             trimFramesUpdateTimeout.current = setTimeout(() => {
               trimFramesUpdateTimeout.current = null;
-              onSetTrimFrames(() => trimFramesLocalRef.current);
+              onSetTrimFrames(() => trimFramesLocalRef.current.trimFrames);
             }, 250);
           } else {
-            onSetTrimFrames(() => trimFramesLocalRef.current);
+            onSetTrimFrames(() => trimFramesLocalRef.current.trimFrames);
           }
           leftTrimLastX.current = null;
           rightTrimLastX.current = null;
@@ -391,7 +412,7 @@ function WaveformEdit({ sample: _sample, previewWav, onSetTrimFrames }) {
         if (trimFramesUpdateTimeout.current) {
           clearTimeout(trimFramesUpdateTimeout.current);
           trimFramesUpdateTimeout.current = null;
-          onSetTrimFrames(() => trimFramesLocalRef.current);
+          onSetTrimFrames(() => trimFramesLocalRef.current.trimFrames);
         }
       }
 
@@ -549,6 +570,10 @@ function WaveformEdit({ sample: _sample, previewWav, onSetTrimFrames }) {
       ].join(' ')}
       style={{
         // @ts-ignore
+        '--cursor-display': trimFramesLocal.cursor === null ? 'none' : 'unset',
+        // @ts-ignore
+        '--cursor-left': `${trimFramesLocal.cursor}px`,
+        // @ts-ignore
         '--trim-pixels-left': `${trimPixels[0]}px`,
         // @ts-ignore
         '--trim-pixels-right': `${trimPixels[1]}px`,
@@ -583,13 +608,14 @@ function WaveformEdit({ sample: _sample, previewWav, onSetTrimFrames }) {
         </OverlayTrigger>
         {displayedTime && <span>{displayedTime}</span>}
       </div>
+      <div className={classes.cursor} />
       <div className={[classes.trim, classes.left].join(' ')}>
         <div className={classes.bar} />
         <div ref={leftTrimHandleRef} className={classes.handle} tabIndex={0} />
         {sourceAudioBuffer && Boolean(monoSamples.length) && (
           <span className={classes.time}>
             {formatTime(
-              (sourceAudioBuffer.duration * trimFramesLocal[0]) /
+              (sourceAudioBuffer.duration * trimFramesLocal.trimFrames[0]) /
                 monoSamples.length,
               2
             )}
@@ -603,7 +629,7 @@ function WaveformEdit({ sample: _sample, previewWav, onSetTrimFrames }) {
           <span className={classes.time}>
             {formatTime(
               (sourceAudioBuffer.duration *
-                (monoSamples.length - 1 - trimFramesLocal[1])) /
+                (monoSamples.length - 1 - trimFramesLocal.trimFrames[1])) /
                 monoSamples.length,
               2
             )}

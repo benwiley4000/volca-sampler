@@ -13,6 +13,8 @@
 }
 
 .waveformContainer {
+  --cursor-display: none;
+  --cursor-left: 0px;
   --trim-pixels-left: 0px;
   --trim-pixels-right: 0px;
   --playback-progress: 0%;
@@ -45,6 +47,17 @@
     right: 0;
     backdrop-filter: var(--grayscale-filter);
   }
+}
+
+.cursor {
+  display: var(--cursor-display);
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background-color: #999;
+  left: var(--cursor-left);
+  will-change: left;
 }
 
 .trim {

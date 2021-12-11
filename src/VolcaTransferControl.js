@@ -129,7 +129,7 @@ function VolcaTransferControl({ sample }) {
             {!syroAudioBuffer
               ? 'Preparing sample for transfer...'
               : syroAudioBuffer instanceof AudioBuffer
-              ? 'Transferring to Volca Sample...'
+              ? 'Transferring to volca sample...'
               : 'Error preparing sample for transfer'}
           </p>
           <ProgressBar now={100 * syroProgress} />

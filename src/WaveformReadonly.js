@@ -1,26 +1,38 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { findSamplePeak, getTrimmedView } from './utils/audioData.js';
 
-import { useLoadedSample, useWaveformInfo } from './utils/waveform.js';
+import {
+  useLoadedSample,
+  useWaveformInfo,
+  useWaveformPlayback,
+} from './utils/waveform.js';
 import WaveformDisplay from './WaveformDisplay.js';
+import WaveformPlayback from './WaveformPlayback.js';
+
+import classes from './WaveformReadonly.module.scss';
 
 /**
  * @typedef {{
  *   sample: import('./store').SampleContainer;
+ *   previewAudio: AudioBuffer | null;
  * }} WaveformReadonlyProps
  */
 
 /**
  * @param {WaveformReadonlyProps} props
  */
-function WaveformReadonly({ sample: _sample }) {
+function WaveformReadonly({ sample: _sample, previewAudio }) {
   const {
     sample: {
-      metadata: { normalize, trim: { frames: trimFrames } },
+      metadata: {
+        normalize,
+        trim: { frames: trimFrames },
+      },
     },
     sourceAudioBuffer,
   } = useLoadedSample(_sample);
-  const { monoSamples, waveformRef, peaks } = useWaveformInfo(sourceAudioBuffer);
+  const { monoSamples, waveformRef, peaks, onResize } =
+    useWaveformInfo(sourceAudioBuffer);
 
   const trimmedSamplePeak = useMemo(() => {
     if (!sourceAudioBuffer) {
@@ -33,12 +45,31 @@ function WaveformReadonly({ sample: _sample }) {
 
   const normalizationCoefficient = 1 / trimmedSamplePeak;
 
+  const {
+    isPlaybackActive,
+    playbackProgress,
+    displayedTime,
+    togglePlayback,
+    stopPlayback,
+  } = useWaveformPlayback(previewAudio);
+
+  useEffect(() => {
+    return stopPlayback;
+  }, [_sample, stopPlayback]);
+
   return (
-    <div style={{ backgroundColor: '#f3f3f3' }}>
+    <div className={classes.waveformContainer}>
       <WaveformDisplay
         waveformRef={waveformRef}
         peaks={peaks}
         scaleCoefficient={normalize ? normalizationCoefficient : 1}
+        onResize={onResize}
+      />
+      <WaveformPlayback
+        isPlaybackActive={isPlaybackActive}
+        playbackProgress={playbackProgress}
+        displayedTime={displayedTime}
+        togglePlayback={togglePlayback}
       />
     </div>
   );

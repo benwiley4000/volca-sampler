@@ -1,42 +1,35 @@
 import React, {
-  useCallback,
   useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
   useState,
 } from 'react';
-import { Button, OverlayTrigger, Tooltip } from 'react-bootstrap';
-import playIcon from '@material-design-icons/svg/filled/play_arrow.svg';
-import stopIcon from '@material-design-icons/svg/filled/stop.svg';
 
 import {
   findSamplePeak,
   getTrimmedView,
-  useAudioPlaybackContext,
 } from './utils/audioData.js';
-import { useLoadedSample, useWaveformInfo } from './utils/waveform.js';
+import {
+  formatTime,
+  useLoadedSample,
+  useWaveformInfo,
+  useWaveformPlayback,
+} from './utils/waveform.js';
 import WaveformDisplay from './WaveformDisplay.js';
+import WaveformPlayback from './WaveformPlayback.js';
 
 import classes from './WaveformEdit.module.scss';
-
-/**
- * @param {number} sec
- * @param {number} decimals
- */
-function formatTime(sec, decimals) {
-  return `0:${sec.toFixed(decimals).padStart(3 + decimals, '0')}`;
-}
 
 const WaveformEdit = React.memo(
   /**
    * @param {{
    *   sample: import('./store').SampleContainer;
-   *   previewWav: AudioBuffer | null;
+   *   previewAudio: AudioBuffer | null;
    *   onSetTrimFrames: (updateTrimFrames: (old: [number, number]) => [number, number]) => void;
    * }} props
    */
-  function WaveformEdit({ sample: _sample, previewWav, onSetTrimFrames }) {
+  function WaveformEdit({ sample: _sample, previewAudio, onSetTrimFrames }) {
     const {
       sample: {
         metadata: {
@@ -505,79 +498,17 @@ const WaveformEdit = React.memo(
       }, [moveCallbackParams, onSetTrimFrames]);
     }
 
-    const { playAudioBuffer } = useAudioPlaybackContext();
-
-    // to be set when playback is started
-    const stopPreviewPlayback = useRef(() => {});
-    useEffect(() => {
-      return () => stopPreviewPlayback.current();
-    }, [_sample, trimFramesLocal]);
-
-    const [callbackOnPreviewWav, setCallbackOnPreviewWav] = useState(
-      /** @type {{ fn: () => void } | null} */ (null)
-    );
-    useEffect(() => {
-      if (previewWav instanceof AudioBuffer && callbackOnPreviewWav) {
-        setCallbackOnPreviewWav(null);
-        callbackOnPreviewWav.fn();
-      }
-    }, [previewWav, callbackOnPreviewWav]);
-
-    const [playbackProgress, setPlaybackProgress] = useState(0);
-    const [isPlaybackActive, setIsPlaybackActive] = useState(false);
-
-    const [displayedTime, setDisplayedTime] = useState('');
-    useEffect(() => {
-      if (previewWav) {
-        setDisplayedTime(
-          isPlaybackActive
-            ? formatTime(playbackProgress * previewWav.duration, 1)
-            : formatTime(previewWav.duration, 1)
-        );
-      }
-    }, [previewWav, isPlaybackActive, playbackProgress]);
-
-    const handlePlay = useCallback(
-      /** @param {MouseEvent | KeyboardEvent} e */
-      (e) => {
-        if (isPlaybackActive) {
-          stopPreviewPlayback.current();
-        } else if (previewWav) {
-          stopPreviewPlayback.current = playAudioBuffer(previewWav, {
-            onTimeUpdate(currentTime) {
-              setPlaybackProgress(currentTime / previewWav.duration);
-            },
-            onEnded() {
-              setIsPlaybackActive(false);
-            },
-          });
-          setPlaybackProgress(0);
-          setIsPlaybackActive(true);
-        } else {
-          const target = /** @type {EventTarget} */ (e.target);
-          // wait until the audio buffer is ready then simulate an event
-          // to retry this handler. it's important that we simulate
-          // another action because otherwise iOS won't let us play the
-          // audio later.
-          setCallbackOnPreviewWav({
-            fn: () => target.dispatchEvent(e),
-          });
-        }
-      },
-      [isPlaybackActive, playAudioBuffer, previewWav]
-    );
+    const {
+      isPlaybackActive,
+      playbackProgress,
+      displayedTime,
+      togglePlayback,
+      stopPlayback,
+    } = useWaveformPlayback(previewAudio);
 
     useEffect(() => {
-      /** @param {KeyboardEvent} e */
-      function handleSpace(e) {
-        if (e.key === ' ') {
-          e.preventDefault();
-          handlePlay(e);
-        }
-      }
-      document.addEventListener('keydown', handleSpace);
-      return () => document.removeEventListener('keydown', handleSpace);
-    }, [handlePlay]);
+      return stopPlayback;
+    }, [_sample, trimFramesLocal, stopPlayback]);
 
     return (
       <div
@@ -595,8 +526,6 @@ const WaveformEdit = React.memo(
           '--trim-pixels-left': `${trimPixels[0]}px`,
           // @ts-ignore
           '--trim-pixels-right': `${trimPixels[1]}px`,
-          // @ts-ignore
-          '--playback-progress': `${100 * playbackProgress}%`,
         }}
       >
         <WaveformDisplay
@@ -605,27 +534,12 @@ const WaveformEdit = React.memo(
           scaleCoefficient={normalize ? normalizationCoefficient : 1}
           onResize={onResize}
         />
-        <div className={classes.playbackOverlay}>
-          <div className={classes.playback} />
-        </div>
-        <div className={classes.playbackButtonContainer}>
-          <OverlayTrigger
-            delay={{ show: 400, hide: 0 }}
-            overlay={
-              <Tooltip>
-                Preview how your sample will sound on the Volca Sample
-              </Tooltip>
-            }
-          >
-            <Button variant="dark" onClick={(e) => handlePlay(e.nativeEvent)}>
-              <img
-                src={isPlaybackActive ? stopIcon : playIcon}
-                alt="Play preview"
-              />
-            </Button>
-          </OverlayTrigger>
-          {displayedTime && <span>{displayedTime}</span>}
-        </div>
+        <WaveformPlayback
+          isPlaybackActive={isPlaybackActive}
+          playbackProgress={playbackProgress}
+          displayedTime={displayedTime}
+          togglePlayback={togglePlayback}
+        />
         <div className={classes.cursor} />
         <div className={[classes.trim, classes.left].join(' ')}>
           <div className={classes.bar} />

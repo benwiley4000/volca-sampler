@@ -1,17 +1,9 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import {
-  Container,
-  Dropdown,
-  DropdownButton,
-  Button,
-} from 'react-bootstrap';
+import React, { useCallback } from 'react';
+import { Container, Dropdown, DropdownButton, Button } from 'react-bootstrap';
 
 import WaveformEdit from './WaveformEdit.js';
 import VolcaTransferControl from './VolcaTransferControl.js';
-import {
-  getTargetWavForSample,
-  getAudioBufferForAudioFileData,
-} from './utils/audioData.js';
+import { useTargetAudioForSample } from './utils/audioData.js';
 import { SampleContainer } from './store.js';
 import QualityBitDepthControl from './QualityBitDepthControl.js';
 import NormalizeSwitch from './NormalizeSwitch.js';
@@ -66,44 +58,7 @@ const SampleDetail = React.memo(
         })),
       [sampleId, onSampleUpdate]
     );
-    const [targetWav, setTargetWav] = useState(
-      /** @type {Uint8Array | null} */ (null)
-    );
-    const [audioBufferForAudioFileData, setAudioBufferForAudioFileData] =
-      useState(/** @type {AudioBuffer | null} */ (null));
-    const [callbackOnAudioBuffer, setCallbackOnAudioBuffer] = useState(
-      /** @type {{ fn: () => void } | null} */ (null)
-    );
-    useEffect(() => {
-      if (
-        audioBufferForAudioFileData instanceof AudioBuffer &&
-        callbackOnAudioBuffer
-      ) {
-        setCallbackOnAudioBuffer(null);
-        callbackOnAudioBuffer.fn();
-      }
-    }, [audioBufferForAudioFileData, callbackOnAudioBuffer]);
-    useEffect(() => {
-      setTargetWav(null);
-      setCallbackOnAudioBuffer(null);
-      let cancelled = false;
-      getTargetWavForSample(sample).then(({ data }) => {
-        if (!cancelled) {
-          setTargetWav(data);
-        }
-      });
-    }, [sample]);
-    useEffect(() => {
-      setAudioBufferForAudioFileData(null);
-      if (targetWav) {
-        let cancelled = false;
-        getAudioBufferForAudioFileData(targetWav).then((audioBuffer) => {
-          if (!cancelled) {
-            setAudioBufferForAudioFileData(audioBuffer);
-          }
-        });
-      }
-    }, [targetWav]);
+    const { audioBuffer } = useTargetAudioForSample(sample);
     /**
      * @type {(update: number | ((slotNumber: number) => number)) => void}
      */
@@ -146,11 +101,11 @@ const SampleDetail = React.memo(
           normalize={sample.metadata.normalize}
           onSampleUpdate={onSampleUpdate}
         />
-        <div className={classes.waveformBoundingBox}>
+        <div className={classes.waveformEditBoundingBox}>
           <WaveformEdit
             onSetTrimFrames={handleSetTrimFrames}
             sample={sample}
-            previewWav={audioBufferForAudioFileData}
+            previewAudio={audioBuffer}
           />
         </div>
         {/* {' '}
@@ -158,14 +113,14 @@ const SampleDetail = React.memo(
         type="button"
         variant="secondary"
         onClick={async () => {
-          if (targetWav) {
-            const blob = new Blob([targetWav], {
+          if (wav) {
+            const blob = new Blob([wav], {
               type: 'audio/x-wav',
             });
             downloadBlob(blob, `${sample.metadata.name}.wav`);
           }
         }}
-        disabled={!targetWav}
+        disabled={!wav}
       >
         Download preview audio
       </Button> */}{' '}

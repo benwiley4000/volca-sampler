@@ -3,8 +3,10 @@ import {
   createElement,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
+  useState,
 } from 'react';
 import getWavFileHeaders from 'wav-headers';
 
@@ -253,6 +255,41 @@ export async function getTargetWavForSample(sampleContainer) {
   return {
     data: wavBuffer,
     sampleRate: 16,
+  };
+}
+
+/**
+ * @param {import('../store').SampleContainer} sampleContainer
+ */
+export function useTargetAudioForSample(sampleContainer) {
+  const [targetWav, setTargetWav] = useState(
+    /** @type {Uint8Array | null} */ (null)
+  );
+  const [audioBufferForAudioFileData, setAudioBufferForAudioFileData] =
+    useState(/** @type {AudioBuffer | null} */ (null));
+  useEffect(() => {
+    setTargetWav(null);
+    let cancelled = false;
+    getTargetWavForSample(sampleContainer).then(({ data }) => {
+      if (!cancelled) {
+        setTargetWav(data);
+      }
+    });
+  }, [sampleContainer]);
+  useEffect(() => {
+    setAudioBufferForAudioFileData(null);
+    if (targetWav) {
+      let cancelled = false;
+      getAudioBufferForAudioFileData(targetWav).then((audioBuffer) => {
+        if (!cancelled) {
+          setAudioBufferForAudioFileData(audioBuffer);
+        }
+      });
+    }
+  }, [targetWav]);
+  return {
+    wav: targetWav,
+    audioBuffer: audioBufferForAudioFileData,
   };
 }
 

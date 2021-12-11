@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   getMonoSamplesFromAudioBuffer,
   getSourceAudioBuffer,
   findSamplePeak,
+  useAudioPlaybackContext,
 } from './audioData.js';
 
 export const GROUP_PIXEL_WIDTH = 6;
@@ -163,5 +164,97 @@ export function useWaveformInfo(sourceAudioBuffer) {
     pixelWidth,
     peaks,
     onResize: setSize,
+  };
+}
+
+/**
+ * @param {number} sec
+ * @param {number} decimals
+ */
+export function formatTime(sec, decimals) {
+  return `0:${sec.toFixed(decimals).padStart(3 + decimals, '0')}`;
+}
+
+/**
+ * @param {AudioBuffer | null} audioBuffer
+ */
+export function useWaveformPlayback(audioBuffer) {
+  const { playAudioBuffer } = useAudioPlaybackContext();
+  // to be set when playback is started
+  const stopPreviewPlayback = useRef(() => {});
+  const [callbackOnPreviewWav, setCallbackOnPreviewWav] = useState(
+    /** @type {{ fn: () => void } | null} */ (null)
+  );
+  useEffect(() => {
+    if (audioBuffer && callbackOnPreviewWav) {
+      setCallbackOnPreviewWav(null);
+      callbackOnPreviewWav.fn();
+    }
+  }, [audioBuffer, callbackOnPreviewWav]);
+
+  const [playbackProgress, setPlaybackProgress] = useState(0);
+  const [isPlaybackActive, setIsPlaybackActive] = useState(false);
+
+  const [displayedTime, setDisplayedTime] = useState('');
+  useEffect(() => {
+    if (audioBuffer) {
+      setDisplayedTime(
+        isPlaybackActive
+          ? formatTime(playbackProgress * audioBuffer.duration, 1)
+          : formatTime(audioBuffer.duration, 1)
+      );
+    }
+  }, [audioBuffer, isPlaybackActive, playbackProgress]);
+
+  const togglePlayback = useCallback(
+    /** @param {MouseEvent | KeyboardEvent} e */
+    (e) => {
+      if (isPlaybackActive) {
+        stopPreviewPlayback.current();
+      } else if (audioBuffer) {
+        stopPreviewPlayback.current = playAudioBuffer(audioBuffer, {
+          onTimeUpdate(currentTime) {
+            setPlaybackProgress(currentTime / audioBuffer.duration);
+          },
+          onEnded() {
+            setIsPlaybackActive(false);
+          },
+        });
+        setPlaybackProgress(0);
+        setIsPlaybackActive(true);
+      } else {
+        const target = /** @type {EventTarget} */ (e.target);
+        // wait until the audio buffer is ready then simulate an event
+        // to retry this handler. it's important that we simulate
+        // another action because otherwise iOS won't let us play the
+        // audio later.
+        setCallbackOnPreviewWav({
+          fn: () => target.dispatchEvent(e),
+        });
+      }
+    },
+    [isPlaybackActive, playAudioBuffer, audioBuffer]
+  );
+
+  useEffect(() => {
+    /** @param {KeyboardEvent} e */
+    function handleSpace(e) {
+      if (e.key === ' ') {
+        e.preventDefault();
+        togglePlayback(e);
+      }
+    }
+    document.addEventListener('keydown', handleSpace);
+    return () => document.removeEventListener('keydown', handleSpace);
+  }, [togglePlayback]);
+
+  const stopPlayback = useCallback(() => stopPreviewPlayback.current(), []);
+
+  return {
+    isPlaybackActive,
+    playbackProgress,
+    displayedTime,
+    togglePlayback,
+    stopPlayback,
   };
 }

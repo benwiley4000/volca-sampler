@@ -6,13 +6,23 @@
   float: right;
 }
 
+.duplicateButtonLink {
+  padding: 0;
+  vertical-align: unset;
+  user-select: unset;
+}
+
 .normalizeControlWrapper {
   display: inline-block;
   margin-bottom: $spacer * 2;
 }
 
-.waveformBoundingBox {
+.waveformReadonlyBoundingBox {
   height: 120px;
+  margin-bottom: $spacer * 2;
+}
+
+.waveformEditBoundingBox {
   margin-bottom: $spacer * 5.5;
 }
 

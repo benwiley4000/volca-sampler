@@ -22,6 +22,8 @@ import { getAudioBufferForAudioFileData } from './utils/audioData.js';
 
 import classes from './App.module.scss';
 
+const sessionStorageKey = 'focused_sample_id';
+
 function App() {
   const [userSamples, setUserSamples] = useState(
     /** @type {Map<string, SampleContainer>} */ (new Map())
@@ -35,9 +37,21 @@ function App() {
   useEffect(() => {
     getFactorySamples().then(setFactorySamples).catch(console.error);
   }, []);
+  const restoredFocusedSampleId = sessionStorage.getItem(sessionStorageKey);
   const [focusedSampleId, setFocusedSampleId] = useState(
-    /** @type {string | null} */ (null)
+    /** @type {string | null} */ (
+      restoredFocusedSampleId && typeof restoredFocusedSampleId === 'string'
+        ? restoredFocusedSampleId
+        : null
+    )
   );
+  useEffect(() => {
+    if (focusedSampleId) {
+      sessionStorage.setItem(sessionStorageKey, focusedSampleId);
+    } else {
+      sessionStorage.removeItem(sessionStorageKey);
+    }
+  }, [focusedSampleId]);
   const [loadingSamples, setLoadingSamples] = useState(true);
   useEffect(() => {
     // TODO: error handling

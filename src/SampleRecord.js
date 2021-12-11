@@ -481,7 +481,7 @@ function SampleRecord({ onRecordFinish }) {
         </p>
       ) : (
         <div>
-          <h2>Send a new sound to your Volca Sample!</h2>
+          <h2>Send a new sound to your volca sample!</h2>
           {showSilenceWarning && (
             <div className={classes.alertContainer}>
               <Alert

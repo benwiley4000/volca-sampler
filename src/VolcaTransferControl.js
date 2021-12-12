@@ -7,6 +7,8 @@ import {
 } from './utils/audioData.js';
 import { getSampleBuffer } from './utils/syro.js';
 
+import classes from './VolcaTransferControl.module.scss';
+
 /**
  * @param {{
  *   sample: import('./store').SampleContainer;
@@ -109,6 +111,7 @@ function VolcaTransferControl({ sample }) {
   return (
     <>
       <Button
+        className={classes.transferButton}
         type="button"
         variant="primary"
         onClick={handleTransfer}

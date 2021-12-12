@@ -1,7 +1,10 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Button, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import playIcon from '@material-design-icons/svg/filled/play_arrow.svg';
 import stopIcon from '@material-design-icons/svg/filled/stop.svg';
+import downloadIcon from '@material-design-icons/svg/filled/download.svg';
+
+import { downloadBlob } from './utils/download.js';
 
 import classes from './WaveformPlayback.module.scss';
 
@@ -11,6 +14,8 @@ const WaveformPlayback = React.memo(
    *   isPlaybackActive: boolean;
    *   playbackProgress: number;
    *   displayedTime: string;
+   *   downloadFilename: string;
+   *   wavFile: Uint8Array | null;
    *   togglePlayback: (e: MouseEvent | KeyboardEvent) => void;
    * }} props
    */
@@ -18,8 +23,19 @@ const WaveformPlayback = React.memo(
     isPlaybackActive,
     playbackProgress,
     displayedTime,
+    downloadFilename,
+    wavFile,
     togglePlayback,
   }) {
+    const handleDownload = useCallback(async () => {
+      if (wavFile) {
+        const blob = new Blob([wavFile], {
+          type: 'audio/x-wav',
+        });
+        downloadBlob(blob, downloadFilename);
+      }
+    }, [downloadFilename, wavFile]);
+
     return (
       <>
         <div
@@ -55,6 +71,26 @@ const WaveformPlayback = React.memo(
           </OverlayTrigger>
           {displayedTime && <span>{displayedTime}</span>}
         </div>
+        <OverlayTrigger
+          delay={{ show: 400, hide: 0 }}
+          overlay={
+            <Tooltip>
+              Download a copy of the audio that will be transferred to the volca
+              sample
+            </Tooltip>
+          }
+        >
+          <Button
+            className={classes.downloadButton}
+            type="button"
+            variant="dark"
+            size="sm"
+            onClick={handleDownload}
+            disabled={!wavFile}
+          >
+            <img src={downloadIcon} alt="Download preview audio" />
+          </Button>
+        </OverlayTrigger>
       </>
     );
   }

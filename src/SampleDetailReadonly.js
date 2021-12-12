@@ -3,27 +3,10 @@ import { Container, Button, Alert } from 'react-bootstrap';
 
 import WaveformReadonly from './WaveformReadonly.js';
 import VolcaTransferControl from './VolcaTransferControl.js';
-import { useTargetAudioForSample } from './utils/audioData.js';
 import { SampleContainer } from './store.js';
 import SlotNumberInput from './SlotNumberInput.js';
 
 import classes from './SampleDetail.module.scss';
-
-/**
- * @param {Blob} blob
- * @param {string} filename
- */
-function downloadBlob(blob, filename) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.style.display = 'none';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
 
 /**
  * @param {import('./store').SampleContainer} readonlySample
@@ -54,7 +37,6 @@ function useSampleWithTemporalSlotNumber(readonlySample) {
  * }} props
  */
 function SampleDetailReadonly({ sample: readonlySample, onSampleDuplicate }) {
-  const { audioBuffer } = useTargetAudioForSample(readonlySample);
   const { sample, setSlotNumber } =
     useSampleWithTemporalSlotNumber(readonlySample);
 
@@ -82,45 +64,11 @@ function SampleDetailReadonly({ sample: readonlySample, onSampleDuplicate }) {
           </span>
         </p>
       </Alert>
+      <h4>Preview</h4>
       <div className={classes.waveformReadonlyBoundingBox}>
-        <WaveformReadonly sample={sample} previewAudio={audioBuffer} />
+        <WaveformReadonly sample={sample} />
       </div>
-      {/* {' '}
-      <Button
-        type="button"
-        variant="secondary"
-        onClick={async () => {
-          if (wav) {
-            const blob = new Blob([wav], {
-              type: 'audio/x-wav',
-            });
-            downloadBlob(blob, `${sample.metadata.name}.wav`);
-          }
-        }}
-        disabled={!wav}
-      >
-        Download preview audio
-      </Button> */}{' '}
-      <Button
-        type="button"
-        variant="secondary"
-        size="sm"
-        onClick={async () => {
-          const { sourceFileId, userFileInfo } = sample.metadata;
-          const data = await SampleContainer.getSourceFileData(sourceFileId);
-          const blob = new Blob([data], {
-            type: userFileInfo ? userFileInfo.type : 'audio/x-wav',
-          });
-          downloadBlob(
-            blob,
-            `${sample.metadata.name}${userFileInfo ? userFileInfo.ext : '.wav'}`
-          );
-        }}
-      >
-        Download original file
-      </Button>
-      <br />
-      <br />
+      <h4>Transfer</h4>
       <SlotNumberInput
         slotNumber={sample.metadata.slotNumber}
         onSlotNumberUpdate={setSlotNumber}

@@ -1,5 +1,9 @@
 import React, { useEffect, useMemo } from 'react';
-import { findSamplePeak, getTrimmedView } from './utils/audioData.js';
+import {
+  findSamplePeak,
+  getTrimmedView,
+  useTargetAudioForSample,
+} from './utils/audioData.js';
 
 import {
   useLoadedSample,
@@ -14,17 +18,19 @@ import classes from './WaveformReadonly.module.scss';
 /**
  * @typedef {{
  *   sample: import('./store').SampleContainer;
- *   previewAudio: AudioBuffer | null;
  * }} WaveformReadonlyProps
  */
 
 /**
  * @param {WaveformReadonlyProps} props
  */
-function WaveformReadonly({ sample: _sample, previewAudio }) {
+function WaveformReadonly({ sample: _sample }) {
+  const { wav: previewWavFile, audioBuffer: previewAudioBuffer } =
+    useTargetAudioForSample(_sample);
   const {
     sample: {
       metadata: {
+        name,
         normalize,
         trim: { frames: trimFrames },
       },
@@ -51,7 +57,7 @@ function WaveformReadonly({ sample: _sample, previewAudio }) {
     displayedTime,
     togglePlayback,
     stopPlayback,
-  } = useWaveformPlayback(previewAudio);
+  } = useWaveformPlayback(previewAudioBuffer);
 
   useEffect(() => {
     return stopPlayback;
@@ -69,6 +75,8 @@ function WaveformReadonly({ sample: _sample, previewAudio }) {
         isPlaybackActive={isPlaybackActive}
         playbackProgress={playbackProgress}
         displayedTime={displayedTime}
+        downloadFilename={`${name}.wav`}
+        wavFile={previewWavFile}
         togglePlayback={togglePlayback}
       />
     </div>

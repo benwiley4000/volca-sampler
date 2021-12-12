@@ -9,9 +9,10 @@
   --trim-pixels-right: 0px;
   position: relative;
   background-color: #fff;
-  box-shadow: 0 1px 0 #eee inset, 0 -1px 0 #eee inset;
+  outline: 1px solid #ddd;
   width: 100%;
   height: 100%;
+  border-radius: 1px;
 }
 
 .cursor {
@@ -26,6 +27,7 @@
 }
 
 .trim {
+  --grayscale-filter: grayscale(100%) brightness(200%);
   --handle-diameter: 24px;
   position: absolute;
   top: 0;
@@ -38,8 +40,8 @@
 
   & > .bar {
     position: absolute;
-    top: 0;
-    bottom: 0;
+    top: -1px;
+    bottom: -1px;
     width: 1px;
     background: var(--bs-dark);
   }

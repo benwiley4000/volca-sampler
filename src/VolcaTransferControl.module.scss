@@ -1,0 +1,12 @@
+@import 'bootstrap_custom_variables';
+@import '~bootstrap/scss/functions';
+@import '~bootstrap/scss/mixins';
+@import '~bootstrap/scss/variables';
+
+.transferButton {
+  width: 100%;
+
+  @include media-breakpoint-up(sm) {
+    width: unset;
+  }
+}

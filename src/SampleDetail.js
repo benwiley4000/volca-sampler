@@ -1,31 +1,15 @@
 import React, { useCallback } from 'react';
-import { Container, Dropdown, DropdownButton, Button } from 'react-bootstrap';
+import { Container, Dropdown, DropdownButton } from 'react-bootstrap';
 
 import WaveformEdit from './WaveformEdit.js';
 import VolcaTransferControl from './VolcaTransferControl.js';
-import { useTargetAudioForSample } from './utils/audioData.js';
 import { SampleContainer } from './store.js';
 import QualityBitDepthControl from './QualityBitDepthControl.js';
 import NormalizeSwitch from './NormalizeSwitch.js';
 import SlotNumberInput from './SlotNumberInput.js';
+import { downloadBlob } from './utils/download.js';
 
 import classes from './SampleDetail.module.scss';
-
-/**
- * @param {Blob} blob
- * @param {string} filename
- */
-function downloadBlob(blob, filename) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.style.display = 'none';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
 
 const SampleDetail = React.memo(
   /**
@@ -58,7 +42,6 @@ const SampleDetail = React.memo(
         })),
       [sampleId, onSampleUpdate]
     );
-    const { audioBuffer } = useTargetAudioForSample(sample);
     /**
      * @type {(update: number | ((slotNumber: number) => number)) => void}
      */
@@ -78,6 +61,8 @@ const SampleDetail = React.memo(
           <SampleDetailActions
             sampleId={sample.id}
             name={sample.metadata.name}
+            sourceFileId={sample.metadata.sourceFileId}
+            userFileInfo={sample.metadata.userFileInfo}
             onSampleUpdate={onSampleUpdate}
             onSampleDuplicate={onSampleDuplicate}
             onSampleDelete={onSampleDelete}
@@ -90,7 +75,7 @@ const SampleDetail = React.memo(
           <strong>Updated:</strong>{' '}
           {new Date(sample.metadata.dateModified).toLocaleString()}
         </p>
-        <br />
+        <h4>Configure</h4>
         <QualityBitDepthControl
           sampleId={sample.id}
           qualityBitDepth={sample.metadata.qualityBitDepth}
@@ -102,50 +87,9 @@ const SampleDetail = React.memo(
           onSampleUpdate={onSampleUpdate}
         />
         <div className={classes.waveformEditBoundingBox}>
-          <WaveformEdit
-            onSetTrimFrames={handleSetTrimFrames}
-            sample={sample}
-            previewAudio={audioBuffer}
-          />
+          <WaveformEdit onSetTrimFrames={handleSetTrimFrames} sample={sample} />
         </div>
-        {/* {' '}
-      <Button
-        type="button"
-        variant="secondary"
-        onClick={async () => {
-          if (wav) {
-            const blob = new Blob([wav], {
-              type: 'audio/x-wav',
-            });
-            downloadBlob(blob, `${sample.metadata.name}.wav`);
-          }
-        }}
-        disabled={!wav}
-      >
-        Download preview audio
-      </Button> */}{' '}
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          onClick={async () => {
-            const { sourceFileId, userFileInfo } = sample.metadata;
-            const data = await SampleContainer.getSourceFileData(sourceFileId);
-            const blob = new Blob([data], {
-              type: userFileInfo ? userFileInfo.type : 'audio/x-wav',
-            });
-            downloadBlob(
-              blob,
-              `${sample.metadata.name}${
-                userFileInfo ? userFileInfo.ext : '.wav'
-              }`
-            );
-          }}
-        >
-          Download original file
-        </Button>
-        <br />
-        <br />
+        <h4>Transfer</h4>
         <SlotNumberInput
           slotNumber={sample.metadata.slotNumber}
           onSlotNumberUpdate={handleSlotNumberUpdate}
@@ -161,12 +105,48 @@ const SampleDetailActions = React.memo(
    * @param {{
    *   sampleId: string;
    *   name: string;
+   *   sourceFileId: string;
+   *   userFileInfo: { type: string; ext: string } | null;
    *   onSampleUpdate: (id: string, update: import('./store').SampleMetadataUpdateArg) => void;
    *   onSampleDuplicate: (id: string) => void;
    *   onSampleDelete: (id: string) => void;
    * }} props
    */
-  ({ sampleId, name, onSampleUpdate, onSampleDuplicate, onSampleDelete }) => {
+  ({
+    sampleId,
+    name,
+    sourceFileId,
+    userFileInfo,
+    onSampleUpdate,
+    onSampleDuplicate,
+    onSampleDelete,
+  }) => {
+    const handleRename = useCallback(() => {
+      const newName = prompt(
+        `Choose a new name for the sample "${name}":`,
+        name
+      );
+      const newNameTrimmed = newName && newName.trim();
+      if (newNameTrimmed) {
+        onSampleUpdate(sampleId, { name: newNameTrimmed });
+      }
+    }, [name, sampleId, onSampleUpdate]);
+    const handleDuplicate = useCallback(
+      () => onSampleDuplicate(sampleId),
+      [sampleId, onSampleDuplicate]
+    );
+    const downloadSourceFile = useCallback(async () => {
+      const data = await SampleContainer.getSourceFileData(sourceFileId);
+      const blob = new Blob([data], {
+        type: userFileInfo ? userFileInfo.type : 'audio/x-wav',
+      });
+      downloadBlob(blob, `${name}${userFileInfo ? userFileInfo.ext : '.wav'}`);
+    }, [name, sourceFileId, userFileInfo]);
+    const handleDelete = useCallback(() => {
+      if (window.confirm(`Are you sure you want to delete ${name}?`)) {
+        onSampleDelete(sampleId);
+      }
+    }, [name, sampleId, onSampleDelete]);
     return (
       <DropdownButton
         className={classes.optionsButton}
@@ -174,33 +154,13 @@ const SampleDetailActions = React.memo(
         align="end"
         title="options"
       >
-        <Dropdown.Item
-          onClick={() => {
-            const newName = prompt(
-              `Choose a new name for the sample "${name}":`,
-              name
-            );
-            const newNameTrimmed = newName && newName.trim();
-            if (newNameTrimmed) {
-              onSampleUpdate(sampleId, { name: newNameTrimmed });
-            }
-          }}
-        >
-          Rename
-        </Dropdown.Item>
-        <Dropdown.Item onClick={() => onSampleDuplicate(sampleId)}>
-          Duplicate
+        <Dropdown.Item onClick={handleRename}>Rename</Dropdown.Item>
+        <Dropdown.Item onClick={handleDuplicate}>Duplicate</Dropdown.Item>
+        <Dropdown.Item onClick={downloadSourceFile}>
+          Download source audio
         </Dropdown.Item>
         <Dropdown.Divider />
-        <Dropdown.Item
-          onClick={() => {
-            if (window.confirm(`Are you sure you want to delete ${name}?`)) {
-              onSampleDelete(sampleId);
-            }
-          }}
-        >
-          Delete
-        </Dropdown.Item>
+        <Dropdown.Item onClick={handleDelete}>Delete</Dropdown.Item>
       </DropdownButton>
     );
   }

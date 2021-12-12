@@ -264,7 +264,7 @@ const SlotNumberInput = React.memo(
     }, [focusedDigit]);
     return (
       <>
-        <Form.Label>Destination</Form.Label>
+        <Form.Label>Choose destination</Form.Label>
         <br />
         <div className={classes.slotNumberRow}>
           <div className={classes.slotNumberContainer}>

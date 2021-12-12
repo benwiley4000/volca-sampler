@@ -9,6 +9,7 @@ import React, {
 import {
   findSamplePeak,
   getTrimmedView,
+  useTargetAudioForSample,
 } from './utils/audioData.js';
 import {
   formatTime,
@@ -25,14 +26,16 @@ const WaveformEdit = React.memo(
   /**
    * @param {{
    *   sample: import('./store').SampleContainer;
-   *   previewAudio: AudioBuffer | null;
    *   onSetTrimFrames: (updateTrimFrames: (old: [number, number]) => [number, number]) => void;
    * }} props
    */
-  function WaveformEdit({ sample: _sample, previewAudio, onSetTrimFrames }) {
+  function WaveformEdit({ sample: _sample, onSetTrimFrames }) {
+    const { wav: previewWavFile, audioBuffer: previewAudioBuffer } =
+      useTargetAudioForSample(_sample);
     const {
       sample: {
         metadata: {
+          name,
           trim: { frames: trimFrames },
           normalize,
         },
@@ -504,7 +507,7 @@ const WaveformEdit = React.memo(
       displayedTime,
       togglePlayback,
       stopPlayback,
-    } = useWaveformPlayback(previewAudio);
+    } = useWaveformPlayback(previewAudioBuffer);
 
     useEffect(() => {
       return stopPlayback;
@@ -538,6 +541,8 @@ const WaveformEdit = React.memo(
           isPlaybackActive={isPlaybackActive}
           playbackProgress={playbackProgress}
           displayedTime={displayedTime}
+          downloadFilename={`${name}.wav`}
+          wavFile={previewWavFile}
           togglePlayback={togglePlayback}
         />
         <div className={classes.cursor} />

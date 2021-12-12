@@ -57,9 +57,9 @@
     "express": "^4.17.1",
     "gh-pages": "^3.2.3",
     "mkdirp": "^1.0.4",
+    "node-sass": "^6.0.1",
     "pcm-convert": "^1.6.5",
     "puppeteer": "^10.4.0",
-    "sass": "^1.43.4",
     "tap-spec-emoji": "^6.1.2",
     "tape": "^5.3.1",
     "typescript": "^4.4.3"

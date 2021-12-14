@@ -5,7 +5,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Accordion, ListGroup, Offcanvas } from 'react-bootstrap';
+import { Accordion, Button, ListGroup, Offcanvas } from 'react-bootstrap';
 
 import Header from './Header.js';
 import SampleList from './SampleList.js';
@@ -223,20 +223,32 @@ function App() {
   return (
     <div>
       <Header onMenuOpen={handleMenuOpen} onHeaderClick={handleHeaderClick} />
-      <Offcanvas show={sidebarOpen} onHide={() => setSidebarOpen(false)}>
+      <Offcanvas
+        className={classes.sidebar}
+        show={sidebarOpen}
+        onHide={() => setSidebarOpen(false)}
+      >
         <Offcanvas.Header closeButton />
         <Offcanvas.Body>
-          <ListGroup>
-            <ListGroup.Item
-              as="button"
-              onClick={() => handleSampleSelect(null)}
+          <Button
+            className={classes.newSampleButton}
+            type="button"
+            variant="primary"
+            onClick={() => handleSampleSelect(null)}
             >
-              New Sample
-            </ListGroup.Item>
+              New sample
+              </Button>
+          <ListGroup>
             {loadingSamples ? 'Loading...' : null}
             {!loadingSamples && (
               <Accordion
-                defaultActiveKey={userSamples.size ? 'user' : 'factory'}
+                defaultActiveKey={
+                  focusedSampleId && factorySamples.has(focusedSampleId)
+                    ? 'factory'
+                    : userSamples.size
+                    ? 'user'
+                    : 'factory'
+                }
               >
                 <Accordion.Item eventKey="user">
                   <Accordion.Header>Your Samples</Accordion.Header>

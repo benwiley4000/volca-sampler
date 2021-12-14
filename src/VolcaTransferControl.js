@@ -182,6 +182,7 @@ function VolcaTransferControl({ sample }) {
         </Modal.Footer>
       </Modal>
       <Modal
+        onHide={transferInProgress ? undefined : handleCancel}
         show={syroTransferState !== 'idle'}
         aria-labelledby="transfer-modal"
       >

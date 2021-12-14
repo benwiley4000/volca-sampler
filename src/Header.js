@@ -44,6 +44,9 @@ const Header = React.memo(
               src="volca_sample.png"
               alt=""
             />
+            <div className={classes.tagline}>
+              <h2>for volca sample</h2>
+            </div>
           </h1>
         </Container>
         <svg width={0} height={0}>

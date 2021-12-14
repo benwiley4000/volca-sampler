@@ -15,6 +15,7 @@ import { SampleContainer } from './store.js';
 import QualityBitDepthControl from './QualityBitDepthControl.js';
 import SlotNumberInput from './SlotNumberInput.js';
 import { downloadBlob } from './utils/download.js';
+import { formatDate } from './utils/date.js';
 
 import classes from './SampleDetail.module.scss';
 
@@ -61,10 +62,10 @@ const SampleDetail = React.memo(
         </h2>
         <p>
           <strong>Sampled:</strong>{' '}
-          {new Date(sample.metadata.dateSampled).toLocaleString()}
+          {formatDate(new Date(sample.metadata.dateSampled))}
           <br />
           <strong>Updated:</strong>{' '}
-          {new Date(sample.metadata.dateModified).toLocaleString()}
+          {formatDate(new Date(sample.metadata.dateModified))}
         </p>
         <h4>Configure</h4>
         <QualityBitDepthControl

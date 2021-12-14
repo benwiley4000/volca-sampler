@@ -5,6 +5,7 @@ import WaveformReadonly from './WaveformReadonly.js';
 import VolcaTransferControl from './VolcaTransferControl.js';
 import { SampleContainer } from './store.js';
 import SlotNumberInput from './SlotNumberInput.js';
+import { formatDate } from './utils/date.js';
 
 import classes from './SampleDetail.module.scss';
 
@@ -45,7 +46,7 @@ function SampleDetailReadonly({ sample: readonlySample, onSampleDuplicate }) {
       <h2>{sample.metadata.name}</h2>
       <p>
         <strong>Sampled:</strong>{' '}
-        {new Date(sample.metadata.dateSampled).toLocaleString()}
+        {formatDate(new Date(sample.metadata.dateSampled))}
       </p>
       <Alert variant="secondary">
         <Alert.Heading>This is a factory sample.</Alert.Heading>

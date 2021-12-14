@@ -1,5 +1,10 @@
 const CracoEsbuildPlugin = require('craco-esbuild');
 
 module.exports = {
-  plugins: [{ plugin: CracoEsbuildPlugin }],
+  plugins: [
+    {
+      plugin: CracoEsbuildPlugin,
+      options: { enableSvgr: true },
+    },
+  ],
 };

@@ -1,8 +1,8 @@
 import React, { useCallback } from 'react';
 import { Button, OverlayTrigger, Tooltip } from 'react-bootstrap';
-import playIcon from '@material-design-icons/svg/filled/play_arrow.svg';
-import stopIcon from '@material-design-icons/svg/filled/stop.svg';
-import downloadIcon from '@material-design-icons/svg/filled/download.svg';
+import { ReactComponent as PlayIcon } from '@material-design-icons/svg/filled/play_arrow.svg';
+import { ReactComponent as StopIcon } from '@material-design-icons/svg/filled/stop.svg';
+import { ReactComponent as DownloadIcon } from '@material-design-icons/svg/filled/download.svg';
 
 import { downloadBlob } from './utils/download.js';
 
@@ -63,10 +63,7 @@ const WaveformPlayback = React.memo(
               variant="dark"
               onClick={(e) => togglePlayback(e.nativeEvent)}
             >
-              <img
-                src={isPlaybackActive ? stopIcon : playIcon}
-                alt="Play preview"
-              />
+              {isPlaybackActive ? <StopIcon /> : <PlayIcon />}
             </Button>
           </OverlayTrigger>
           {displayedTime && <span>{displayedTime}</span>}
@@ -88,7 +85,7 @@ const WaveformPlayback = React.memo(
             onClick={handleDownload}
             disabled={!wavFile}
           >
-            <img src={downloadIcon} alt="Download preview audio" />
+            <DownloadIcon />
           </Button>
         </OverlayTrigger>
       </>

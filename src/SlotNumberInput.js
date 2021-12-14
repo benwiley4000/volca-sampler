@@ -2,9 +2,9 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import SevenSegmentDisplay, { Digit } from 'seven-segment-display';
 import { Form, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { findDOMNode } from 'react-dom';
-import keyboardArrowUpIcon from '@material-design-icons/svg/filled/keyboard_arrow_up.svg';
-import keyboardArrowDownIcon from '@material-design-icons/svg/filled/keyboard_arrow_down.svg';
-import warningIcon from '@material-design-icons/svg/filled/warning.svg';
+import { ReactComponent as KeyboardArrowUpIcon } from '@material-design-icons/svg/filled/keyboard_arrow_up.svg';
+import { ReactComponent as KeyboardArrowDownIcon } from '@material-design-icons/svg/filled/keyboard_arrow_down.svg';
+import { ReactComponent as WarningIcon } from '@material-design-icons/svg/filled/warning.svg';
 
 import classes from './SlotNumberInput.module.scss';
 
@@ -270,13 +270,13 @@ const SlotNumberInput = React.memo(
           <div className={classes.slotNumberContainer}>
             <div className={classes.arrowControls}>
               <span onClick={() => handleArrowUp(2)}>
-                <img src={keyboardArrowUpIcon} alt="Increment 100" />
+                <KeyboardArrowUpIcon />
               </span>
               <span onClick={() => handleArrowUp(1)}>
-                <img src={keyboardArrowUpIcon} alt="Increment 10" />
+                <KeyboardArrowUpIcon />
               </span>
               <span onClick={() => handleArrowUp(0)}>
-                <img src={keyboardArrowUpIcon} alt="Increment 1" />
+                <KeyboardArrowUpIcon />
               </span>
             </div>
             <div
@@ -333,13 +333,13 @@ const SlotNumberInput = React.memo(
             </div>
             <div className={classes.arrowControls}>
               <span onClick={() => handleArrowDown(2)}>
-                <img src={keyboardArrowDownIcon} alt="Decrement 100" />
+                <KeyboardArrowDownIcon />
               </span>
               <span onClick={() => handleArrowDown(1)}>
-                <img src={keyboardArrowDownIcon} alt="Decrement 10" />
+                <KeyboardArrowDownIcon />
               </span>
               <span onClick={() => handleArrowDown(0)}>
-                <img src={keyboardArrowDownIcon} alt="Decrement 1" />
+                <KeyboardArrowDownIcon />
               </span>
             </div>
           </div>
@@ -353,11 +353,9 @@ const SlotNumberInput = React.memo(
                 </Tooltip>
               }
             >
-              <img
-                className={classes.warning}
-                src={warningIcon}
-                alt="destination-warning"
-              />
+              <span className={classes.warning}>
+                <WarningIcon />
+              </span>
             </OverlayTrigger>
           )}
         </div>

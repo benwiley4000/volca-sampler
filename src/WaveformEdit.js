@@ -1,10 +1,12 @@
 import React, {
+  useCallback,
   useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
   useState,
 } from 'react';
+import { Button, Form } from 'react-bootstrap';
 
 import {
   findSamplePeak,
@@ -13,12 +15,14 @@ import {
 } from './utils/audioData.js';
 import {
   formatTime,
+  getSamplePeaksForAudioBuffer,
   useLoadedSample,
   useWaveformInfo,
   useWaveformPlayback,
 } from './utils/waveform.js';
 import WaveformDisplay from './WaveformDisplay.js';
 import WaveformPlayback from './WaveformPlayback.js';
+import NormalizeSwitch from './NormalizeSwitch.js';
 
 import classes from './WaveformEdit.module.scss';
 
@@ -26,14 +30,15 @@ const WaveformEdit = React.memo(
   /**
    * @param {{
    *   sample: import('./store').SampleContainer;
-   *   onSetTrimFrames: (updateTrimFrames: (old: [number, number]) => [number, number]) => void;
+   *   onSampleUpdate: (id: string, update: import('./store').SampleMetadataUpdateArg) => void;
    * }} props
    */
-  function WaveformEdit({ sample: _sample, onSetTrimFrames }) {
+  function WaveformEdit({ sample: _sample, onSampleUpdate }) {
     const { wav: previewWavFile, audioBuffer: previewAudioBuffer } =
       useTargetAudioForSample(_sample);
     const {
       sample: {
+        id: loadedSampleId,
         metadata: {
           name,
           trim: { frames: trimFrames },
@@ -72,6 +77,48 @@ const WaveformEdit = React.memo(
       const factor = pixelWidth / monoSamples.length;
       return trimFramesLocal.trimFrames.map((frames) => frames * factor);
     }, [pixelWidth, monoSamples.length, trimFramesLocal.trimFrames]);
+
+    const trimFramesLocalRef = useRef(trimFramesLocal);
+    trimFramesLocalRef.current = trimFramesLocal;
+    const selectedSampleId = useRef(_sample.id);
+    selectedSampleId.current = _sample.id;
+    const lastCommitId = useRef(0);
+    const commitTrimFrames = useCallback(async () => {
+      if (!sourceAudioBuffer || loadedSampleId !== selectedSampleId.current) {
+        return;
+      }
+      let commitId = (lastCommitId.current = Math.random());
+      const { trimFrames } = trimFramesLocalRef.current;
+      const waveformPeaks = await getSamplePeaksForAudioBuffer(
+        sourceAudioBuffer,
+        trimFrames
+      );
+      if (lastCommitId.current !== commitId) {
+        return;
+      }
+      onSampleUpdate(loadedSampleId, {
+        trim: {
+          frames: trimFrames,
+          waveformPeaks,
+        },
+      });
+    }, [loadedSampleId, sourceAudioBuffer, onSampleUpdate]);
+
+    const awaitingCommit = useRef(false);
+    useEffect(() => {
+      if (awaitingCommit.current) {
+        commitTrimFrames();
+        awaitingCommit.current = false;
+      }
+    }, [trimFramesLocal, commitTrimFrames]);
+
+    const resetTrim = useCallback(() => {
+      awaitingCommit.current = true;
+      setTrimFramesLocal({
+        trimFrames: [0, 0],
+        cursor: null,
+      });
+    }, []);
 
     /** @type {React.RefObject<HTMLDivElement>} */
     const leftTrimHandleRef = useRef(null);
@@ -118,8 +165,6 @@ const WaveformEdit = React.memo(
         };
       }, [pixelWidth, monoSamples.length]);
 
-      const trimFramesLocalRef = useRef(trimFramesLocal);
-      trimFramesLocalRef.current = trimFramesLocal;
       useEffect(() => {
         if (
           !moveCallbackParams ||
@@ -171,7 +216,7 @@ const WaveformEdit = React.memo(
           }
           if (e.detail === 2) {
             // double-mousedown... select everything
-            onSetTrimFrames(() => [0, 0]);
+            resetTrim();
             return;
           }
           document.body.style.userSelect = 'none';
@@ -393,10 +438,10 @@ const WaveformEdit = React.memo(
               // think most users will do it in in under 250ms.
               trimFramesUpdateTimeout.current = setTimeout(() => {
                 trimFramesUpdateTimeout.current = null;
-                onSetTrimFrames(() => trimFramesLocalRef.current.trimFrames);
+                commitTrimFrames();
               }, 250);
             } else {
-              onSetTrimFrames(() => trimFramesLocalRef.current.trimFrames);
+              commitTrimFrames();
             }
             leftTrimLastX.current = null;
             rightTrimLastX.current = null;
@@ -415,7 +460,7 @@ const WaveformEdit = React.memo(
           if (trimFramesUpdateTimeout.current) {
             clearTimeout(trimFramesUpdateTimeout.current);
             trimFramesUpdateTimeout.current = null;
-            onSetTrimFrames(() => trimFramesLocalRef.current.trimFrames);
+            commitTrimFrames();
           }
         }
 
@@ -498,7 +543,7 @@ const WaveformEdit = React.memo(
             }
           );
         };
-      }, [moveCallbackParams, onSetTrimFrames]);
+      }, [moveCallbackParams, commitTrimFrames, resetTrim]);
     }
 
     const {
@@ -513,76 +558,95 @@ const WaveformEdit = React.memo(
       return stopPlayback;
     }, [_sample, trimFramesLocal, stopPlayback]);
 
+    const allAudioSelected = _sample.metadata.trim.frames.every((f) => f === 0);
+
     return (
-      <div
-        className={[
-          classes.waveformContainer,
-          isPlaybackActive ? classes.playbackActive : '',
-        ].join(' ')}
-        style={{
-          // @ts-ignore
-          '--cursor-display':
-            trimFramesLocal.cursor === null ? 'none' : 'unset',
-          // @ts-ignore
-          '--cursor-left': `${trimFramesLocal.cursor}px`,
-          // @ts-ignore
-          '--trim-pixels-left': `${trimPixels[0]}px`,
-          // @ts-ignore
-          '--trim-pixels-right': `${trimPixels[1]}px`,
-        }}
-      >
-        <WaveformDisplay
-          waveformRef={waveformRef}
-          peaks={peaks}
-          scaleCoefficient={normalize ? normalizationCoefficient : 1}
-          onResize={onResize}
-        />
-        <WaveformPlayback
-          isPlaybackActive={isPlaybackActive}
-          playbackProgress={playbackProgress}
-          displayedTime={displayedTime}
-          downloadFilename={`${name}.wav`}
-          wavFile={previewWavFile}
-          togglePlayback={togglePlayback}
-        />
-        <div className={classes.cursor} />
-        <div className={[classes.trim, classes.left].join(' ')}>
-          <div className={classes.bar} />
-          <div
-            ref={leftTrimHandleRef}
-            className={classes.handle}
-            tabIndex={0}
+      <>
+        <Form.Group className={classes.waveformAdjacentControls}>
+          <NormalizeSwitch
+            sampleId={_sample.id}
+            normalize={_sample.metadata.normalize}
+            onSampleUpdate={onSampleUpdate}
           />
-          {sourceAudioBuffer && Boolean(monoSamples.length) && (
-            <span className={classes.time}>
-              {formatTime(
-                (sourceAudioBuffer.duration * trimFramesLocal.trimFrames[0]) /
-                  monoSamples.length,
-                2
-              )}
-            </span>
-          )}
-        </div>
-        <div className={[classes.trim, classes.right].join(' ')}>
-          <div className={classes.bar} />
-          <div
-            ref={rightTrimHandleRef}
-            className={classes.handle}
-            tabIndex={0}
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={allAudioSelected}
+            onClick={resetTrim}
+          >
+            {allAudioSelected ? 'All audio selected' : 'Select all audio'}
+          </Button>
+        </Form.Group>
+        <div
+          className={[
+            classes.waveformContainer,
+            isPlaybackActive ? classes.playbackActive : '',
+          ].join(' ')}
+          style={{
+            // @ts-ignore
+            '--cursor-display':
+              trimFramesLocal.cursor === null ? 'none' : 'unset',
+            // @ts-ignore
+            '--cursor-left': `${trimFramesLocal.cursor}px`,
+            // @ts-ignore
+            '--trim-pixels-left': `${trimPixels[0]}px`,
+            // @ts-ignore
+            '--trim-pixels-right': `${trimPixels[1]}px`,
+          }}
+        >
+          <WaveformDisplay
+            waveformRef={waveformRef}
+            peaks={peaks}
+            scaleCoefficient={normalize ? normalizationCoefficient : 1}
+            onResize={onResize}
           />
-          {sourceAudioBuffer && Boolean(monoSamples.length) && (
-            <span className={classes.time}>
-              {formatTime(
-                (sourceAudioBuffer.duration *
-                  (monoSamples.length - 1 - trimFramesLocal.trimFrames[1])) /
-                  monoSamples.length,
-                2
-              )}
-            </span>
-          )}
+          <WaveformPlayback
+            isPlaybackActive={isPlaybackActive}
+            playbackProgress={playbackProgress}
+            displayedTime={displayedTime}
+            downloadFilename={`${name}.wav`}
+            wavFile={previewWavFile}
+            togglePlayback={togglePlayback}
+          />
+          <div className={classes.cursor} />
+          <div className={[classes.trim, classes.left].join(' ')}>
+            <div className={classes.bar} />
+            <div
+              ref={leftTrimHandleRef}
+              className={classes.handle}
+              tabIndex={0}
+            />
+            {sourceAudioBuffer && Boolean(monoSamples.length) && (
+              <span className={classes.time}>
+                {formatTime(
+                  (sourceAudioBuffer.duration * trimFramesLocal.trimFrames[0]) /
+                    monoSamples.length,
+                  2
+                )}
+              </span>
+            )}
+          </div>
+          <div className={[classes.trim, classes.right].join(' ')}>
+            <div className={classes.bar} />
+            <div
+              ref={rightTrimHandleRef}
+              className={classes.handle}
+              tabIndex={0}
+            />
+            {sourceAudioBuffer && Boolean(monoSamples.length) && (
+              <span className={classes.time}>
+                {formatTime(
+                  (sourceAudioBuffer.duration *
+                    (monoSamples.length - 1 - trimFramesLocal.trimFrames[1])) /
+                    monoSamples.length,
+                  2
+                )}
+              </span>
+            )}
+          </div>
+          <div ref={waveformOverlayRef} className={classes.waveformOverlay} />
         </div>
-        <div ref={waveformOverlayRef} className={classes.waveformOverlay} />
-      </div>
+      </>
     );
   }
 );

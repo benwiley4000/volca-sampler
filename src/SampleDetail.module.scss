@@ -12,6 +12,16 @@
   user-select: unset;
 }
 
+.deleteModalHeader {
+  justify-content: flex-start;
+
+  & > svg {
+    fill: var(--bs-primary);
+    margin-right: 1rem;
+    transform: scale(calc(2 / 1.5));
+  }
+}
+
 .normalizeControlWrapper {
   display: inline-block;
   margin-bottom: $spacer * 2;

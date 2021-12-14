@@ -239,6 +239,10 @@ export function useWaveformPlayback(audioBuffer) {
   useEffect(() => {
     /** @param {KeyboardEvent} e */
     function handleSpace(e) {
+      if (document.querySelector('[role="dialog"]')) {
+        // don't do this if a dialog is open
+        return;
+      }
       if (e.key === ' ') {
         e.preventDefault();
         togglePlayback(e);

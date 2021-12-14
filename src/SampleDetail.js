@@ -1,5 +1,13 @@
-import React, { useCallback } from 'react';
-import { Container, Dropdown, DropdownButton } from 'react-bootstrap';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  Container,
+  Dropdown,
+  DropdownButton,
+  Form,
+  Button,
+  Modal,
+} from 'react-bootstrap';
+import { ReactComponent as WarningIcon } from '@material-design-icons/svg/filled/warning.svg';
 
 import WaveformEdit from './WaveformEdit.js';
 import VolcaTransferControl from './VolcaTransferControl.js';
@@ -121,16 +129,31 @@ const SampleDetailActions = React.memo(
     onSampleDuplicate,
     onSampleDelete,
   }) => {
-    const handleRename = useCallback(() => {
-      const newName = prompt(
-        `Choose a new name for the sample "${name}":`,
-        name
-      );
-      const newNameTrimmed = newName && newName.trim();
-      if (newNameTrimmed) {
-        onSampleUpdate(sampleId, { name: newNameTrimmed });
+    const [deleting, setDeleting] = useState(false);
+    /** @type {React.RefObject<HTMLInputElement>} */
+    const renameInputRef = useRef(null);
+    const [editedName, setEditedName] = useState(name);
+    const [renaming, setRenaming] = useState(false);
+    useEffect(() => {
+      if (renaming) {
+        setEditedName(name);
+        if (renameInputRef.current) {
+          renameInputRef.current.select();
+        }
       }
-    }, [name, sampleId, onSampleUpdate]);
+    }, [renaming, name]);
+    const newNameTrimmed = editedName.trim();
+    /** @type {React.FormEventHandler} */
+    const handleRename = useCallback(
+      (e) => {
+        e.preventDefault();
+        if (newNameTrimmed) {
+          onSampleUpdate(sampleId, { name: newNameTrimmed });
+          setRenaming(false);
+        }
+      },
+      [newNameTrimmed, sampleId, onSampleUpdate]
+    );
     const handleDuplicate = useCallback(
       () => onSampleDuplicate(sampleId),
       [sampleId, onSampleDuplicate]
@@ -142,26 +165,94 @@ const SampleDetailActions = React.memo(
       });
       downloadBlob(blob, `${name}${userFileInfo ? userFileInfo.ext : '.wav'}`);
     }, [name, sourceFileId, userFileInfo]);
-    const handleDelete = useCallback(() => {
-      if (window.confirm(`Are you sure you want to delete ${name}?`)) {
+    /** @type {React.FormEventHandler} */
+    const handleDelete = useCallback(
+      (e) => {
+        e.preventDefault();
         onSampleDelete(sampleId);
-      }
-    }, [name, sampleId, onSampleDelete]);
+        setDeleting(false);
+      },
+      [sampleId, onSampleDelete]
+    );
     return (
-      <DropdownButton
-        className={classes.optionsButton}
-        variant="light"
-        align="end"
-        title="options"
-      >
-        <Dropdown.Item onClick={handleRename}>Rename</Dropdown.Item>
-        <Dropdown.Item onClick={handleDuplicate}>Duplicate</Dropdown.Item>
-        <Dropdown.Item onClick={downloadSourceFile}>
-          Download source audio
-        </Dropdown.Item>
-        <Dropdown.Divider />
-        <Dropdown.Item onClick={handleDelete}>Delete</Dropdown.Item>
-      </DropdownButton>
+      <>
+        <DropdownButton
+          className={classes.optionsButton}
+          variant="light"
+          align="end"
+          title="options"
+        >
+          <Dropdown.Item onClick={() => setRenaming(true)}>
+            Rename
+          </Dropdown.Item>
+          <Dropdown.Item onClick={handleDuplicate}>Duplicate</Dropdown.Item>
+          <Dropdown.Item onClick={downloadSourceFile}>
+            Download source audio
+          </Dropdown.Item>
+          <Dropdown.Divider />
+          <Dropdown.Item onClick={() => setDeleting(true)}>
+            Delete
+          </Dropdown.Item>
+        </DropdownButton>
+        <Modal show={renaming} aria-labelledby="rename-modal">
+          <Form onSubmit={handleRename}>
+            <Modal.Header>
+              <Modal.Title id="rename-modal">Renaming sample</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+              <p>
+                Choose a new name for the sample <strong>{name}</strong>:
+              </p>
+              <Form.Control
+                ref={renameInputRef}
+                defaultValue={name}
+                onChange={(e) => setEditedName(e.target.value)}
+              />
+            </Modal.Body>
+            <Modal.Footer>
+              <Button
+                type="button"
+                variant="light"
+                onClick={() => setRenaming(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                variant="primary"
+                disabled={!newNameTrimmed}
+              >
+                Rename
+              </Button>
+            </Modal.Footer>
+          </Form>
+        </Modal>
+        <Modal show={deleting} aria-labelledby="delete-modal">
+          <Form onSubmit={handleDelete}>
+            <Modal.Header className={classes.deleteModalHeader}>
+              <WarningIcon />
+              <Modal.Title id="delete-modal">Deleting sample</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+              <p>
+                Are you sure you want to delete <strong>{name}</strong>?
+              </p>
+            </Modal.Body>
+            <Modal.Footer>
+              <Button
+                type="button"
+                variant="light"
+                onClick={() => setDeleting(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary">
+                Delete
+              </Button>
+            </Modal.Footer>
+          </Form>
+        </Modal>
+      </>
     );
   }
 );

@@ -604,7 +604,7 @@ const WaveformEdit = React.memo(
             isPlaybackActive={isPlaybackActive}
             playbackProgress={playbackProgress}
             displayedTime={displayedTime}
-            downloadFilename={`${name}.wav`}
+            downloadFilename={`${name}.volcasample.wav`}
             wavFile={previewWavFile}
             togglePlayback={togglePlayback}
           />

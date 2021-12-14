@@ -454,7 +454,7 @@ function SampleRecord({ onRecordFinish }) {
   }, [showingCaptureConfig, refreshCaptureDevices]);
 
   return (
-    <Container fluid="sm">
+    <Container fluid="sm" className={classes.container}>
       {accessState === 'denied' ? (
         <p>
           Looks like you didn't grant access to your audio input device. Please
@@ -480,7 +480,7 @@ function SampleRecord({ onRecordFinish }) {
           </Button>
         </p>
       ) : (
-        <div>
+        <>
           <h2>Send a new sound to your volca sample!</h2>
           {showSilenceWarning && (
             <div className={classes.alertContainer}>
@@ -502,7 +502,7 @@ function SampleRecord({ onRecordFinish }) {
           <Button
             className={classes.recordButton}
             type="button"
-            variant={captureState === 'capturing' ? 'danger' : 'primary'}
+            variant="primary"
             size="lg"
             style={{ width: 250 }}
             onClick={
@@ -526,8 +526,6 @@ function SampleRecord({ onRecordFinish }) {
           </Button>
           {['capturing', 'finalizing'].includes(captureState) ? (
             <>
-              <br />
-              <br />
               <Button
                 style={{ width: 250 }}
                 size="sm"
@@ -540,7 +538,6 @@ function SampleRecord({ onRecordFinish }) {
             </>
           ) : (
             <>
-              <br />
               <Button
                 style={{ width: 250 }}
                 type="button"
@@ -600,15 +597,13 @@ function SampleRecord({ onRecordFinish }) {
                       ))}
                     </Form.Select>
                   </Form.Group>
-                  <br />
                 </div>
               </Collapse>
             </>
           )}
-        </div>
+        </>
       )}
       {(captureState === 'error' && recordingError) || null}
-      <br />
       <Button
         style={{ width: 250 }}
         type="button"

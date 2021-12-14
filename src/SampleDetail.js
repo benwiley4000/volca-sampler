@@ -13,7 +13,6 @@ import WaveformEdit from './WaveformEdit.js';
 import VolcaTransferControl from './VolcaTransferControl.js';
 import { SampleContainer } from './store.js';
 import QualityBitDepthControl from './QualityBitDepthControl.js';
-import NormalizeSwitch from './NormalizeSwitch.js';
 import SlotNumberInput from './SlotNumberInput.js';
 import { downloadBlob } from './utils/download.js';
 
@@ -34,22 +33,6 @@ const SampleDetail = React.memo(
     onSampleDuplicate,
     onSampleDelete,
   }) {
-    const sampleId = sample && sample.id;
-    /**
-     * @type {(updateTrimFrames: (old: [number, number]) => [number, number]) => void}
-     */
-    const handleSetTrimFrames = useCallback(
-      (updateTrimFrames) =>
-        sampleId &&
-        onSampleUpdate(sampleId, (metadata) => ({
-          ...metadata,
-          trim: {
-            ...metadata.trim,
-            frames: updateTrimFrames(metadata.trim.frames),
-          },
-        })),
-      [sampleId, onSampleUpdate]
-    );
     /**
      * @type {(update: number | ((slotNumber: number) => number)) => void}
      */
@@ -89,14 +72,7 @@ const SampleDetail = React.memo(
           qualityBitDepth={sample.metadata.qualityBitDepth}
           onSampleUpdate={onSampleUpdate}
         />
-        <NormalizeSwitch
-          sampleId={sample.id}
-          normalize={sample.metadata.normalize}
-          onSampleUpdate={onSampleUpdate}
-        />
-        <div className={classes.waveformEditBoundingBox}>
-          <WaveformEdit onSetTrimFrames={handleSetTrimFrames} sample={sample} />
-        </div>
+        <WaveformEdit sample={sample} onSampleUpdate={onSampleUpdate} />
         <h4>Transfer</h4>
         <SlotNumberInput
           slotNumber={sample.metadata.slotNumber}

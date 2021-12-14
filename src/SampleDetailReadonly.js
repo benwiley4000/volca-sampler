@@ -65,9 +65,7 @@ function SampleDetailReadonly({ sample: readonlySample, onSampleDuplicate }) {
         </p>
       </Alert>
       <h4>Preview</h4>
-      <div className={classes.waveformReadonlyBoundingBox}>
-        <WaveformReadonly sample={sample} />
-      </div>
+      <WaveformReadonly sample={sample} />
       <h4>Transfer</h4>
       <SlotNumberInput
         slotNumber={sample.metadata.slotNumber}

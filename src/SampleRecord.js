@@ -5,7 +5,14 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Form, Button, Collapse, Alert, Container } from 'react-bootstrap';
+import {
+  Form,
+  Button,
+  Collapse,
+  Alert,
+  Container,
+  Nav,
+} from 'react-bootstrap';
 
 import {
   findSamplePeak,
@@ -573,30 +580,31 @@ function SampleRecord({ onRecordFinish }) {
                   </Form.Group>
                   <Form.Group>
                     <Form.Label>Input channels</Form.Label>
-                    <Form.Select
-                      style={{ width: 250 }}
-                      value={selectedChannelCount}
-                      onChange={(e) =>
-                        setSelectedChannelCount(Number(e.target.value))
-                      }
+                    <Nav
+                      variant="pills"
+                      defaultActiveKey={selectedChannelCount}
+                      onSelect={count => setSelectedChannelCount(Number(count))}
                     >
                       {[1, 2].map((count) => (
-                        <option
-                          key={count}
-                          value={count}
-                          disabled={
-                            !captureDevices ||
-                            !captureDevices.has(selectedCaptureDeviceId) ||
-                            /** @type {import('./utils/recording').AudioDeviceInfoContainer} */ (
-                              captureDevices.get(selectedCaptureDeviceId)
-                            ).channelsAvailable < count
-                          }
-                        >
-                          {count === 1 ? 'Mono' : 'Stereo (summed to mono)'}
-                        </option>
+                        <Nav.Item key={count}>
+                          <Nav.Link
+                            className={classes.channelOption}
+                            eventKey={count}
+                            disabled={
+                              !captureDevices ||
+                              !captureDevices.has(selectedCaptureDeviceId) ||
+                              /** @type {import('./utils/recording').AudioDeviceInfoContainer} */ (
+                                captureDevices.get(selectedCaptureDeviceId)
+                              ).channelsAvailable < count
+                            }
+                          >
+                            {count === 1 ? 'Mono' : 'Stereo'}
+                          </Nav.Link>
+                        </Nav.Item>
                       ))}
-                    </Form.Select>
+                    </Nav>
                   </Form.Group>
+                  <p className="small">Stereo input will be summed to mono.</p>
                 </div>
               </Collapse>
             </>

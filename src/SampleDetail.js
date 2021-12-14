@@ -155,9 +155,9 @@ const SampleDetailActions = React.memo(
       <>
         <DropdownButton
           className={classes.optionsButton}
-          variant="light"
+          variant="secondary"
           align="end"
-          title="options"
+          title="Actions"
         >
           <Dropdown.Item onClick={() => setRenaming(true)}>
             Rename

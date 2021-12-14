@@ -15,7 +15,7 @@ import { SampleContainer } from './store.js';
 import QualityBitDepthControl from './QualityBitDepthControl.js';
 import SlotNumberInput from './SlotNumberInput.js';
 import { downloadBlob } from './utils/download.js';
-import { formatDate } from './utils/date.js';
+import { formatDate } from './utils/datetime.js';
 
 import classes from './SampleDetail.module.scss';
 
@@ -171,7 +171,11 @@ const SampleDetailActions = React.memo(
             Delete
           </Dropdown.Item>
         </DropdownButton>
-        <Modal show={renaming} aria-labelledby="rename-modal">
+        <Modal
+          onHide={() => setRenaming(false)}
+          show={renaming}
+          aria-labelledby="rename-modal"
+        >
           <Form onSubmit={handleRename}>
             <Modal.Header>
               <Modal.Title id="rename-modal">Renaming sample</Modal.Title>
@@ -204,7 +208,11 @@ const SampleDetailActions = React.memo(
             </Modal.Footer>
           </Form>
         </Modal>
-        <Modal show={deleting} aria-labelledby="delete-modal">
+        <Modal
+          onHide={() => setDeleting(false)}
+          show={deleting}
+          aria-labelledby="delete-modal"
+        >
           <Form onSubmit={handleDelete}>
             <Modal.Header className={classes.deleteModalHeader}>
               <WarningIcon />
@@ -212,7 +220,8 @@ const SampleDetailActions = React.memo(
             </Modal.Header>
             <Modal.Body>
               <p>
-                Are you sure you want to delete <strong>{name}</strong>?
+                Are you sure you want to delete <strong>{name}</strong>? This
+                can't be undone.
               </p>
             </Modal.Body>
             <Modal.Footer>

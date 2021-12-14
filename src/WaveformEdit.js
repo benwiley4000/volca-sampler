@@ -14,12 +14,12 @@ import {
   useTargetAudioForSample,
 } from './utils/audioData.js';
 import {
-  formatTime,
   getSamplePeaksForAudioBuffer,
   useLoadedSample,
   useWaveformInfo,
   useWaveformPlayback,
 } from './utils/waveform.js';
+import { formatShortTime } from './utils/datetime.js';
 import WaveformDisplay from './WaveformDisplay.js';
 import WaveformPlayback from './WaveformPlayback.js';
 import NormalizeSwitch from './NormalizeSwitch.js';
@@ -618,7 +618,7 @@ const WaveformEdit = React.memo(
             />
             {sourceAudioBuffer && Boolean(monoSamples.length) && (
               <span className={classes.time}>
-                {formatTime(
+                {formatShortTime(
                   (sourceAudioBuffer.duration * trimFramesLocal.trimFrames[0]) /
                     monoSamples.length,
                   2
@@ -635,7 +635,7 @@ const WaveformEdit = React.memo(
             />
             {sourceAudioBuffer && Boolean(monoSamples.length) && (
               <span className={classes.time}>
-                {formatTime(
+                {formatShortTime(
                   (sourceAudioBuffer.duration *
                     (monoSamples.length - 1 - trimFramesLocal.trimFrames[1])) /
                     monoSamples.length,

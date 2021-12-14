@@ -1,11 +1,18 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Button, ProgressBar } from 'react-bootstrap';
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
+import { Button, Modal, ProgressBar } from 'react-bootstrap';
 
 import {
   getAudioBufferForAudioFileData,
   useAudioPlaybackContext,
 } from './utils/audioData.js';
 import { getSampleBuffer } from './utils/syro.js';
+import { formatLongTime } from './utils/datetime';
 
 import classes from './VolcaTransferControl.module.scss';
 
@@ -16,9 +23,15 @@ import classes from './VolcaTransferControl.module.scss';
  */
 function VolcaTransferControl({ sample }) {
   const [syroProgress, setSyroProgress] = useState(0);
+  const [preTransferModalOpen, setPreTransferModalOpen] = useState(false);
   const [syroTransferState, setSyroTransferState] = useState(
     /** @type {'idle' | 'transferring' | 'error'} */ ('idle')
   );
+  useLayoutEffect(() => {
+    if (syroTransferState === 'transferring') {
+      setPreTransferModalOpen(false);
+    }
+  }, [syroTransferState]);
   const [syroAudioBuffer, setSyroAudioBuffer] = useState(
     /** @type {AudioBuffer | Error | null} */ (null)
   );
@@ -94,7 +107,6 @@ function VolcaTransferControl({ sample }) {
         const stopPlayback = playAudioBuffer(syroAudioBuffer, {
           onTimeUpdate: (currentTime) =>
             setSyroProgress(currentTime / syroAudioBuffer.duration),
-          onEnded: () => setSyroTransferState('idle'),
         });
         stop.current = () => {
           stopPlayback();
@@ -108,41 +120,136 @@ function VolcaTransferControl({ sample }) {
     [playAudioBuffer, syroAudioBuffer]
   );
   const handleCancel = useCallback(() => stop.current(), []);
+  const transferInProgress = syroProgress < 1;
   return (
     <>
       <Button
         className={classes.transferButton}
         type="button"
         variant="primary"
-        onClick={handleTransfer}
-        disabled={
-          syroAudioBuffer instanceof Error ||
-          syroTransferState === 'transferring'
-        }
+        onClick={() => setPreTransferModalOpen(true)}
       >
         Transfer to volca sample
       </Button>
-      <br />
-      {syroAudioBuffer &&
-      syroTransferState === 'idle' ? null : syroTransferState === 'error' ? (
-        'Error transferring'
-      ) : (
-        <>
+      <Modal
+        onHide={() => setPreTransferModalOpen(false)}
+        className={classes.preTransferModal}
+        show={preTransferModalOpen}
+        aria-labelledby="pre-transfer-modal"
+      >
+        <Modal.Header>
+          <Modal.Title id="pre-transfer-modal">
+            Connect volca sample before continuing
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <figure>
+            <img src="connection.png" alt="" />
+            <figcaption className="small">
+              Source:{' '}
+              <a
+                href="https://github.com/korginc/volcasample#6-transferring-syrostream-to-your-volca-sample"
+                target="_blank"
+                rel="noreferrer"
+              >
+                KORG
+              </a>
+            </figcaption>
+          </figure>
           <p>
-            {!syroAudioBuffer
-              ? 'Preparing sample for transfer...'
-              : syroAudioBuffer instanceof AudioBuffer
-              ? 'Transferring to volca sample...'
-              : 'Error preparing sample for transfer'}
+            Make sure your <strong>headphone output</strong> is connected to the
+            volca sample's <strong>SYNC IN</strong> and adjust your output
+            volume to a high (but not overdriven) level. Your volca wants to
+            hear this, but you don't.
           </p>
-          <ProgressBar now={100 * syroProgress} />
-          <br />
-          <Button type="button" variant="light" onClick={handleCancel}>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            type="button"
+            variant="light"
+            onClick={() => setPreTransferModalOpen(false)}
+          >
             Cancel
           </Button>
-        </>
-      )}
-      <br />
+          <Button
+            type="button"
+            variant="primary"
+            disabled={!(syroAudioBuffer instanceof AudioBuffer)}
+            onClick={handleTransfer}
+          >
+            Transfer now
+          </Button>
+        </Modal.Footer>
+      </Modal>
+      <Modal
+        show={syroTransferState !== 'idle'}
+        aria-labelledby="transfer-modal"
+      >
+        <Modal.Header>
+          <Modal.Title id="transfer-modal">
+            {transferInProgress
+              ? 'Sample transfer in progress'
+              : 'Sample transfer complete'}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {syroTransferState === 'error' ? (
+            <p>
+              Something unexpected happening while transferring (on our end).
+            </p>
+          ) : transferInProgress ? (
+            <>
+              <p>
+                Transferring <strong>{sample.metadata.name}</strong> to slot{' '}
+                <strong>{sample.metadata.slotNumber}</strong> on your your volca
+                sample. Don't disconnect anything.
+              </p>
+              <ProgressBar
+                striped
+                animated
+                variant="primary"
+                now={100 * syroProgress}
+              />
+              <div className={classes.progressAnnotation}>
+                {syroAudioBuffer instanceof AudioBuffer &&
+                  formatLongTime(
+                    syroAudioBuffer.duration * (1 - syroProgress)
+                  )}{' '}
+                remaining
+              </div>
+            </>
+          ) : (
+            <>
+              <p>
+                The sample <strong>{sample.metadata.name}</strong> was
+                transferred to slot{' '}
+                <strong>{sample.metadata.slotNumber}</strong> on your volca
+                sample. Press the <strong>[FUNC]</strong> button to finish.
+              </p>
+              <p>
+                If everything worked, you will see <strong>[End]</strong> on the
+                volca sample's display. If you see <strong>[Err]</strong> on the
+                display, the transfer failed. Normally this means you need to
+                either adjust your output volume or free up some memory on the
+                volca sample. For more info, check out this{' '}
+                <a
+                  href="https://www.korg.com/products/dj/volca_sample/faq.php"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  FAQ
+                </a>{' '}
+                from KORG.
+              </p>
+            </>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button type="button" variant="primary" onClick={handleCancel}>
+            {transferInProgress ? 'Cancel' : 'Done'}
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </>
   );
 }

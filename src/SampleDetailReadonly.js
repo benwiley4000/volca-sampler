@@ -5,7 +5,7 @@ import WaveformReadonly from './WaveformReadonly.js';
 import VolcaTransferControl from './VolcaTransferControl.js';
 import { SampleContainer } from './store.js';
 import SlotNumberInput from './SlotNumberInput.js';
-import { formatDate } from './utils/date.js';
+import { formatDate } from './utils/datetime.js';
 
 import classes from './SampleDetail.module.scss';
 

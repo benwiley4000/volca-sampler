@@ -3,6 +3,7 @@
 }
 
 .listItem {
+  overflow: hidden;
   &:hover {
     background-color: var(--bs-gray-100);
   }
@@ -14,5 +15,9 @@
     .listWaveform {
       filter: unset;
     }
+  }
+
+  label {
+    white-space: nowrap;
   }
 }

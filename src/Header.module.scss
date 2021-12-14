@@ -28,6 +28,7 @@
   display: inline-flex;
   align-items: center;
   cursor: pointer;
+  position: relative;
 
   @media screen and (min-width: 350px) {
     font-size: 2.5rem;
@@ -120,5 +121,33 @@
   display: none;
   @media screen and (min-width: 455px) {
     display: unset;
+  }
+}
+
+.tagline {
+  position: absolute;
+  will-change: top, left, transform;
+  transition: top 0.1s, left 0.1s, transform 0.1s;
+  transform: scale(0);
+  top: 1.2em;
+  left: 0.7em;
+
+  @media screen and (max-width: 529px) and (max-height: 499px) {
+    font-size: 1.8rem;
+    h2 {
+      font-size: inherit;
+    }
+  }
+
+  @media screen and (min-width: 530px) and (min-height: 500px) {
+    transform: scale(1);
+    top: 1.1em;
+    left: 0.5em;
+  }
+
+  .title:hover & {
+    transform: scale(1);
+    top: 1.2em;
+    left: 0.7em;
   }
 }

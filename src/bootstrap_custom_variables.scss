@@ -4,6 +4,7 @@ $progress-bar-transition: none; // progress is incorrect otherwise
 $list-group-active-color: var(--bs-dark);
 $accordion-button-active-bg: transparent;
 $list-group-active-bg: rgba($primary, 0.04);
+$font-family-sans-serif: var(--body-font-family);
 $form-switch-width: 2.5em;
 .form-switch > .form-check-input {
   height: 1.25em;

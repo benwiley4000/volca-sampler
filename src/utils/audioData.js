@@ -205,9 +205,10 @@ export async function getSourceAudioBuffer(sourceFileId, shouldClampValues) {
  * Given sample container, returns a 16-bit mono wav file with the sample's
  * metadata parameters applied
  * @param {import('../store').SampleContainer} sampleContainer
+ * @param {boolean} [forPreview]
  * @returns {Promise<{ data: Uint8Array; sampleRate: number }>}
  */
-export async function getTargetWavForSample(sampleContainer) {
+export async function getTargetWavForSample(sampleContainer, forPreview) {
   const {
     qualityBitDepth,
     sourceFileId,
@@ -235,7 +236,7 @@ export async function getTargetWavForSample(sampleContainer) {
   if (normalize) {
     normalizeSamples(samples);
   }
-  if (qualityBitDepth < 16) {
+  if (forPreview && qualityBitDepth < 16) {
     applyQualityBitDepthToSamples(samples, qualityBitDepth);
   }
   const samples16 = convertSamplesTo16Bit(samples);
@@ -270,7 +271,7 @@ export function useTargetAudioForSample(sampleContainer) {
   useEffect(() => {
     setTargetWav(null);
     let cancelled = false;
-    getTargetWavForSample(sampleContainer).then(({ data }) => {
+    getTargetWavForSample(sampleContainer, true).then(({ data }) => {
       if (!cancelled) {
         setTargetWav(data);
       }

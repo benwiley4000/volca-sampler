@@ -19,6 +19,7 @@ import {
 } from './store.js';
 import { getSamplePeaksForAudioBuffer } from './utils/waveform.js';
 import { getAudioBufferForAudioFileData } from './utils/audioData.js';
+import { newSampleName } from './utils/words.js';
 
 import classes from './App.module.scss';
 
@@ -109,7 +110,7 @@ function App() {
         name = userFile.name;
       }
     } else {
-      name = 'New sample';
+      name = newSampleName();
     }
     const sample = new SampleContainer.Mutable({
       name,

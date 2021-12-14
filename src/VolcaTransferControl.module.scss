@@ -10,3 +10,19 @@
     width: unset;
   }
 }
+
+.preTransferModal {
+  figure {
+    text-align: center;
+
+    img {
+      max-width: 100%;
+      max-height: 400px;
+    }
+  }
+}
+
+.progressAnnotation {
+  display: flex;
+  justify-content: flex-end;
+}

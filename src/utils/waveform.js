@@ -6,6 +6,7 @@ import {
   findSamplePeak,
   useAudioPlaybackContext,
 } from './audioData.js';
+import { formatShortTime } from './datetime.js';
 
 export const GROUP_PIXEL_WIDTH = 6;
 
@@ -168,14 +169,6 @@ export function useWaveformInfo(sourceAudioBuffer) {
 }
 
 /**
- * @param {number} sec
- * @param {number} decimals
- */
-export function formatTime(sec, decimals) {
-  return `0:${sec.toFixed(decimals).padStart(3 + decimals, '0')}`;
-}
-
-/**
  * @param {AudioBuffer | null} audioBuffer
  */
 export function useWaveformPlayback(audioBuffer) {
@@ -200,8 +193,8 @@ export function useWaveformPlayback(audioBuffer) {
     if (audioBuffer) {
       setDisplayedTime(
         isPlaybackActive
-          ? formatTime(playbackProgress * audioBuffer.duration, 1)
-          : formatTime(audioBuffer.duration, 1)
+          ? formatShortTime(playbackProgress * audioBuffer.duration, 1)
+          : formatShortTime(audioBuffer.duration, 1)
       );
     }
   }, [audioBuffer, isPlaybackActive, playbackProgress]);

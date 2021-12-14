@@ -1,7 +1,10 @@
 import React, { useLayoutEffect, useRef, useState } from 'react';
+import { Form } from 'react-bootstrap';
 import { styled } from 'tonami';
 import { WAVEFORM_CACHED_WIDTH } from './utils/waveform';
 import WaveformDisplay from './WaveformDisplay';
+
+import classes from './SampleList.module.scss';
 
 const WaveformContainer = styled.div({
   width: `${WAVEFORM_CACHED_WIDTH}px`,
@@ -56,15 +59,21 @@ const SampleListItem = React.memo(
     }, []);
     return (
       <li
-        className={['list-group-item', selected ? 'active' : ''].join(' ')}
+        className={[
+          'list-group-item',
+          classes.listItem,
+          selected ? `active ${classes.active}` : '',
+        ].join(' ')}
         onClick={() => onSampleSelect(sample.id)}
       >
-        <div>{sample.metadata.name}</div>
-        <WaveformContainer ref={waveformContainerRef}>
-          {waveformSeen && (
-            <WaveformDisplay peaks={sample.metadata.trim.waveformPeaks} />
-          )}
-        </WaveformContainer>
+        <Form.Label>{sample.metadata.name}</Form.Label>
+        <div className={classes.listWaveform}>
+          <WaveformContainer ref={waveformContainerRef}>
+            {waveformSeen && (
+              <WaveformDisplay peaks={sample.metadata.trim.waveformPeaks} />
+            )}
+          </WaveformContainer>
+        </div>
       </li>
     );
   }

@@ -1,0 +1,18 @@
+.listWaveform {
+  filter: var(--grayscale-filter);
+}
+
+.listItem {
+  &:hover {
+    background-color: var(--bs-gray-100);
+  }
+
+  &:hover,
+  &.active {
+    color: var(--bs-primary);
+
+    .listWaveform {
+      filter: unset;
+    }
+  }
+}

@@ -12,6 +12,7 @@ import SampleList from './SampleList.js';
 import SampleDetail from './SampleDetail.js';
 import SampleDetailReadonly from './SampleDetailReadonly.js';
 import SampleRecord from './SampleRecord.js';
+import Footer from './Footer.js';
 import {
   getFactorySamples,
   SampleContainer,
@@ -235,9 +236,9 @@ function App() {
             type="button"
             variant="primary"
             onClick={() => handleSampleSelect(null)}
-            >
-              New sample
-              </Button>
+          >
+            New sample
+          </Button>
           <ListGroup>
             {loadingSamples ? 'Loading...' : null}
             {!loadingSamples && (
@@ -305,6 +306,7 @@ function App() {
           )}
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

@@ -20,7 +20,7 @@ const Footer = React.memo(function Footer() {
         <strong>KORG Inc.</strong>
         , who is not affiliated with this app.
         <br />
-        Source code for this app can be found on{' '}
+        The source code can be found on{' '}
         <a
           href="https://github.com/benwiley4000/volca-sampler"
           target="_blank"

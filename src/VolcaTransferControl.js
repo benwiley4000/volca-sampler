@@ -233,7 +233,9 @@ function VolcaTransferControl({ sample }) {
                 If you see <strong>[Err]</strong> on the display, the transfer
                 failed. Normally this means you need to adjust your output
                 volume or free up some memory on the volca sample, then try
-                again. For more info, check out this{' '}
+                again. If your volume is at a decent level but the transfer
+                failed, you might also want to try a new audio cable. For more
+                info, check out this{' '}
                 <a
                   href="https://www.korg.com/products/dj/volca_sample/faq.php"
                   target="_blank"

@@ -120,7 +120,8 @@ function VolcaTransferControl({ sample }) {
     [playAudioBuffer, syroAudioBuffer]
   );
   const handleCancel = useCallback(() => stop.current(), []);
-  const transferInProgress = syroProgress < 1;
+  const transferInProgress =
+    syroTransferState === 'transferring' && syroProgress < 1;
   return (
     <>
       <Button
@@ -181,15 +182,47 @@ function VolcaTransferControl({ sample }) {
           </Button>
         </Modal.Footer>
       </Modal>
-      <Modal
-        onHide={transferInProgress ? undefined : handleCancel}
-        show={syroTransferState !== 'idle'}
-        aria-labelledby="transfer-modal"
-      >
+      <Modal show={transferInProgress} aria-labelledby="transfer-modal">
         <Modal.Header>
           <Modal.Title id="transfer-modal">
-            {transferInProgress
-              ? 'Sample transfer in progress'
+            Sample transfer in progress
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>
+            Transferring <strong>{sample.metadata.name}</strong> to slot{' '}
+            <strong>{sample.metadata.slotNumber}</strong> on your your volca
+            sample. Don't disconnect anything.
+          </p>
+          <ProgressBar
+            striped
+            animated
+            variant="primary"
+            now={100 * syroProgress}
+          />
+          <div className={classes.progressAnnotation}>
+            {syroAudioBuffer instanceof AudioBuffer &&
+              formatLongTime(
+                syroAudioBuffer.duration * (1 - syroProgress)
+              )}{' '}
+            remaining
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button type="button" variant="primary" onClick={handleCancel}>
+            Cancel
+          </Button>
+        </Modal.Footer>
+      </Modal>
+      <Modal
+        onHide={handleCancel}
+        show={syroTransferState !== 'idle' && !transferInProgress}
+        aria-labelledby="after-transfer-modal"
+      >
+        <Modal.Header>
+          <Modal.Title id="after-transfer-modal">
+            {syroTransferState === 'error'
+              ? 'Error transferring'
               : 'Sample transfer complete'}
           </Modal.Title>
         </Modal.Header>
@@ -198,27 +231,6 @@ function VolcaTransferControl({ sample }) {
             <p>
               Something unexpected happening while transferring (on our end).
             </p>
-          ) : transferInProgress ? (
-            <>
-              <p>
-                Transferring <strong>{sample.metadata.name}</strong> to slot{' '}
-                <strong>{sample.metadata.slotNumber}</strong> on your your volca
-                sample. Don't disconnect anything.
-              </p>
-              <ProgressBar
-                striped
-                animated
-                variant="primary"
-                now={100 * syroProgress}
-              />
-              <div className={classes.progressAnnotation}>
-                {syroAudioBuffer instanceof AudioBuffer &&
-                  formatLongTime(
-                    syroAudioBuffer.duration * (1 - syroProgress)
-                  )}{' '}
-                remaining
-              </div>
-            </>
           ) : (
             <>
               <p>
@@ -250,7 +262,7 @@ function VolcaTransferControl({ sample }) {
         </Modal.Body>
         <Modal.Footer>
           <Button type="button" variant="primary" onClick={handleCancel}>
-            {transferInProgress ? 'Cancel' : 'Done'}
+            Done
           </Button>
         </Modal.Footer>
       </Modal>

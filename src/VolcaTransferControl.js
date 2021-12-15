@@ -225,14 +225,15 @@ function VolcaTransferControl({ sample }) {
                 The sample <strong>{sample.metadata.name}</strong> was
                 transferred to slot{' '}
                 <strong>{sample.metadata.slotNumber}</strong> on your volca
-                sample. Press the <strong>[FUNC]</strong> button to finish.
+                sample. If everything worked, you will see{' '}
+                <strong>[End]</strong> on the volca sample's display. Press the{' '}
+                <strong>[FUNC]</strong> button to finish.
               </p>
               <p>
-                If everything worked, you will see <strong>[End]</strong> on the
-                volca sample's display. If you see <strong>[Err]</strong> on the
-                display, the transfer failed. Normally this means you need to
-                either adjust your output volume or free up some memory on the
-                volca sample. For more info, check out this{' '}
+                If you see <strong>[Err]</strong> on the display, the transfer
+                failed. Normally this means you need to adjust your output
+                volume or free up some memory on the volca sample, then try
+                again. For more info, check out this{' '}
                 <a
                   href="https://www.korg.com/products/dj/volca_sample/faq.php"
                   target="_blank"

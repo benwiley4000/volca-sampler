@@ -5,10 +5,9 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Accordion, Button, ListGroup, Offcanvas } from 'react-bootstrap';
 
 import Header from './Header.js';
-import SampleList from './SampleList.js';
+import SampleMenu from './SampleMenu.js';
 import SampleDetail from './SampleDetail.js';
 import SampleDetailReadonly from './SampleDetailReadonly.js';
 import SampleRecord from './SampleRecord.js';
@@ -221,92 +220,39 @@ function App() {
   const handleMenuOpen = useCallback(() => setSidebarOpen(true), []);
   const handleHeaderClick = useCallback(() => setFocusedSampleId(null), []);
 
+  const sample = focusedSampleId ? allSamples.get(focusedSampleId) : null;
+
   return (
-    <div>
+    <div className={classes.app}>
       <Header onMenuOpen={handleMenuOpen} onHeaderClick={handleHeaderClick} />
-      <Offcanvas
-        className={classes.sidebar}
-        show={sidebarOpen}
-        onHide={() => setSidebarOpen(false)}
-      >
-        <Offcanvas.Header closeButton />
-        <Offcanvas.Body>
-          <Button
-            className={classes.newSampleButton}
-            type="button"
-            variant="primary"
-            onClick={() => handleSampleSelect(null)}
-          >
-            New sample
-          </Button>
-          <ListGroup>
-            {loadingSamples ? 'Loading...' : null}
-            {!loadingSamples && (
-              <Accordion
-                defaultActiveKey={
-                  focusedSampleId && factorySamples.has(focusedSampleId)
-                    ? 'factory'
-                    : userSamples.size
-                    ? 'user'
-                    : 'factory'
-                }
-              >
-                <Accordion.Item eventKey="user">
-                  <Accordion.Header>Your Samples</Accordion.Header>
-                  <Accordion.Body style={{ padding: 0 }}>
-                    <SampleList
-                      samples={userSamples}
-                      selectedSampleId={focusedSampleId}
-                      onSampleSelect={handleSampleSelect}
-                    />
-                  </Accordion.Body>
-                </Accordion.Item>
-                <Accordion.Item eventKey="factory">
-                  <Accordion.Header>Factory Samples</Accordion.Header>
-                  <Accordion.Body style={{ padding: 0 }}>
-                    <SampleList
-                      samples={factorySamples}
-                      selectedSampleId={focusedSampleId}
-                      onSampleSelect={handleSampleSelect}
-                    />
-                  </Accordion.Body>
-                </Accordion.Item>
-              </Accordion>
-            )}
-          </ListGroup>
-        </Offcanvas.Body>
-      </Offcanvas>
+      <SampleMenu
+        open={sidebarOpen}
+        loading={loadingSamples}
+        focusedSampleId={focusedSampleId}
+        userSamples={userSamples}
+        factorySamples={factorySamples}
+        setOpen={setSidebarOpen}
+        onSampleSelect={handleSampleSelect}
+      />
       <div className={classes.mainLayout}>
-        <div className={classes.focusedSampleContainer}>
-          {focusedSampleId &&
-            (() => {
-              const sample = allSamples.get(focusedSampleId) || null;
-              if (!sample) {
-                return null;
-              }
-              if (sample instanceof SampleContainer.Mutable) {
-                return (
-                  <SampleDetail
-                    sample={sample}
-                    onSampleUpdate={handleSampleUpdate}
-                    onSampleDuplicate={handleSampleDuplicate}
-                    onSampleDelete={handleSampleDelete}
-                  />
-                );
-              }
-              return (
-                <SampleDetailReadonly
-                  sample={sample}
-                  onSampleDuplicate={handleSampleDuplicate}
-                />
-              );
-            })()}
-          {!focusedSampleId && (
-            <SampleRecord onRecordFinish={handleRecordFinish} />
-          )}
-        </div>
+        {!sample ? null : sample instanceof SampleContainer.Mutable ? (
+          <SampleDetail
+            sample={sample}
+            onSampleUpdate={handleSampleUpdate}
+            onSampleDuplicate={handleSampleDuplicate}
+            onSampleDelete={handleSampleDelete}
+          />
+        ) : (
+          <SampleDetailReadonly
+            sample={sample}
+            onSampleDuplicate={handleSampleDuplicate}
+          />
+        )}
+        {!focusedSampleId && (
+          <SampleRecord onRecordFinish={handleRecordFinish} />
+        )}
       </div>
-      <Footer />
+      {(!focusedSampleId || sample) && <Footer />}
     </div>
   );
 }

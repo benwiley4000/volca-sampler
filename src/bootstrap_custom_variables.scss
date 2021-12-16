@@ -17,6 +17,16 @@ $form-switch-width: 2.5em;
     color: var(--bs-dark);
   }
 }
+.modal,
+.modal-dialog,
+.modal-content {
+  display: flex !important;
+  flex-direction: column;
+  min-height: 0;
+}
+.modal-body {
+  overflow-y: auto;
+}
 
 :root {
   --bs-primary-darkened: #{darken($primary, 20%)};

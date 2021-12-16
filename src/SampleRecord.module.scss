@@ -20,7 +20,7 @@
     text-align: center;
   }
 
-  button,
+  & > button,
   select {
     width: 250px;
   }
@@ -32,7 +32,7 @@
   }
 
   @include media-breakpoint-up(sm) {
-    button,
+    & > button,
     select {
       width: 300px;
     }

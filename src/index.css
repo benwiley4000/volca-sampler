@@ -32,3 +32,8 @@ code {
 * {
   box-sizing: border-box;
 }
+
+/* by default the z-index is 1000 which is insane */
+.range-slider__tooltip {
+  z-index: 1 !important;
+}

@@ -511,7 +511,6 @@ function SampleRecord({ onRecordFinish }) {
             type="button"
             variant="primary"
             size="lg"
-            style={{ width: 250 }}
             onClick={
               captureState === 'capturing'
                 ? () => stopRecording()
@@ -534,7 +533,6 @@ function SampleRecord({ onRecordFinish }) {
           {['capturing', 'finalizing'].includes(captureState) ? (
             <>
               <Button
-                style={{ width: 250 }}
                 size="sm"
                 type="button"
                 variant="secondary"
@@ -546,7 +544,6 @@ function SampleRecord({ onRecordFinish }) {
           ) : (
             <>
               <Button
-                style={{ width: 250 }}
                 type="button"
                 variant="light"
                 size="sm"
@@ -559,7 +556,6 @@ function SampleRecord({ onRecordFinish }) {
                   <Form.Group>
                     <Form.Label>Capture Device</Form.Label>
                     <Form.Select
-                      style={{ width: 250 }}
                       value={selectedCaptureDeviceId}
                       onChange={(e) =>
                         setSelectedCaptureDeviceId(e.target.value)
@@ -613,7 +609,6 @@ function SampleRecord({ onRecordFinish }) {
       )}
       {(captureState === 'error' && recordingError) || null}
       <Button
-        style={{ width: 250 }}
         type="button"
         variant="secondary"
         onClick={(e) => {

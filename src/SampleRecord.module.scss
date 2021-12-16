@@ -1,6 +1,12 @@
+@import 'bootstrap_custom_variables';
+@import '~bootstrap/scss/functions';
+@import '~bootstrap/scss/mixins';
+@import '~bootstrap/scss/variables';
+
 .container {
   display: flex;
   flex-direction: column;
+  align-items: center;
 
   & > * {
     margin-bottom: 1rem;
@@ -8,6 +14,40 @@
 
   select {
     margin-bottom: 1rem;
+  }
+
+  h2 {
+    text-align: center;
+  }
+
+  button,
+  select {
+    width: 250px;
+  }
+
+  .channelOption {
+    width: 125px;
+    text-align: center;
+    margin-bottom: 0.5rem;
+  }
+
+  @include media-breakpoint-up(sm) {
+    button,
+    select {
+      width: 300px;
+    }
+
+    .channelOption {
+      width: 150px;
+    }
+  }
+
+  @include media-breakpoint-up(md) {
+    align-items: unset;
+
+    h2 {
+      text-align: unset;
+    }
   }
 }
 
@@ -51,10 +91,4 @@
     height: 100%;
     image-rendering: pixelated;
   }
-}
-
-.channelOption {
-  width: 125px;
-  text-align: center;
-  margin-bottom: 0.5rem;
 }

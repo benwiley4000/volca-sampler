@@ -3,10 +3,17 @@
 @import '~bootstrap/scss/variables';
 @import '~bootstrap/scss/mixins';
 
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
 .mainLayout {
+  flex-grow: 1;
   padding: 2rem;
   display: flex;
-  height: 100%;
+  flex-direction: column;
   @include media-breakpoint-up(sm) {
     // set horizontal padding to match title bar
     padding-left: 4rem;
@@ -21,8 +28,4 @@
 .newSampleButton {
   width: 100%;
   margin-bottom: 2rem;
-}
-
-.focusedSampleContainer {
-  flex-grow: 1;
 }

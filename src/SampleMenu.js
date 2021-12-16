@@ -26,6 +26,8 @@ const SampleMenu = React.memo(
     setOpen,
     onSampleSelect,
   }) {
+    /** @type {React.RefObject<HTMLInputElement>} */
+    const searchFieldRef = useRef(null);
     const [search, setSearch] = useState('');
     const searchTerm = search.trim().toLowerCase();
     const getDefaultKey = () =>
@@ -40,7 +42,11 @@ const SampleMenu = React.memo(
       setTimeout(() => (activeKey.current = getDefaultKey()), 300);
     }
     useEffect(() => {
-      if (!open) {
+      if (open) {
+        if (searchFieldRef.current) {
+          searchFieldRef.current.focus();
+        }
+      } else {
         // set timeout to let transition complete
         setTimeout(() => setSearch(''), 300);
       }
@@ -62,6 +68,7 @@ const SampleMenu = React.memo(
             New sample
           </Button>
           <Form.Control
+            ref={searchFieldRef}
             className={classes.search}
             placeholder="Search for a sample..."
             value={search}

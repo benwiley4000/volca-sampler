@@ -11,9 +11,9 @@ const Header = React.memo(
   function Header({ onMenuOpen, onHeaderClick }) {
     return (
       <div className={classes.titleBar}>
-        <span className={classes.menuIcon} onClick={onMenuOpen}>
+        <button className={classes.menuIcon} onClick={onMenuOpen}>
           ☰
-        </span>
+        </button>
         <Container fluid="sm" className={classes.titleContainer}>
           <h1 className={classes.title} onClick={onHeaderClick}>
             <span className={classes.titleText} data-text="Volca Sample">

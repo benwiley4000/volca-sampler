@@ -9,11 +9,9 @@ const Footer = React.memo(function Footer() {
     <>
       <p className={classes.footer}>
         <strong>Volca Sampler</strong> is an app created by{' '}
-        <strong>
-          <a href="https://benwiley.org" target="_blank" rel="noreferrer">
-            Ben Wiley
-          </a>
-        </strong>
+        <a href="https://benwiley.org" target="_blank" rel="noreferrer">
+          Ben Wiley
+        </a>
         .
         <br />
         <strong>volca sample</strong> is a trademark of{' '}
@@ -49,15 +47,13 @@ const Footer = React.memo(function Footer() {
         <Modal.Body>
           <p>
             This app relies on the open-source{' '}
-            <strong>
-              <a
-                href="https://github.com/korginc/volcasample"
-                target="_blank"
-                rel="noreferrer"
-              >
-                SYRO
-              </a>
-            </strong>{' '}
+            <a
+              href="https://github.com/korginc/volcasample"
+              target="_blank"
+              rel="noreferrer"
+            >
+              SYRO
+            </a>{' '}
             library published by <strong>KORG Inc.</strong>, which encodes audio
             data to be sent to the <strong>volca sample</strong>.
           </p>

@@ -5,14 +5,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import {
-  Form,
-  Button,
-  Collapse,
-  Alert,
-  Container,
-  Nav,
-} from 'react-bootstrap';
+import { Form, Button, Collapse, Alert, Container, Nav } from 'react-bootstrap';
 
 import {
   findSamplePeak,
@@ -579,11 +572,14 @@ function SampleRecord({ onRecordFinish }) {
                     <Nav
                       variant="pills"
                       defaultActiveKey={selectedChannelCount}
-                      onSelect={count => setSelectedChannelCount(Number(count))}
+                      onSelect={(count) =>
+                        setSelectedChannelCount(Number(count))
+                      }
                     >
                       {[1, 2].map((count) => (
                         <Nav.Item key={count}>
                           <Nav.Link
+                            as="button"
                             className={classes.channelOption}
                             eventKey={count}
                             disabled={

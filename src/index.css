@@ -37,3 +37,8 @@ code {
 .range-slider__tooltip {
   z-index: 1 !important;
 }
+
+a,
+.btn-link {
+  font-weight: bold !important;
+}

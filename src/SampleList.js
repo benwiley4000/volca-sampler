@@ -58,7 +58,7 @@ const SampleListItem = React.memo(
       return () => observer.disconnect();
     }, []);
     return (
-      <li
+      <button
         className={[
           'list-group-item',
           classes.listItem,
@@ -74,7 +74,7 @@ const SampleListItem = React.memo(
             )}
           </WaveformContainer>
         </div>
-      </li>
+      </button>
     );
   }
 );
@@ -83,10 +83,11 @@ const SampleListItem = React.memo(
  * @param {{
  *   samples: Map<string, import('./store').SampleContainer>;
  *   selectedSampleId: string | null;
+ *   search: string;
  *   onSampleSelect: (id: string) => void;
  * }} props
  */
-function SampleList({ samples, selectedSampleId, onSampleSelect }) {
+function SampleList({ samples, selectedSampleId, search, onSampleSelect }) {
   const elementsMap = useRef(
     /** @type {WeakMap<import('./store').SampleContainer, React.ReactElement>} */ (
       new WeakMap()
@@ -107,7 +108,9 @@ function SampleList({ samples, selectedSampleId, onSampleSelect }) {
       );
       elementsMap.current.set(sample, element);
     }
-    elementsList.push(element);
+    if (!search || sample.metadata.name.toLowerCase().includes(search)) {
+      elementsList.push(element);
+    }
   }
   return <ul className="list-group list-group-flush">{elementsList}</ul>;
 }

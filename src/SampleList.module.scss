@@ -1,20 +1,33 @@
+@import 'bootstrap_custom_variables';
+@import '~bootstrap/scss/functions';
+@import '~bootstrap/scss/variables';
+
 .listWaveform {
   filter: var(--grayscale-filter);
 }
 
 .listItem {
+  text-align: left;
   overflow: hidden;
   &:hover {
     background-color: var(--bs-gray-100);
   }
 
   &:hover,
-  &.active {
+  &.active,
+  &:focus,
+  &:focus-visible {
     color: var(--bs-primary);
 
     .listWaveform {
       filter: unset;
     }
+  }
+
+  &:focus,
+  &:focus-visible {
+    outline: $input-btn-focus-width solid $input-btn-focus-color;
+    outline-offset: -$input-btn-focus-width;
   }
 
   label {

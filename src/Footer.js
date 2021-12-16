@@ -62,57 +62,67 @@ const Footer = React.memo(function Footer() {
             data to be sent to the <strong>volca sample</strong>.
           </p>
           <h3>FAQ</h3>
-          <p>
-            <strong>Q: What platforms are supported?</strong>
-          </p>
-          <p>
-            A: Anything that can run a modern web browser with a headphone
-            output should work (PC, Mac, Linux, Android, iOS).
-          </p>
-          <p>
-            <strong>Q: Is this compatible with the volca sample2?</strong>
-          </p>
-          <p>
-            A: Yes, but only the stereo cable connection is supported. There are
-            no plans for supporting the USB connection.
-          </p>
-          <p>
-            <strong>Q: Where will my samples be uploaded?</strong>
-          </p>
-          <p>
-            A: Nowhere. Everything is kept on your device, in your web browser's
-            application files. SYRO (the code that converts your samples into
-            something the volca sample can understand) is actually running
-            inside your web browser.
-          </p>
-          <p>
-            <strong>Q: Can I export my samples to another device?</strong>
-          </p>
-          <p>
-            A: You can download the audio for any sample (either the source
-            audio or the optimized audio with your settings applied), but we
-            don't currently support any type of bulk export of your samples and
-            configurations. Some type of peer-to-peer syncing support might be
-            coming in the near future if there's interest from users.
-          </p>
-          <p>
-            <strong>Q: Where can I contact you?</strong>
-          </p>
-          <p>
-            A:{' '}
-            <a href="mailto:therealbenwiley@gmail.com?subject=Volca Sampler">
-              Email
-            </a>{' '}
-            to get in touch with me personally, or{' '}
-            <a
-              href="https://github.com/benwiley4000/volca-sampler/issues"
-              target="_blank"
-              rel="noreferrer"
-            >
-              GitHub
-            </a>{' '}
-            to file an issue with this App.
-          </p>
+          <div className={classes.qAndA}>
+            <p>
+              <strong>Q: What platforms are supported?</strong>
+            </p>
+            <p>
+              A: Anything that can run a modern web browser with a headphone
+              output should work (PC, Mac, Linux, Android, iOS).
+            </p>
+          </div>
+          <div className={classes.qAndA}>
+            <p>
+              <strong>Q: Is this compatible with the volca sample2?</strong>
+            </p>
+            <p>
+              A: Yes, but only the stereo cable connection is supported. There
+              are no plans for supporting the USB connection.
+            </p>
+          </div>
+          <div className={classes.qAndA}>
+            <p>
+              <strong>Q: Where will my samples be uploaded?</strong>
+            </p>
+            <p>
+              A: Nowhere. Everything is kept on your device, in your web
+              browser's application files. SYRO (the code that converts your
+              samples into something the volca sample can understand) is
+              actually running inside your web browser.
+            </p>
+          </div>
+          <div className={classes.qAndA}>
+            <p>
+              <strong>Q: Can I export my samples to another device?</strong>
+            </p>
+            <p>
+              A: You can download the audio for any sample (either the source
+              audio or the optimized audio with your settings applied), but we
+              don't currently support any type of bulk export of your samples
+              and configurations. Some type of peer-to-peer syncing support
+              might be coming in the near future if there's interest from users.
+            </p>
+          </div>
+          <div className={classes.qAndA}>
+            <p>
+              <strong>Q: Where can I contact you?</strong>
+            </p>
+            <p>
+              A:{' '}
+              <a href="mailto:therealbenwiley@gmail.com?subject=Volca Sampler">
+                Email
+              </a>{' '}
+              to get in touch with me personally, or{' '}
+              <a
+                href="https://github.com/benwiley4000/volca-sampler/issues"
+                target="_blank"
+                rel="noreferrer"
+              >
+                GitHub
+              </a>{' '}
+              to file an issue with this app.
+            </p>
+          </div>
           <h3>Licenses</h3>
           <h5>SYRO</h5>
           <p>Copyright (c) 2014, KORG Inc. All rights reserved.</p>

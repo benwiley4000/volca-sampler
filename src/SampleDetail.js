@@ -48,7 +48,7 @@ const SampleDetail = React.memo(
     );
     return (
       <Container fluid="sm">
-        <h2>
+        <h2 className={classes.sampleName}>
           {sample.metadata.name}
           <SampleDetailActions
             sampleId={sample.id}
@@ -171,6 +171,32 @@ const SampleDetailActions = React.memo(
             Delete
           </Dropdown.Item>
         </DropdownButton>
+        <div className={classes.actionButtons}>
+          <Button
+            type="button"
+            variant="outline-secondary"
+            onClick={() => setRenaming(true)}
+          >
+            Rename
+          </Button>
+          <Button type="button" variant="outline-secondary" onClick={handleDuplicate}>
+            Duplicate
+          </Button>
+          <Button
+            type="button"
+            variant="outline-secondary"
+            onClick={downloadSourceFile}
+          >
+            Download source audio
+          </Button>
+          <Button
+            type="button"
+            variant="outline-primary"
+            onClick={() => setDeleting(true)}
+          >
+            Delete
+          </Button>
+        </div>
         <Modal
           onHide={() => setRenaming(false)}
           show={renaming}

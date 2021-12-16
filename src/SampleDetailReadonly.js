@@ -43,7 +43,7 @@ function SampleDetailReadonly({ sample: readonlySample, onSampleDuplicate }) {
 
   return (
     <Container fluid="sm">
-      <h2>{sample.metadata.name}</h2>
+      <h2 className={classes.sampleName}>{sample.metadata.name}</h2>
       <p>
         <strong>Sampled:</strong>{' '}
         {formatDate(new Date(sample.metadata.dateSampled))}

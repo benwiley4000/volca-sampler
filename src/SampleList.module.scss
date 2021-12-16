@@ -6,7 +6,8 @@
   filter: var(--grayscale-filter);
 }
 
-.listItem {
+button.listItem {
+  cursor: initial;
   text-align: left;
   overflow: hidden;
   &:hover {

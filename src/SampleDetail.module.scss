@@ -1,9 +1,38 @@
 @import 'bootstrap_custom_variables';
 @import '~bootstrap/scss/functions';
+@import '~bootstrap/scss/mixins';
 @import '~bootstrap/scss/variables';
 
+.sampleName {
+  display: flex;
+  justify-content: space-between;
+
+  @include media-breakpoint-up(md) {
+    flex-direction: column;
+  }
+}
+
 .optionsButton {
-  float: right;
+  margin-left: 1rem;
+  font-family: var(--body-font-family);
+
+  @include media-breakpoint-up(md) {
+    display: none;
+  }
+}
+
+.actionButtons {
+  font-family: var(--body-font-family);
+  margin: 1rem 0 0.5rem;
+  display: none;
+
+  button:not(:last-child) {
+    margin-right: 0.5rem;
+  }
+
+  @include media-breakpoint-up(md) {
+    display: unset;
+  }
 }
 
 .duplicateButtonLink {

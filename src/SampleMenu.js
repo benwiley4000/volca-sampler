@@ -1,5 +1,5 @@
-import React from 'react';
-import { Accordion, Button, ListGroup, Offcanvas } from 'react-bootstrap';
+import React, { useEffect, useRef, useState } from 'react';
+import { Accordion, Button, Form, ListGroup, Offcanvas } from 'react-bootstrap';
 
 import SampleList from './SampleList';
 
@@ -26,6 +26,25 @@ const SampleMenu = React.memo(
     setOpen,
     onSampleSelect,
   }) {
+    const [search, setSearch] = useState('');
+    const searchTerm = search.trim().toLowerCase();
+    const getDefaultKey = () =>
+      focusedSampleId && factorySamples.has(focusedSampleId)
+        ? 'factory'
+        : userSamples.size
+        ? 'user'
+        : 'factory';
+    const activeKey = useRef(getDefaultKey());
+    if (!open) {
+      // set timeout to let transition complete
+      setTimeout(() => (activeKey.current = getDefaultKey()), 300);
+    }
+    useEffect(() => {
+      if (!open) {
+        // set timeout to let transition complete
+        setTimeout(() => setSearch(''), 300);
+      }
+    }, [open]);
     return (
       <Offcanvas
         className={classes.sidebar}
@@ -33,7 +52,7 @@ const SampleMenu = React.memo(
         onHide={() => setOpen(false)}
       >
         <Offcanvas.Header closeButton />
-        <Offcanvas.Body>
+        <Offcanvas.Body className={classes.offcanvasBody}>
           <Button
             className={classes.newSampleButton}
             type="button"
@@ -42,33 +61,42 @@ const SampleMenu = React.memo(
           >
             New sample
           </Button>
-          <ListGroup>
+          <Form.Control
+            className={classes.search}
+            placeholder="Search for a sample..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <ListGroup className={classes.listGroup}>
             {!loading && (
               <Accordion
-                defaultActiveKey={
-                  focusedSampleId && factorySamples.has(focusedSampleId)
-                    ? 'factory'
-                    : userSamples.size
-                    ? 'user'
-                    : 'factory'
-                }
+                defaultActiveKey={activeKey.current}
+                className={classes.accordion}
               >
-                <Accordion.Item eventKey="user">
+                <Accordion.Item
+                  eventKey={searchTerm ? activeKey.current : 'user'}
+                  className={classes.accordionItem}
+                >
                   <Accordion.Header>Your Samples</Accordion.Header>
                   <Accordion.Body className={classes.accordionBody}>
                     <SampleList
                       samples={userSamples}
                       selectedSampleId={focusedSampleId}
+                      search={searchTerm}
                       onSampleSelect={onSampleSelect}
                     />
                   </Accordion.Body>
                 </Accordion.Item>
-                <Accordion.Item eventKey="factory">
+                <Accordion.Item
+                  eventKey={searchTerm ? activeKey.current : 'factory'}
+                  className={classes.accordionItem}
+                >
                   <Accordion.Header>Factory Samples</Accordion.Header>
                   <Accordion.Body className={classes.accordionBody}>
                     <SampleList
                       samples={factorySamples}
                       selectedSampleId={focusedSampleId}
+                      search={searchTerm}
                       onSampleSelect={onSampleSelect}
                     />
                   </Accordion.Body>

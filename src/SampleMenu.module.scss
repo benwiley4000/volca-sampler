@@ -4,7 +4,38 @@
 
 .newSampleButton {
   width: 100%;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
+}
+
+.search {
+  margin-bottom: 1rem;
+}
+
+.offcanvasBody {
+  display: flex;
+  flex-direction: column;
+}
+
+.listGroup {
+  min-height: 0;
+}
+
+.accordion {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.accordionItem {
+  display: flex;
+  flex-direction: column;
+  // 1px greater than the height.. TODO: find a way not to hardcode ?
+  min-height: 54px;
+
+  // accordion collapse wraps body.. not directly accessible
+  & > div {
+    overflow-y: auto;
+  }
 }
 
 .accordionBody {

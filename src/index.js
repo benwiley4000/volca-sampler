@@ -12,6 +12,15 @@ if (!Blob.prototype.arrayBuffer) {
     return new Response(this).arrayBuffer();
   };
 }
+// Firefox leaves TouchEvent undefined if the device
+// doesn't support touch.
+// We don't actually need to instantiate the class but we will need to check
+// if an event is a TouchEvent.
+if (typeof TouchEvent === 'undefined') {
+  window.TouchEvent = /** @type {typeof TouchEvent} */ (
+    class TouchEvent extends Event {}
+  );
+}
 
 ReactDOM.render(
   <React.StrictMode>

@@ -124,14 +124,23 @@ function VolcaTransferControl({ sample }) {
     syroTransferState === 'transferring' && syroProgress < 1;
   return (
     <>
-      <Button
-        className={classes.transferButton}
-        type="button"
-        variant="primary"
-        onClick={() => setPreTransferModalOpen(true)}
-      >
-        Transfer to volca sample
-      </Button>
+      <div className={classes.transferButtonContainer}>
+        <Button
+          className={classes.transferButton}
+          type="button"
+          variant="primary"
+          onClick={() => setPreTransferModalOpen(true)}
+        >
+          Transfer to volca sample
+        </Button>
+        <p className={[classes.transferTime, 'small'].join(' ')}>
+          {syroAudioBuffer instanceof AudioBuffer
+            ? `Time to transfer: ${formatLongTime(syroAudioBuffer.duration)}`
+            : syroAudioBuffer instanceof Error
+            ? 'Error preparing sample for transfer'
+            : 'Computing time to transfer...'}
+        </p>
+      </div>
       <Modal
         onHide={() => setPreTransferModalOpen(false)}
         className={classes.preTransferModal}

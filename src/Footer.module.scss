@@ -1,7 +1,14 @@
 .footer {
-  width: 100%;
   text-align: center;
-  padding: 4rem 1rem 1rem;
+  padding: 4rem 1rem 0;
+
+  p {
+    margin-bottom: 0.25rem;
+  }
+
+  button {
+    padding: 0;
+  }
 }
 
 .qAndA > p:first-child {

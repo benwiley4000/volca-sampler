@@ -1,5 +1,5 @@
 .sidebar {
-  width: 330px;
+  width: var(--sidebar-width);
 }
 
 .newSampleButton {
@@ -23,14 +23,47 @@
 .accordion {
   display: flex;
   flex-direction: column;
-  min-height: 0;
+  // 1px greater than the height.. TODO: find a way not to hardcode ?
+  --accordion-header-min-height: 55px;
+  --empty-message-height: 48px;
+  --result-height: 89px;
+  --results-count: 0; // specified by javascript
+  --accordion-open: 0; // 0 or 1, specified by javascript
+  --min-height: min(
+    calc(
+      /* we always need to see the accordion header */
+      var(--accordion-header-min-height) +
+        (
+          /* multiply results height by 0 or 1 for closed / open */
+          var(--accordion-open) *
+            max(
+              var(--empty-message-height),
+              calc(var(--results-count) * var(--result-height))
+            ) - 1px
+        )
+    ),
+    calc(100vh / 3)
+  );
+  min-height: var(--min-height);
+
+  &:not(:first-child) > .accordionItem {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+
+  &:not(:last-child) {
+    margin-bottom: -1px;
+    & > .accordionItem {
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+    }
+  }
 }
 
 .accordionItem {
   display: flex;
   flex-direction: column;
-  // 1px greater than the height.. TODO: find a way not to hardcode ?
-  min-height: 54px;
+  min-height: var(--min-height);
 
   // accordion collapse wraps body.. not directly accessible
   & > div {

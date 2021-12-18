@@ -1,0 +1,8 @@
+.sidebar {
+  width: var(--sidebar-width);
+}
+
+.offcanvasBody {
+  display: flex;
+  flex-direction: column;
+}

@@ -7,27 +7,29 @@ const Footer = React.memo(function Footer() {
   const [showingModal, setShowingModal] = useState(false);
   return (
     <>
-      <p className={classes.footer}>
-        <strong>Volca Sampler</strong> is an app created by{' '}
-        <a href="https://benwiley.org" target="_blank" rel="noreferrer">
-          Ben Wiley
-        </a>
-        .
-        <br />
-        <strong>volca sample</strong> is a trademark of{' '}
-        <strong>KORG Inc.</strong>
-        , who is not affiliated with this app.
-        <br />
-        The source code can be found on{' '}
-        <a
-          href="https://github.com/benwiley4000/volca-sampler"
-          target="_blank"
-          rel="noreferrer"
-        >
-          GitHub
-        </a>
-        .
-        <br />
+      <div className={classes.footer}>
+        <p>
+          <strong>Volca Sampler</strong> is an app created by{' '}
+          <a href="https://benwiley.org" target="_blank" rel="noreferrer">
+            Ben Wiley
+          </a>
+          .
+        </p>
+        <p>
+          <strong>volca sample</strong> is a trademark of{' '}
+          <strong>KORG Inc.</strong>, who is not affiliated with this app.
+        </p>
+        <p>
+          The source code can be found on{' '}
+          <a
+            href="https://github.com/benwiley4000/volca-sampler"
+            target="_blank"
+            rel="noreferrer"
+          >
+            GitHub
+          </a>
+          .
+        </p>
         <Button
           type="button"
           variant="link"
@@ -35,7 +37,7 @@ const Footer = React.memo(function Footer() {
         >
           FAQ / Licenses
         </Button>
-      </p>
+      </div>
       <Modal
         show={showingModal}
         aria-labelledby="faq-modal"

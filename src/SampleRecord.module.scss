@@ -42,7 +42,7 @@
     }
   }
 
-  @include media-breakpoint-up(md) {
+  @include media-breakpoint-up(lg) {
     align-items: unset;
 
     h2 {

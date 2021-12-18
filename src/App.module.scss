@@ -9,6 +9,30 @@
   min-height: 100%;
 }
 
+.persistentSidebar {
+  width: var(--sidebar-width);
+  padding: 1rem;
+  padding-top: 2rem;
+  display: none;
+  flex-direction: column;
+  position: fixed;
+  top: 89px;
+  left: 0;
+  bottom: 0;
+
+  @include media-breakpoint-up(md) {
+    display: flex;
+  }
+
+  @media screen and (min-height: 500px) {
+    top: 102px;
+  }
+
+  @media screen and (min-height: 600px) {
+    top: 115px;
+  }
+}
+
 .mainLayout {
   flex-grow: 1;
   padding: 2rem;
@@ -19,13 +43,12 @@
     padding-left: 4rem;
     padding-right: 4rem;
   }
-}
 
-.sidebar {
-  width: 330px;
-}
+  @include media-breakpoint-up(md) {
+    margin-left: var(--sidebar-width);
+  }
 
-.newSampleButton {
-  width: 100%;
-  margin-bottom: 2rem;
+  & > [class*='container'] {
+    flex-grow: 1;
+  }
 }

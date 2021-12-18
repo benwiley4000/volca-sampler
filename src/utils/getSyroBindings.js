@@ -47,7 +47,7 @@ export async function getSyroBindings() {
       /**
        * @type {SyroBindings}
        */
-      return {
+      const bindings = {
         prepareSampleBufferFromWavData: Module.cwrap(
           'prepareSampleBufferFromWavData',
           'number',
@@ -97,5 +97,6 @@ export async function getSyroBindings() {
           return Module.HEAP8.buffer;
         },
       };
+      return bindings;
     }));
 }

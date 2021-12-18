@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Form } from 'react-bootstrap';
+import { Form, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import RangeSlider from 'react-bootstrap-range-slider';
 
 import classes from './QualityBitDepthControl.module.scss';
@@ -29,7 +29,17 @@ const QualityBitDepthControl = React.memo(
     }, []);
     return (
       <Form.Group className={classes.qualityBitDepthWrapper}>
-        <Form.Label className={classes.label}>Quality bit depth</Form.Label>
+        <OverlayTrigger
+          delay={{ show: 400, hide: 0 }}
+          overlay={
+            <Tooltip>
+              Lowering quality reduces transfer time. It will <i>not</i> reduce
+              the memory footprint.
+            </Tooltip>
+          }
+        >
+          <Form.Label className={classes.label}>Quality bit depth</Form.Label>
+        </OverlayTrigger>
         <div className={classes.ticks}>
           {[8, 9, 10, 11, 12, 13, 14, 15, 16].map((value, i, { length }) => {
             const left = `calc(${(i * 100) / (length - 1)}% + ${12 - 3 * i}px)`;

@@ -7,6 +7,11 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  --record-ui-width: 250px;
+
+  @include media-breakpoint-up(sm) {
+    --record-ui-width: 300px;
+  }
 
   & > * {
     margin-bottom: 1rem;
@@ -18,36 +23,18 @@
 
   h2 {
     text-align: center;
+    max-width: var(--record-ui-width);
   }
 
   & > button,
   select {
-    width: 250px;
+    width: var(--record-ui-width);
   }
 
   .channelOption {
-    width: 125px;
+    width: calc(var(--record-ui-width) / 2);
     text-align: center;
     margin-bottom: 0.5rem;
-  }
-
-  @include media-breakpoint-up(sm) {
-    & > button,
-    select {
-      width: 300px;
-    }
-
-    .channelOption {
-      width: 150px;
-    }
-  }
-
-  @include media-breakpoint-up(lg) {
-    align-items: unset;
-
-    h2 {
-      text-align: unset;
-    }
   }
 }
 

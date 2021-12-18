@@ -1,8 +1,15 @@
-import React, { useLayoutEffect, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import { Form } from 'react-bootstrap';
 import { styled } from 'tonami';
-import { WAVEFORM_CACHED_WIDTH } from './utils/waveform';
-import WaveformDisplay from './WaveformDisplay';
+
+import { WAVEFORM_CACHED_WIDTH } from './utils/waveform.js';
+import WaveformDisplay from './WaveformDisplay.js';
 
 import classes from './SampleList.module.scss';
 
@@ -57,6 +64,27 @@ const SampleListItem = React.memo(
       observer.observe(waveformContainer);
       return () => observer.disconnect();
     }, []);
+    /** @type {React.RefObject<HTMLButtonElement>} */
+    const buttonRef = useRef(null);
+    useEffect(() => {
+      if (!selected || !buttonRef.current) {
+        return;
+      }
+      const button = buttonRef.current;
+      const accordionCollapse = /** @type {HTMLElement | null} */ (
+        button.closest('.accordion-collapse')
+      );
+      if (!accordionCollapse) {
+        return;
+      }
+      const isPartiallyOutOfView =
+        accordionCollapse.scrollTop > button.offsetTop ||
+        accordionCollapse.scrollTop + accordionCollapse.offsetHeight <
+          button.offsetTop - button.offsetHeight;
+      if (isPartiallyOutOfView) {
+        button.scrollIntoView({ block: 'center' });
+      }
+    }, [selected]);
     return (
       <button
         className={[
@@ -64,7 +92,9 @@ const SampleListItem = React.memo(
           classes.listItem,
           selected ? `active ${classes.active}` : '',
         ].join(' ')}
+        tabIndex={-1}
         onClick={() => onSampleSelect(sample.id)}
+        ref={buttonRef}
       >
         <Form.Label>{sample.metadata.name}</Form.Label>
         <div className={classes.listWaveform}>
@@ -81,38 +111,96 @@ const SampleListItem = React.memo(
 
 /**
  * @param {{
- *   samples: Map<string, import('./store').SampleContainer>;
+ *   samples: import('./store').SampleContainer[];
  *   selectedSampleId: string | null;
- *   search: string;
  *   onSampleSelect: (id: string) => void;
  * }} props
  */
-function SampleList({ samples, selectedSampleId, search, onSampleSelect }) {
-  const elementsMap = useRef(
-    /** @type {WeakMap<import('./store').SampleContainer, React.ReactElement>} */ (
-      new WeakMap()
-    )
+function SampleList({ samples, selectedSampleId, onSampleSelect }) {
+  /** @type {React.RefObject<HTMLUListElement>} */
+  const listRef = useRef(null);
+  /** @type {React.KeyboardEventHandler} */
+  const handleKeyDown = useCallback(
+    (e) => {
+      if (!listRef.current) {
+        return;
+      }
+      if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') {
+        return;
+      }
+      const button = /** @type {HTMLElement} */ (e.target).closest('button');
+      if (button) {
+        e.preventDefault();
+        const index = Array.prototype.indexOf.call(
+          listRef.current.children,
+          button
+        );
+        if (e.key === 'ArrowUp' && index > 0) {
+          if (button.previousElementSibling instanceof HTMLButtonElement) {
+            button.previousElementSibling.focus();
+          }
+        }
+        if (e.key === 'ArrowDown' && index + 1 < samples.length) {
+          if (button.nextElementSibling instanceof HTMLButtonElement) {
+            button.nextElementSibling.focus();
+          }
+        }
+      }
+    },
+    [samples]
   );
-  /** @type {React.ReactElement[]} */
-  const elementsList = [];
-  for (const sample of samples.values()) {
-    let element = elementsMap.current.get(sample);
-    if (!element) {
-      element = (
-        <SampleListItem
-          key={sample.id}
-          sample={sample}
-          selected={sample.id === selectedSampleId}
-          onSampleSelect={onSampleSelect}
-        />
+  /** @type {React.KeyboardEventHandler} */
+  const handleKeyUp = useCallback(
+    (e) => {
+      if (
+        !listRef.current ||
+        !(document.activeElement instanceof HTMLButtonElement)
+      ) {
+        return;
+      }
+      if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') {
+        return;
+      }
+      const index = Array.prototype.indexOf.call(
+        listRef.current.children,
+        document.activeElement
       );
-      elementsMap.current.set(sample, element);
-    }
-    if (!search || sample.metadata.name.toLowerCase().includes(search)) {
-      elementsList.push(element);
-    }
-  }
-  return <ul className="list-group list-group-flush">{elementsList}</ul>;
+      if (index === -1) {
+        return;
+      }
+      e.preventDefault();
+      const sampleToSelect = samples[index];
+      if (sampleToSelect) {
+        onSampleSelect(sampleToSelect.id);
+      }
+    },
+    [samples, onSampleSelect]
+  );
+  return (
+    <ul
+      ref={listRef}
+      className="list-group list-group-flush"
+      onKeyDown={handleKeyDown}
+      onKeyUp={handleKeyUp}
+    >
+      {samples.length ? (
+        samples.map((sample) => (
+          <SampleListItem
+            key={sample.id}
+            sample={sample}
+            selected={sample.id === selectedSampleId}
+            onSampleSelect={onSampleSelect}
+          />
+        ))
+      ) : (
+        <li className="list-group-item">
+          <Form.Label className={classes.emptyListMessage}>
+            No samples found.
+          </Form.Label>
+        </li>
+      )}
+    </ul>
+  );
 }
 
 export default SampleList;

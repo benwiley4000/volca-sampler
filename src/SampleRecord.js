@@ -500,6 +500,7 @@ function SampleRecord({ onRecordFinish }) {
             </div>
           )}
           <Button
+            id="record-button"
             className={classes.recordButton}
             type="button"
             variant="primary"

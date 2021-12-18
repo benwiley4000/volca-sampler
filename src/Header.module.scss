@@ -1,3 +1,8 @@
+@import 'bootstrap_custom_variables';
+@import '~bootstrap/scss/functions';
+@import '~bootstrap/scss/variables';
+@import '~bootstrap/scss/mixins';
+
 .titleBar {
   display: flex;
   background-color: #f3f3f3;
@@ -10,6 +15,15 @@
   position: sticky;
   top: 0;
   z-index: 1030;
+
+  @include media-breakpoint-up(md) {
+    padding-left: 0;
+    padding-right: 0;
+
+    & > [class*="container"] {
+      margin: 0 0.5rem;
+    }
+  }
 }
 
 .menuIcon {
@@ -22,6 +36,10 @@
   font-size: 3rem;
   border: 0;
   background: transparent;
+
+  @include media-breakpoint-up(md) {
+    display: none;
+  }
 }
 
 .title {

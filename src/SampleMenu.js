@@ -1,118 +1,260 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Accordion, Button, Form, ListGroup, Offcanvas } from 'react-bootstrap';
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import { Accordion, Button, Form, ListGroup } from 'react-bootstrap';
 
-import SampleList from './SampleList';
+import SampleList from './SampleList.js';
 
 import classes from './SampleMenu.module.scss';
 
 const SampleMenu = React.memo(
   /**
    * @param {{
-   *   open: boolean;
+   *   visible: boolean;
    *   loading: boolean;
    *   focusedSampleId: string | null;
    *   userSamples: Map<string, import('./store').SampleContainer>;
    *   factorySamples: Map<string, import('./store').SampleContainer>;
-   *   setOpen: (open: boolean) => void;
    *   onSampleSelect: (id: string | null) => void;
    * }} props
    */
   function SampleMenu({
-    open,
+    visible,
     loading,
     focusedSampleId,
     userSamples,
     factorySamples,
-    setOpen,
     onSampleSelect,
   }) {
-    /** @type {React.RefObject<HTMLInputElement>} */
-    const searchFieldRef = useRef(null);
     const [search, setSearch] = useState('');
     const searchTerm = search.trim().toLowerCase();
-    const getDefaultKey = () =>
-      focusedSampleId && factorySamples.has(focusedSampleId)
-        ? 'factory'
-        : userSamples.size
-        ? 'user'
-        : 'factory';
-    const activeKey = useRef(getDefaultKey());
-    if (!open) {
-      // set timeout to let transition complete
-      setTimeout(() => (activeKey.current = getDefaultKey()), 300);
+    const [activeKey, setActiveKey] = useState(
+      /** @type {'user' | 'factory' | null} */ (null)
+    );
+    {
+      const hasSearch = Boolean(search);
+      useLayoutEffect(() => {
+        setActiveKey(
+          focusedSampleId && factorySamples.has(focusedSampleId)
+            ? 'factory'
+            : userSamples.size
+            ? 'user'
+            : 'factory'
+        );
+      }, [userSamples, factorySamples, focusedSampleId, hasSearch]);
     }
-    useEffect(() => {
-      if (open) {
-        if (searchFieldRef.current) {
-          searchFieldRef.current.focus();
-        }
-      } else {
-        // set timeout to let transition complete
-        setTimeout(() => setSearch(''), 300);
+    const [searchActiveKeys, setSearchActiveKeys] = useState([
+      'user',
+      'factory',
+    ]);
+    useLayoutEffect(() => {
+      if (searchTerm) {
+        setSearchActiveKeys(['user', 'factory']);
       }
-    }, [open]);
+    }, [searchTerm]);
+    const toggleSearchActiveKey = useCallback(
+      /** @param {'user' | 'factory'} key */
+      (key) => {
+        setSearchActiveKeys((keys) =>
+          keys.includes(key) ? keys.filter((k) => k !== key) : keys.concat(key)
+        );
+      },
+      []
+    );
+    /** @type {React.KeyboardEventHandler} */
+    const handleAccordionHeaderArrowDown = useCallback((e) => {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        const header = /** @type {HTMLElement} */ (e.target);
+        const accordionItem = header.closest(`.${classes.accordionItem}`);
+        if (!accordionItem) {
+          console.warn('Expected accordionItem class on parent.');
+          return;
+        }
+        const firstListItem = /** @type {HTMLButtonElement} */ (
+          accordionItem.querySelector('ul > button')
+        );
+        if (firstListItem) {
+          firstListItem.focus();
+        }
+      }
+    }, []);
+    const userSamplesFiltered = useMemo(
+      () =>
+        [...userSamples.values()].filter(
+          (sample) =>
+            !search || sample.metadata.name.toLowerCase().includes(search)
+        ),
+      [userSamples, search]
+    );
+    const factorySamplesFiltered = useMemo(
+      () =>
+        [...factorySamples.values()].filter(
+          (sample) =>
+            !search || sample.metadata.name.toLowerCase().includes(search)
+        ),
+      [factorySamples, search]
+    );
+    /** @type {React.RefObject<HTMLHeadingElement>} */
+    const userSamplesHeader = useRef(null);
+    /** @type {React.RefObject<HTMLHeadingElement>} */
+    const factorySamplesHeader = useRef(null);
+    const userSamplesHeaderMouseDown = useRef(false);
+    const factorySamplesHeaderMouseDown = useRef(false);
+    useEffect(() => {
+      if (!userSamplesHeader.current || !factorySamplesHeader.current) {
+        console.warn('Expected refs to be defined');
+        return;
+      }
+      function onUserSamplesMousedown() {
+        userSamplesHeaderMouseDown.current = true;
+      }
+      function onFactorySamplesMousedown() {
+        factorySamplesHeaderMouseDown.current = true;
+      }
+      function onMouseUp() {
+        userSamplesHeaderMouseDown.current = false;
+        factorySamplesHeaderMouseDown.current = false;
+      }
+      const userHeader = userSamplesHeader.current;
+      const factoryHeader = factorySamplesHeader.current;
+      userHeader.addEventListener('mousedown', onUserSamplesMousedown);
+      factoryHeader.addEventListener('mousedown', onFactorySamplesMousedown);
+      window.addEventListener('mouseup', onMouseUp);
+      return () => {
+        userHeader.removeEventListener('mousedown', onUserSamplesMousedown);
+        factoryHeader.removeEventListener(
+          'mousedown',
+          onFactorySamplesMousedown
+        );
+        window.removeEventListener('mouseup', onMouseUp);
+      };
+    }, [loading]);
     return (
-      <Offcanvas
-        className={classes.sidebar}
-        show={open}
-        onHide={() => setOpen(false)}
-      >
-        <Offcanvas.Header closeButton />
-        <Offcanvas.Body className={classes.offcanvasBody}>
-          <Button
-            className={classes.newSampleButton}
-            type="button"
-            variant="primary"
-            onClick={() => onSampleSelect(null)}
-          >
-            New sample
-          </Button>
-          <Form.Control
-            ref={searchFieldRef}
-            className={classes.search}
-            placeholder="Search for a sample..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          <ListGroup className={classes.listGroup}>
-            {!loading && (
-              <Accordion
-                defaultActiveKey={activeKey.current}
-                className={classes.accordion}
-              >
-                <Accordion.Item
-                  eventKey={searchTerm ? activeKey.current : 'user'}
-                  className={classes.accordionItem}
+      <>
+        <Button
+          className={classes.newSampleButton}
+          type="button"
+          variant="primary"
+          onClick={() => {
+            onSampleSelect(null);
+            requestAnimationFrame(() => {
+              const recordButton = document.getElementById('record-button');
+              if (recordButton) {
+                recordButton.focus();
+                requestAnimationFrame(() => {
+                  // if we tried to focus while closing a transitioning popover
+                  // then it might not have worked
+                  if (document.activeElement !== recordButton) {
+                    setTimeout(() => {
+                      recordButton.focus();
+                    }, 300);
+                  }
+                });
+              }
+            });
+          }}
+        >
+          New sample
+        </Button>
+        <Form.Control
+          className={classes.search}
+          placeholder="Search for a sample..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <ListGroup className={classes.listGroup}>
+          {!loading &&
+            /**
+             * @type {{
+             *   eventKey: 'user' | 'factory';
+             *   filteredSamples: typeof userSamplesFiltered;
+             *   headerRef: React.Ref<HTMLHeadingElement>;
+             *   headerMouseDownRef: React.RefObject<boolean>;
+             * }[]}
+             */
+            ([
+              {
+                eventKey: 'user',
+                filteredSamples: userSamplesFiltered,
+                headerRef: userSamplesHeader,
+                headerMouseDownRef: userSamplesHeaderMouseDown,
+              },
+              {
+                eventKey: 'factory',
+                filteredSamples: factorySamplesFiltered,
+                headerRef: factorySamplesHeader,
+                headerMouseDownRef: factorySamplesHeaderMouseDown,
+              },
+            ]).map(
+              ({
+                eventKey,
+                filteredSamples,
+                headerRef,
+                headerMouseDownRef,
+              }) => (
+                <Accordion
+                  style={{
+                    // @ts-ignore
+                    '--results-count': filteredSamples.length,
+                    // @ts-ignore
+                    '--accordion-open': (
+                      searchTerm
+                        ? searchActiveKeys.includes(eventKey)
+                        : activeKey === eventKey
+                    )
+                      ? '1'
+                      : '0',
+                  }}
+                  activeKey={
+                    searchTerm
+                      ? searchActiveKeys.filter((k) => k === eventKey)[0] ||
+                        'nothing'
+                      : activeKey === eventKey
+                      ? activeKey
+                      : 'nothing'
+                  }
+                  className={classes.accordion}
                 >
-                  <Accordion.Header>Your Samples</Accordion.Header>
-                  <Accordion.Body className={classes.accordionBody}>
-                    <SampleList
-                      samples={userSamples}
-                      selectedSampleId={focusedSampleId}
-                      search={searchTerm}
-                      onSampleSelect={onSampleSelect}
-                    />
-                  </Accordion.Body>
-                </Accordion.Item>
-                <Accordion.Item
-                  eventKey={searchTerm ? activeKey.current : 'factory'}
-                  className={classes.accordionItem}
-                >
-                  <Accordion.Header>Factory Samples</Accordion.Header>
-                  <Accordion.Body className={classes.accordionBody}>
-                    <SampleList
-                      samples={factorySamples}
-                      selectedSampleId={focusedSampleId}
-                      search={searchTerm}
-                      onSampleSelect={onSampleSelect}
-                    />
-                  </Accordion.Body>
-                </Accordion.Item>
-              </Accordion>
+                  <Accordion.Item
+                    eventKey={eventKey}
+                    className={classes.accordionItem}
+                  >
+                    <Accordion.Header
+                      ref={headerRef}
+                      onClick={() => {
+                        setActiveKey((key) =>
+                          key === eventKey ? null : eventKey
+                        );
+                        if (searchTerm) {
+                          toggleSearchActiveKey(eventKey);
+                        }
+                      }}
+                      onFocus={() =>
+                        !headerMouseDownRef.current && setActiveKey(eventKey)
+                      }
+                      onKeyDown={handleAccordionHeaderArrowDown}
+                    >
+                      Your Samples
+                    </Accordion.Header>
+                    <Accordion.Body className={classes.accordionBody}>
+                      <SampleList
+                        samples={filteredSamples}
+                        selectedSampleId={focusedSampleId}
+                        onSampleSelect={onSampleSelect}
+                      />
+                    </Accordion.Body>
+                  </Accordion.Item>
+                </Accordion>
+              )
             )}
-          </ListGroup>
-        </Offcanvas.Body>
-      </Offcanvas>
+        </ListGroup>
+      </>
     );
   }
 );

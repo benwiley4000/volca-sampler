@@ -7,7 +7,7 @@ import React, {
 } from 'react';
 
 import Header from './Header.js';
-import SampleMenu from './SampleMenu.js';
+import SampleMenuSidebar from './SampleMenuSidebar.js';
 import SampleDetail from './SampleDetail.js';
 import SampleDetailReadonly from './SampleDetailReadonly.js';
 import SampleRecord from './SampleRecord.js';
@@ -22,6 +22,7 @@ import { getAudioBufferForAudioFileData } from './utils/audioData.js';
 import { newSampleName } from './utils/words.js';
 
 import classes from './App.module.scss';
+import SampleMenu from './SampleMenu.js';
 
 const sessionStorageKey = 'focused_sample_id';
 
@@ -225,7 +226,7 @@ function App() {
   return (
     <div className={classes.app}>
       <Header onMenuOpen={handleMenuOpen} onHeaderClick={handleHeaderClick} />
-      <SampleMenu
+      <SampleMenuSidebar
         open={sidebarOpen}
         loading={loadingSamples}
         focusedSampleId={focusedSampleId}
@@ -234,6 +235,16 @@ function App() {
         setOpen={setSidebarOpen}
         onSampleSelect={handleSampleSelect}
       />
+      <div className={classes.persistentSidebar}>
+        <SampleMenu
+          visible
+          loading={loadingSamples}
+          focusedSampleId={focusedSampleId}
+          userSamples={userSamples}
+          factorySamples={factorySamples}
+          onSampleSelect={handleSampleSelect}
+        />
+      </div>
       <div className={classes.mainLayout}>
         {!sample ? null : sample instanceof SampleContainer.Mutable ? (
           <SampleDetail
@@ -251,8 +262,8 @@ function App() {
         {!focusedSampleId && (
           <SampleRecord onRecordFinish={handleRecordFinish} />
         )}
+        {(!focusedSampleId || sample) && <Footer />}
       </div>
-      {(!focusedSampleId || sample) && <Footer />}
     </div>
   );
 }

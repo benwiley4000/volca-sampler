@@ -13,7 +13,6 @@ import WaveformEdit from './WaveformEdit.js';
 import VolcaTransferControl from './VolcaTransferControl.js';
 import { SampleContainer } from './store.js';
 import QualityBitDepthControl from './QualityBitDepthControl.js';
-import SlotNumberInput from './SlotNumberInput.js';
 import { downloadBlob } from './utils/download.js';
 import { formatDate } from './utils/datetime.js';
 

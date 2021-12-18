@@ -428,7 +428,7 @@ test('getSampleBuffer', async (t) => {
              * @type {typeof import('../src/utils/syro').getSampleBuffer}
              */
             const getSampleBuffer = window.getSampleBuffer;
-            const sampleBuffer = await getSampleBuffer(
+            const { sampleBuffer } = await getSampleBuffer(
               sampleContainer,
               () => null
             ).sampleBufferPromise;

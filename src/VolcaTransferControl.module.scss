@@ -3,28 +3,22 @@
 @import '~bootstrap/scss/mixins';
 @import '~bootstrap/scss/variables';
 
-.transferButtonContainer {
-  position: relative;
-  display: inline-block;
-  padding-bottom: 2rem;
+.transferInfo {
+  width: 220px;
+  white-space: nowrap;
+  margin-bottom: 1rem;
+  background-color: #f3f3f3;
+  padding: 0.75rem;
+  border-radius: 0.25rem;
 }
 
-.transferButtonContainer,
 .transferButton {
+  display: block;
   width: 100%;
 
   @include media-breakpoint-up(sm) {
     width: unset;
   }
-}
-
-.transferTime {
-  position: absolute;
-  margin-top: 0.25rem;
-  left: 50%;
-  transform: translateX(-50%);
-  color: $text-muted;
-  white-space: nowrap;
 }
 
 .preTransferModal {

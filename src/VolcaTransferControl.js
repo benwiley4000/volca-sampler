@@ -147,7 +147,8 @@ function VolcaTransferControl({ sample, onSlotNumberUpdate }) {
       </div>
       <SlotNumberInput
         slotNumber={sample.metadata.slotNumber}
-        onSlotNumberUpdate={onSlotNumberUpdate}/>
+        onSlotNumberUpdate={onSlotNumberUpdate}
+      />
       <Button
         className={classes.transferButton}
         type="button"
@@ -258,20 +259,35 @@ function VolcaTransferControl({ sample, onSlotNumberUpdate }) {
           ) : (
             <>
               <p>
-                The sample <strong>{sample.metadata.name}</strong> was
-                transferred to slot{' '}
+                <strong>{sample.metadata.name}</strong> was transferred to slot{' '}
                 <strong>{sample.metadata.slotNumber}</strong> on your volca
-                sample. If everything worked, you will see{' '}
-                <strong>[End]</strong> on the volca sample's display. Press the{' '}
+                sample.
+              </p>
+              <h5>
+                If you see <strong>[End]</strong>:
+              </h5>
+              <p>
+                The transfer was successful. Press the blinking{' '}
                 <strong>[FUNC]</strong> button to finish.
               </p>
+              <h5>
+                If you see <strong>[Err dcod]</strong>:
+              </h5>
               <p>
-                If you see <strong>[Err]</strong> on the display, the transfer
-                failed. Normally this means you need to adjust your output
-                volume or free up some memory on the volca sample, then try
-                again. If your volume is at a decent level but the transfer
-                failed, you might also want to try a new audio cable. For more
-                info, check out this{' '}
+                Check your volume level and make sure no other application is
+                creating noise, then try again. If your volume is at a decent
+                level but the transfer failed, you might also want to try a new
+                audio cable.
+              </p>
+              <h5>
+                If you see <strong>[Err FuLL]</strong>:
+              </h5>
+              <p>
+                Free up some memory on the volca sample (or cut down your sample
+                size), then try again.
+              </p>
+              <p>
+                For more info, check out this{' '}
                 <a
                   href="https://www.korg.com/products/dj/volca_sample/faq.php"
                   target="_blank"

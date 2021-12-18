@@ -199,6 +199,7 @@ const SampleMenu = React.memo(
                 headerMouseDownRef,
               }) => (
                 <Accordion
+                  key={eventKey}
                   style={{
                     // @ts-ignore
                     '--results-count': filteredSamples.length,

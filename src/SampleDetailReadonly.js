@@ -68,11 +68,10 @@ function SampleDetailReadonly({ sample: readonlySample, onSampleDuplicate }) {
       <h4>Preview</h4>
       <WaveformReadonly sample={sample} />
       <h4>Transfer</h4>
-      <SlotNumberInput
-        slotNumber={sample.metadata.slotNumber}
+      <VolcaTransferControl
+        sample={sample}
         onSlotNumberUpdate={setSlotNumber}
       />
-      <VolcaTransferControl sample={sample} />
     </Container>
   );
 }

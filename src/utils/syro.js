@@ -5,7 +5,7 @@ import { getTargetWavForSample } from './audioData.js';
  * @param {import('../store').SampleContainer} sampleContainer
  * @param {(progress: number) => void} onProgress
  * @returns {{
- *   sampleBufferPromise: Promise<Uint8Array>;
+ *   sampleBufferPromise: Promise<{ sampleBuffer: Uint8Array; dataSize: number }>;
  *   cancelWork: () => void;
  * }}
  */
@@ -29,12 +29,16 @@ export function getSampleBuffer(sampleContainer, onProgress) {
         unregisterUpdateCallback,
         heap8Buffer,
       } = await getSyroBindings();
+      const emptyResponse = {
+        sampleBuffer: new Uint8Array(),
+        dataSize: 0,
+      };
       if (cancelled) {
-        return new Uint8Array();
+        return emptyResponse;
       }
       const { data } = await getTargetWavForSample(sampleContainer);
       if (cancelled) {
-        return new Uint8Array();
+        return emptyResponse;
       }
       /**
        * @type {Uint8Array | undefined}
@@ -104,12 +108,15 @@ export function getSampleBuffer(sampleContainer, onProgress) {
         unregisterUpdateCallback(onUpdate);
       }
       if (cancelled) {
-        return new Uint8Array();
+        return emptyResponse;
       }
       if (!sampleBuffer) {
         throw new Error('Unexpected condition: sampleBuffer should be defined');
       }
-      return sampleBuffer;
+      return {
+        sampleBuffer,
+        dataSize: data.length,
+      };
     })(),
   };
 }

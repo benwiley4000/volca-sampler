@@ -75,11 +75,8 @@ const SampleDetail = React.memo(
         />
         <WaveformEdit sample={sample} onSampleUpdate={onSampleUpdate} />
         <h4>Transfer</h4>
-        <SlotNumberInput
-          slotNumber={sample.metadata.slotNumber}
-          onSlotNumberUpdate={handleSlotNumberUpdate}
-        />
-        <VolcaTransferControl sample={sample} />
+        <VolcaTransferControl sample={sample} onSlotNumberUpdate={handleSlotNumberUpdate}
+ />
       </Container>
     );
   }
@@ -179,7 +176,11 @@ const SampleDetailActions = React.memo(
           >
             Rename
           </Button>
-          <Button type="button" variant="outline-secondary" onClick={handleDuplicate}>
+          <Button
+            type="button"
+            variant="outline-secondary"
+            onClick={handleDuplicate}
+          >
             Duplicate
           </Button>
           <Button

@@ -6,6 +6,7 @@ import React, {
   useState,
 } from 'react';
 import { Button, Modal, ProgressBar } from 'react-bootstrap';
+import byteSize from 'byte-size';
 
 import {
   getAudioBufferForAudioFileData,
@@ -15,13 +16,15 @@ import { getSampleBuffer } from './utils/syro.js';
 import { formatLongTime } from './utils/datetime';
 
 import classes from './VolcaTransferControl.module.scss';
+import SlotNumberInput from './SlotNumberInput.js';
 
 /**
  * @param {{
  *   sample: import('./store').SampleContainer;
+ *   onSlotNumberUpdate: (update: number | ((slotNumber: number) => number)) => void;
  * }} props
  */
-function VolcaTransferControl({ sample }) {
+function VolcaTransferControl({ sample, onSlotNumberUpdate }) {
   const [syroProgress, setSyroProgress] = useState(0);
   const [preTransferModalOpen, setPreTransferModalOpen] = useState(false);
   const [syroTransferState, setSyroTransferState] = useState(
@@ -32,6 +35,9 @@ function VolcaTransferControl({ sample }) {
       setPreTransferModalOpen(false);
     }
   }, [syroTransferState]);
+  const [targetWavDataSize, setTargetWavDataSize] = useState(
+    /** @type {number | null} */ (null)
+  );
   const [syroAudioBuffer, setSyroAudioBuffer] = useState(
     /** @type {AudioBuffer | Error | null} */ (null)
   );
@@ -50,6 +56,7 @@ function VolcaTransferControl({ sample }) {
     let cancelled = false;
     setSyroProgress(0);
     setSyroTransferState('idle');
+    setTargetWavDataSize(null);
     setSyroAudioBuffer(null);
     setCallbackOnSyroBuffer(null);
     stop.current = () => {
@@ -68,10 +75,11 @@ function VolcaTransferControl({ sample }) {
         cancelWork();
         cancelled = true;
       };
-      sampleBufferPromise.then(async (sampleBuffer) => {
+      sampleBufferPromise.then(async ({ sampleBuffer, dataSize }) => {
         if (cancelled) {
           return;
         }
+        setTargetWavDataSize(dataSize);
         stop.current = () => {
           cancelled = true;
         };
@@ -124,23 +132,30 @@ function VolcaTransferControl({ sample }) {
     syroTransferState === 'transferring' && syroProgress < 1;
   return (
     <>
-      <div className={classes.transferButtonContainer}>
-        <Button
-          className={classes.transferButton}
-          type="button"
-          variant="primary"
-          onClick={() => setPreTransferModalOpen(true)}
-        >
-          Transfer to volca sample
-        </Button>
-        <p className={[classes.transferTime, 'small'].join(' ')}>
-          {syroAudioBuffer instanceof AudioBuffer
-            ? `Time to transfer: ${formatLongTime(syroAudioBuffer.duration)}`
-            : syroAudioBuffer instanceof Error
-            ? 'Error preparing sample for transfer'
-            : 'Computing time to transfer...'}
-        </p>
+      <div className={classes.transferInfo}>
+        <strong>Memory footprint:</strong>{' '}
+        {typeof targetWavDataSize === 'number'
+          ? byteSize(targetWavDataSize).toString()
+          : 'checking...'}
+        <br />
+        <strong>Time to transfer:</strong>{' '}
+        {syroAudioBuffer instanceof AudioBuffer
+          ? formatLongTime(syroAudioBuffer.duration)
+          : syroAudioBuffer instanceof Error
+          ? 'error'
+          : 'checking...'}
       </div>
+      <SlotNumberInput
+        slotNumber={sample.metadata.slotNumber}
+        onSlotNumberUpdate={onSlotNumberUpdate}/>
+      <Button
+        className={classes.transferButton}
+        type="button"
+        variant="primary"
+        onClick={() => setPreTransferModalOpen(true)}
+      >
+        Transfer to volca sample
+      </Button>
       <Modal
         onHide={() => setPreTransferModalOpen(false)}
         className={classes.preTransferModal}

@@ -96,11 +96,16 @@ const WaveformEdit = React.memo(
       if (lastCommitId.current !== commitId) {
         return;
       }
-      onSampleUpdate(loadedSampleId, {
-        trim: {
-          frames: trimFrames,
-          waveformPeaks,
-        },
+      onSampleUpdate(loadedSampleId, (metadata) => {
+        if (metadata.trim.frames.every((frame, i) => trimFrames[i] === frame)) {
+          return metadata;
+        }
+        return {
+          trim: {
+            frames: trimFrames,
+            waveformPeaks,
+          },
+        };
       });
     }, [loadedSampleId, sourceAudioBuffer, onSampleUpdate]);
 

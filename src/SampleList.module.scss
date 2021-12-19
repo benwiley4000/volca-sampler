@@ -2,11 +2,22 @@
 @import '~bootstrap/scss/functions';
 @import '~bootstrap/scss/variables';
 
-.listWaveform {
+.waveformContainer {
+  --trim-pixels-left: 0px;
+  --trim-pixels-right: 0px;
+  --waveform-width: 0px; // defined by javascript
   filter: var(--grayscale-filter);
+  mix-blend-mode: darken;
+  position: relative;
+  width: var(--waveform-width);
+  height: 40px;
+
+  &.playbackActive {
+    filter: unset;
+  }
 }
 
-button.listItem {
+div.listItem {
   cursor: initial;
   text-align: left;
   overflow: hidden;
@@ -20,7 +31,7 @@ button.listItem {
   &:focus-visible {
     color: var(--bs-primary);
 
-    .listWaveform {
+    .waveformContainer {
       filter: unset;
     }
   }

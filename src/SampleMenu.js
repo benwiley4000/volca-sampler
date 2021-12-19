@@ -76,8 +76,8 @@ const SampleMenu = React.memo(
           console.warn('Expected accordionItem class on parent.');
           return;
         }
-        const firstListItem = /** @type {HTMLButtonElement} */ (
-          accordionItem.querySelector('ul > button')
+        const firstListItem = /** @type {HTMLDivElement} */ (
+          accordionItem.querySelector('ul > div')
         );
         if (firstListItem) {
           firstListItem.focus();

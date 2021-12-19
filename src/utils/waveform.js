@@ -170,8 +170,9 @@ export function useWaveformInfo(sourceAudioBuffer) {
 
 /**
  * @param {AudioBuffer | null} audioBuffer
+ * @param {boolean} [shouldHandleSpace]
  */
-export function useWaveformPlayback(audioBuffer) {
+export function useWaveformPlayback(audioBuffer, shouldHandleSpace = false) {
   const { playAudioBuffer } = useAudioPlaybackContext();
   // to be set when playback is started
   const stopPreviewPlayback = useRef(() => {});
@@ -230,6 +231,9 @@ export function useWaveformPlayback(audioBuffer) {
   );
 
   useEffect(() => {
+    if (!shouldHandleSpace) {
+      return;
+    }
     /** @param {KeyboardEvent} e */
     function handleSpace(e) {
       if (document.querySelector('[role="dialog"]')) {
@@ -243,7 +247,7 @@ export function useWaveformPlayback(audioBuffer) {
     }
     document.addEventListener('keydown', handleSpace);
     return () => document.removeEventListener('keydown', handleSpace);
-  }, [togglePlayback]);
+  }, [shouldHandleSpace, togglePlayback]);
 
   const stopPlayback = useCallback(() => stopPreviewPlayback.current(), []);
 

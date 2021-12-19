@@ -557,7 +557,7 @@ const WaveformEdit = React.memo(
       displayedTime,
       togglePlayback,
       stopPlayback,
-    } = useWaveformPlayback(previewAudioBuffer);
+    } = useWaveformPlayback(previewAudioBuffer, true);
 
     useEffect(() => {
       return stopPlayback;

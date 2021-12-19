@@ -57,7 +57,7 @@ function WaveformReadonly({ sample: _sample }) {
     displayedTime,
     togglePlayback,
     stopPlayback,
-  } = useWaveformPlayback(previewAudioBuffer);
+  } = useWaveformPlayback(previewAudioBuffer, true);
 
   useEffect(() => {
     return stopPlayback;

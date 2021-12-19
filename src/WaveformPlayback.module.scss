@@ -47,20 +47,6 @@
     }
   }
 
-  &.small {
-    left: 0.5rem;
-    top: 50%;
-    transform: translateY(-50%);
-
-    & > button {
-      padding: 14px;
-
-      & > svg {
-        transform: translate(-50%, -50%);
-      }
-    }
-  }
-
   & > span {
     margin-left: 0.5rem;
     color: #fff;

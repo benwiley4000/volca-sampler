@@ -5,7 +5,9 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Form } from 'react-bootstrap';
+import { Button, Form } from 'react-bootstrap';
+import { ReactComponent as PlayIcon } from '@material-design-icons/svg/filled/play_arrow.svg';
+import { ReactComponent as StopIcon } from '@material-design-icons/svg/filled/stop.svg';
 
 import {
   useWaveformPlayback,
@@ -85,10 +87,27 @@ const SampleListItem = React.memo(
       }
     }, [selected]);
 
-    const { audioBuffer: previewAudioBuffer } = useTargetAudioForSample(sample);
+    const [audioRequested, setAudioRequested] = useState(false);
 
-    const { isPlaybackActive, playbackProgress, togglePlayback } =
-      useWaveformPlayback(previewAudioBuffer);
+    const { audioBuffer: previewAudioBuffer } = useTargetAudioForSample(
+      sample,
+      audioRequested
+    );
+
+    const {
+      isPlaybackActive,
+      playbackProgress,
+      togglePlayback: _togglePlayback,
+    } = useWaveformPlayback(previewAudioBuffer);
+
+    const togglePlayback = useCallback(
+      /** @param {MouseEvent | KeyboardEvent} e */
+      (e) => {
+        _togglePlayback(e);
+        setAudioRequested(true);
+      },
+      [_togglePlayback]
+    );
 
     return (
       <div
@@ -111,7 +130,19 @@ const SampleListItem = React.memo(
         }}
         ref={listItemRef}
       >
-        <Form.Label>{sample.metadata.name}</Form.Label>
+        <span className={classes.sampleTitle}>
+          <Button
+            className={classes.playbackButton}
+            tabIndex={-1}
+            variant="dark"
+            onClick={(e) => {
+              togglePlayback(e.nativeEvent);
+            }}
+          >
+            {isPlaybackActive ? <StopIcon /> : <PlayIcon />}
+          </Button>
+          <span>{sample.metadata.name}</span>
+        </span>
         <div
           className={[
             classes.waveformContainer,
@@ -132,7 +163,6 @@ const SampleListItem = React.memo(
               <WaveformListItemPlayback
                 isPlaybackActive={isPlaybackActive}
                 playbackProgress={playbackProgress}
-                togglePlayback={togglePlayback}
               />
             </>
           )}

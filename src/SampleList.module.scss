@@ -42,8 +42,25 @@ div.listItem {
     outline-offset: -$input-btn-focus-width;
   }
 
-  label {
+  .sampleTitle {
     white-space: nowrap;
+    display: inline-block;
+    margin-bottom: 0.5rem;
+  }
+
+  .playbackButton {
+    border-radius: 50%;
+    position: relative;
+    padding: 14px;
+    margin-right: 0.5rem;
+
+    & > svg {
+      position: absolute;
+      fill: #fff;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
   }
 }
 

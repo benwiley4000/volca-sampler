@@ -69,6 +69,12 @@
       pointer-events: initial;
       cursor: not-allowed;
     }
+
+    &:focus-visible {
+      outline: 0;
+      box-shadow: 0 0 $input-btn-focus-blur $input-btn-focus-width
+      rgba($secondary, 0.5);
+    }
   }
 
   .stereoExplanation {

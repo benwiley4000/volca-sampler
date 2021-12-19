@@ -580,7 +580,7 @@ function SampleRecord({ onRecordFinish }) {
                     {(selectedCaptureDevice || captureDeviceFromStorage) && (
                       <>
                         <p className="small">
-                          Capture device:{' '}
+                          <strong>Capture device:</strong>{' '}
                           {selectedCaptureDevice
                             ? selectedCaptureDevice.device.label ||
                               selectedCaptureDevice.device.deviceId
@@ -589,7 +589,7 @@ function SampleRecord({ onRecordFinish }) {
                             : ''}
                         </p>
                         <p className="small">
-                          Input channels:{' '}
+                          <strong>Input channels:</strong>{' '}
                           {displayedChannelCount === 1 ? 'Mono' : 'Stereo'}
                         </p>
                       </>

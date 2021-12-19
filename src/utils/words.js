@@ -14,7 +14,14 @@ const coolAdjectives = [
   'Very Good',
   'Ice Cold',
   'Sick',
-  'Juicy'
+  'Juicy',
+  'Gnarly',
+  'Grainy',
+  'Most-excellent',
+  'Fortuitous',
+  'Bodacious',
+  'Tubular',
+  'Fresh',
 ];
 
 const sampleSynonyms = [

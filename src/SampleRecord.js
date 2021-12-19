@@ -674,25 +674,27 @@ function SampleRecord({ onRecordFinish }) {
         </>
       )}
       {(captureState === 'error' && recordingError) || null}
-      <Button
-        className={classes.importFileButton}
-        type="button"
-        variant="secondary"
-        onClick={(e) => {
-          const input = e.currentTarget.querySelector('input');
-          if (input && e.target !== input) {
-            input.click();
-          }
-        }}
-      >
-        Or import an audio file
-        <input
-          hidden
-          type="file"
-          accept="audio/*,.wav,.mp3,.ogg"
-          onChange={importFile}
-        />
-      </Button>
+      {!['capturing', 'finalizing'].includes(captureState) && (
+        <Button
+          className={classes.importFileButton}
+          type="button"
+          variant="secondary"
+          onClick={(e) => {
+            const input = e.currentTarget.querySelector('input');
+            if (input && e.target !== input) {
+              input.click();
+            }
+          }}
+        >
+          Or import an audio file
+          <input
+            hidden
+            type="file"
+            accept="audio/*,.wav,.mp3,.ogg"
+            onChange={importFile}
+          />
+        </Button>
+      )}
     </Container>
   );
 }

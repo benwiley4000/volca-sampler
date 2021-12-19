@@ -32,10 +32,10 @@
   --min-height: min(
     calc(
       /* we always need to see the accordion header */
-      var(--accordion-header-min-height) +
+        var(--accordion-header-min-height) +
         (
           /* multiply results height by 0 or 1 for closed / open */
-          var(--accordion-open) *
+            var(--accordion-open) *
             max(
               var(--empty-message-height),
               calc(var(--results-count) * var(--result-height))

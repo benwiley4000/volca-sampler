@@ -2,10 +2,18 @@ import React, {
   useCallback,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
-import { Form, Button, Collapse, Alert, Container, Nav } from 'react-bootstrap';
+import {
+  Form,
+  Button,
+  Alert,
+  Container,
+  Nav,
+  Accordion,
+} from 'react-bootstrap';
 
 import {
   findSamplePeak,
@@ -18,7 +26,11 @@ import classes from './SampleRecord.module.scss';
 const captureDevicePreferenceKey = 'capture_device_preference';
 
 /**
- * @typedef {{ deviceId: string; channelCount: number }} CaptureDevicePreference
+ * @typedef {{
+ *   deviceId: string;
+ *   channelCount: number;
+ *   label?: string;
+ * }} CaptureDevicePreference
  */
 
 /**
@@ -40,13 +52,23 @@ function useMediaRecording(onRecordUpdate, onRecordFinish) {
       JSON.parse(localStorage.getItem(captureDevicePreferenceKey) || 'null')
     )
   );
+  // just for displaying stuff in the UI while the selection is validating
+  const [captureDeviceFromStorage] = useState(restoringCaptureDevice.current);
   const [captureDevices, setCaptureDevices] = useState(cachedCaptureDevices);
   const [accessState, setAccessState] = useState(
     /** @type {'pending' | 'ok' | 'denied' | 'unavailable'} */ (
       captureDevices ? 'ok' : 'pending'
     )
   );
-  const [selectedCaptureDeviceId, setSelectedCaptureDeviceId] = useState('');
+  const [selectedCaptureDevice, setSelectedCaptureDevice] = useState(
+    /** @type {import('./utils/recording').AudioDeviceInfoContainer | null} */ (
+      null
+    )
+  );
+  const selectedCaptureDeviceId = useMemo(
+    () => (selectedCaptureDevice ? selectedCaptureDevice.device.deviceId : ''),
+    [selectedCaptureDevice]
+  );
   useEffect(() => {
     cachedCaptureDevices = captureDevices;
     setAccessState('ok');
@@ -62,24 +84,24 @@ function useMediaRecording(onRecordUpdate, onRecordFinish) {
           setCaptureDevices(
             new Map(devices.map((d) => [d.device.deviceId, d]))
           );
-          setSelectedCaptureDeviceId((id) => {
-            if (id) {
+          setSelectedCaptureDevice((device) => {
+            if (device) {
               restoringCaptureDevice.current = null;
-              return id;
+              return device;
             }
-            if (
-              restoringCaptureDevice.current &&
-              devices.find(
+            if (restoringCaptureDevice.current) {
+              const deviceMatch = devices.find(
                 ({ device }) =>
                   /** @type {NonNullable<CaptureDevicePreference>} */ (
                     restoringCaptureDevice.current
                   ).deviceId === device.deviceId
-              )
-            ) {
-              return restoringCaptureDevice.current.deviceId;
+              );
+              if (deviceMatch) {
+                return deviceMatch;
+              }
             }
             restoringCaptureDevice.current = null;
-            return devices[0].device.deviceId;
+            return devices[0];
           });
         }
       })
@@ -123,16 +145,17 @@ function useMediaRecording(onRecordUpdate, onRecordFinish) {
     }
   }, [captureDevices, selectedCaptureDeviceId]);
   useEffect(() => {
-    if (selectedCaptureDeviceId) {
+    if (selectedCaptureDevice) {
       localStorage.setItem(
         captureDevicePreferenceKey,
         JSON.stringify({
-          deviceId: selectedCaptureDeviceId,
+          deviceId: selectedCaptureDevice.device.deviceId,
           channelCount: selectedChannelCount,
+          label: selectedCaptureDevice.device.label,
         })
       );
     }
-  }, [selectedCaptureDeviceId, selectedChannelCount]);
+  }, [selectedCaptureDevice, selectedChannelCount]);
   /**
    * @typedef {'ready' | 'capturing' | 'finalizing' | 'error'} CaptureState
    */
@@ -273,15 +296,16 @@ function useMediaRecording(onRecordUpdate, onRecordFinish) {
   return {
     captureDevices,
     accessState,
-    selectedCaptureDeviceId,
+    selectedCaptureDevice,
     selectedChannelCount,
+    captureDeviceFromStorage,
     captureState,
     recordingError,
     showSilenceWarning,
     sampleRate,
     maxSamples,
     refreshCaptureDevices,
-    setSelectedCaptureDeviceId,
+    setSelectedCaptureDevice,
     setSelectedChannelCount,
     beginRecording: handleBeginRecording,
     stopRecording: stop.fn,
@@ -394,15 +418,16 @@ function SampleRecord({ onRecordFinish }) {
   const {
     captureDevices,
     accessState,
-    selectedCaptureDeviceId,
+    selectedCaptureDevice,
     selectedChannelCount,
+    captureDeviceFromStorage,
     captureState,
     recordingError,
     showSilenceWarning,
     maxSamples,
     sampleRate,
     refreshCaptureDevices,
-    setSelectedCaptureDeviceId,
+    setSelectedCaptureDevice,
     setSelectedChannelCount,
     beginRecording,
     stopRecording,
@@ -452,6 +477,12 @@ function SampleRecord({ onRecordFinish }) {
       refreshCaptureDevices();
     }
   }, [showingCaptureConfig, refreshCaptureDevices]);
+
+  const displayedChannelCount = selectedCaptureDevice
+    ? selectedChannelCount
+    : captureDeviceFromStorage
+    ? captureDeviceFromStorage.channelCount
+    : selectedChannelCount;
 
   return (
     <Container fluid="sm" className={classes.container}>
@@ -536,23 +567,52 @@ function SampleRecord({ onRecordFinish }) {
               </Button>
             </>
           ) : (
-            <>
-              <Button
-                type="button"
-                variant="light"
-                size="sm"
-                onClick={() => setShowingCaptureConfig((showing) => !showing)}
-              >
-                Audio input settings {showingCaptureConfig ? '▲' : '▼'}
-              </Button>
-              <Collapse in={showingCaptureConfig}>
-                <div>
+            <Accordion
+              activeKey={showingCaptureConfig ? 'audioInput' : 'nothing'}
+            >
+              <Accordion.Item eventKey="audioInput">
+                <Accordion.Header
+                  className={classes.audioInputHeader}
+                  onClick={() => setShowingCaptureConfig((showing) => !showing)}
+                >
+                  <div>
+                    <span>Audio input settings</span>
+                    {(selectedCaptureDevice || captureDeviceFromStorage) && (
+                      <>
+                        <p className="small">
+                          Capture device:{' '}
+                          {selectedCaptureDevice
+                            ? selectedCaptureDevice.device.label ||
+                              selectedCaptureDevice.device.deviceId
+                            : captureDeviceFromStorage
+                            ? captureDeviceFromStorage.label
+                            : ''}
+                        </p>
+                        <p className="small">
+                          Input channels:{' '}
+                          {displayedChannelCount === 1 ? 'Mono' : 'Stereo'}
+                        </p>
+                      </>
+                    )}
+                  </div>
+                </Accordion.Header>
+                <Accordion.Body>
                   <Form.Group>
-                    <Form.Label>Capture Device</Form.Label>
+                    <Form.Label>Capture device</Form.Label>
                     <Form.Select
-                      value={selectedCaptureDeviceId}
+                      value={
+                        selectedCaptureDevice
+                          ? selectedCaptureDevice.device.deviceId
+                          : captureDeviceFromStorage
+                          ? captureDeviceFromStorage.deviceId
+                          : ''
+                      }
                       onChange={(e) =>
-                        setSelectedCaptureDeviceId(e.target.value)
+                        captureDevices &&
+                        accessState === 'ok' &&
+                        setSelectedCaptureDevice(
+                          captureDevices.get(e.target.value) || null
+                        )
                       }
                     >
                       {captureDevices && accessState === 'ok' ? (
@@ -561,6 +621,14 @@ function SampleRecord({ onRecordFinish }) {
                             {device.label || id}
                           </option>
                         ))
+                      ) : captureDeviceFromStorage ? (
+                        <option
+                          value={captureDeviceFromStorage.deviceId}
+                          disabled
+                        >
+                          {captureDeviceFromStorage.label ||
+                            captureDeviceFromStorage.deviceId}
+                        </option>
                       ) : (
                         <option value="" disabled>
                           Loading devices...
@@ -572,7 +640,7 @@ function SampleRecord({ onRecordFinish }) {
                     <Form.Label>Input channels</Form.Label>
                     <Nav
                       variant="pills"
-                      defaultActiveKey={selectedChannelCount}
+                      activeKey={displayedChannelCount}
                       onSelect={(count) =>
                         setSelectedChannelCount(Number(count))
                       }
@@ -584,11 +652,10 @@ function SampleRecord({ onRecordFinish }) {
                             className={classes.channelOption}
                             eventKey={count}
                             disabled={
-                              !captureDevices ||
-                              !captureDevices.has(selectedCaptureDeviceId) ||
-                              /** @type {import('./utils/recording').AudioDeviceInfoContainer} */ (
-                                captureDevices.get(selectedCaptureDeviceId)
-                              ).channelsAvailable < count
+                              displayedChannelCount !== count &&
+                              (selectedCaptureDevice
+                                ? selectedCaptureDevice.channelsAvailable
+                                : 1) < count
                             }
                           >
                             {count === 1 ? 'Mono' : 'Stereo'}
@@ -597,15 +664,18 @@ function SampleRecord({ onRecordFinish }) {
                       ))}
                     </Nav>
                   </Form.Group>
-                  <p className="small">Stereo input will be summed to mono.</p>
-                </div>
-              </Collapse>
-            </>
+                  <p className={['small', classes.stereoExplanation].join(' ')}>
+                    Stereo input is summed to mono.
+                  </p>
+                </Accordion.Body>
+              </Accordion.Item>
+            </Accordion>
           )}
         </>
       )}
       {(captureState === 'error' && recordingError) || null}
       <Button
+        className={classes.importFileButton}
         type="button"
         variant="secondary"
         onClick={(e) => {

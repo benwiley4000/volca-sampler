@@ -17,24 +17,64 @@
     margin-bottom: 1rem;
   }
 
+  .audioInputHeader {
+    width: var(--record-ui-width);
+
+    button > div {
+      overflow: hidden;
+      width: 100%;
+    }
+
+    p {
+      font-family: var(--body-font-family);
+      color: var(--bs-dark);
+      margin: 0.25rem 0;
+      white-space: nowrap;
+      width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: $text-muted;
+      padding-right: 0.5rem;
+    }
+  }
+
   select {
     margin-bottom: 1rem;
   }
 
-  h2 {
+  & > h2 {
     text-align: center;
     max-width: var(--record-ui-width);
   }
 
-  & > button,
-  select {
+  & > button {
     width: var(--record-ui-width);
   }
 
+  --audio-input-accordion-inner-width: calc(
+    var(--record-ui-width) - #{$accordion-padding-x * 2}
+  );
+
+  select {
+    width: var(--audio-input-accordion-inner-width);
+  }
+
   .channelOption {
-    width: calc(var(--record-ui-width) / 2);
+    width: calc(var(--audio-input-accordion-inner-width) / 2);
     text-align: center;
     margin-bottom: 0.5rem;
+
+    &:disabled {
+      color: $text-muted !important;
+      pointer-events: initial;
+      cursor: not-allowed;
+    }
+  }
+
+  .stereoExplanation {
+    text-align: center;
+    margin-top: 0.25rem;
+    margin-bottom: 0;
   }
 }
 
@@ -78,4 +118,8 @@
     height: 100%;
     image-rendering: pixelated;
   }
+}
+
+.importFileButton {
+  margin-top: 1.5rem;
 }

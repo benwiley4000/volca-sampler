@@ -261,14 +261,18 @@ export async function getTargetWavForSample(sampleContainer, forPreview) {
 
 /**
  * @param {import('../store').SampleContainer} sampleContainer
+ * @param {boolean} [neededYet]
  */
-export function useTargetAudioForSample(sampleContainer) {
+export function useTargetAudioForSample(sampleContainer, neededYet = true) {
   const [targetWav, setTargetWav] = useState(
     /** @type {Uint8Array | null} */ (null)
   );
   const [audioBufferForAudioFileData, setAudioBufferForAudioFileData] =
     useState(/** @type {AudioBuffer | null} */ (null));
   useEffect(() => {
+    if (!neededYet) {
+      return;
+    }
     setTargetWav(null);
     let cancelled = false;
     getTargetWavForSample(sampleContainer, true).then(({ data }) => {
@@ -276,7 +280,7 @@ export function useTargetAudioForSample(sampleContainer) {
         setTargetWav(data);
       }
     });
-  }, [sampleContainer]);
+  }, [sampleContainer, neededYet]);
   useEffect(() => {
     setAudioBufferForAudioFileData(null);
     if (targetWav) {

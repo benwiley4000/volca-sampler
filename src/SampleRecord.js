@@ -162,9 +162,7 @@ function useMediaRecording(onRecordUpdate, onRecordFinish) {
   const [captureState, setCaptureState] = useState(
     /** @type {CaptureState} */ ('ready')
   );
-  const [recordingError, setRecordingError] = useState(
-    /** @type {unknown} */ (null)
-  );
+  const [recordingError, setRecordingError] = useState('');
   const [showSilenceWarning, setShowSilenceWarning] = useState(false);
   useEffect(() => {
     if (captureState !== 'ready') {
@@ -239,7 +237,7 @@ function useMediaRecording(onRecordUpdate, onRecordFinish) {
     try {
       wavBuffer = await mediaRecording;
     } catch (err) {
-      setRecordingError(err);
+      setRecordingError(String(err));
       setCaptureState('error');
       return;
     }
@@ -555,6 +553,10 @@ function SampleRecord({ onRecordFinish }) {
               </span>
             )}
           </Button>
+          {(captureState === 'error' && recordingError && (
+            <p>Recording error: {recordingError}</p>
+          )) ||
+            null}
           {['capturing', 'finalizing'].includes(captureState) ? (
             <>
               <Button
@@ -673,7 +675,6 @@ function SampleRecord({ onRecordFinish }) {
           )}
         </>
       )}
-      {(captureState === 'error' && recordingError) || null}
       {!['capturing', 'finalizing'].includes(captureState) && (
         <Button
           className={classes.importFileButton}

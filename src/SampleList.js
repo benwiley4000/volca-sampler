@@ -6,17 +6,16 @@ import React, {
   useState,
 } from 'react';
 import { Form } from 'react-bootstrap';
-import { styled } from 'tonami';
 
-import { WAVEFORM_CACHED_WIDTH } from './utils/waveform.js';
+import {
+  useWaveformPlayback,
+  WAVEFORM_CACHED_WIDTH,
+} from './utils/waveform.js';
+import { useTargetAudioForSample } from './utils/audioData.js';
 import WaveformDisplay from './WaveformDisplay.js';
+import WaveformListItemPlayback from './WaveformListItemPlayback.js';
 
 import classes from './SampleList.module.scss';
-
-const WaveformContainer = styled.div({
-  width: `${WAVEFORM_CACHED_WIDTH}px`,
-  height: '40px',
-});
 
 const intersectionObserverAvailable =
   typeof IntersectionObserver !== 'undefined';
@@ -64,47 +63,78 @@ const SampleListItem = React.memo(
       observer.observe(waveformContainer);
       return () => observer.disconnect();
     }, []);
-    /** @type {React.RefObject<HTMLButtonElement>} */
-    const buttonRef = useRef(null);
+    /** @type {React.RefObject<HTMLDivElement>} */
+    const listItemRef = useRef(null);
     useEffect(() => {
-      if (!selected || !buttonRef.current) {
+      if (!selected || !listItemRef.current) {
         return;
       }
-      const button = buttonRef.current;
+      const listItem = listItemRef.current;
       const accordionCollapse = /** @type {HTMLElement | null} */ (
-        button.closest('.accordion-collapse')
+        listItem.closest('.accordion-collapse')
       );
       if (!accordionCollapse) {
         return;
       }
       const isPartiallyOutOfView =
-        accordionCollapse.scrollTop > button.offsetTop ||
+        accordionCollapse.scrollTop > listItem.offsetTop ||
         accordionCollapse.scrollTop + accordionCollapse.offsetHeight <
-          button.offsetTop - button.offsetHeight;
+          listItem.offsetTop - listItem.offsetHeight;
       if (isPartiallyOutOfView) {
-        button.scrollIntoView({ block: 'center' });
+        listItem.scrollIntoView({ block: 'center' });
       }
     }, [selected]);
+
+    const { audioBuffer: previewAudioBuffer } = useTargetAudioForSample(sample);
+
+    const { isPlaybackActive, playbackProgress, togglePlayback } =
+      useWaveformPlayback(previewAudioBuffer);
+
     return (
-      <button
+      <div
         className={[
           'list-group-item',
           classes.listItem,
           selected ? `active ${classes.active}` : '',
         ].join(' ')}
         tabIndex={-1}
-        onClick={() => onSampleSelect(sample.id)}
-        ref={buttonRef}
+        onClick={(e) => {
+          const playButton = e.currentTarget.querySelector('button');
+          if (
+            playButton &&
+            playButton.contains(/** @type {Node} */ (e.target))
+          ) {
+            // ignore play button which should't change sample selection
+            return;
+          }
+          onSampleSelect(sample.id);
+        }}
+        ref={listItemRef}
       >
         <Form.Label>{sample.metadata.name}</Form.Label>
-        <div className={classes.listWaveform}>
-          <WaveformContainer ref={waveformContainerRef}>
-            {waveformSeen && (
+        <div
+          className={[
+            classes.waveformContainer,
+            isPlaybackActive ? classes.playbackActive : '',
+          ].join(' ')}
+          style={{
+            // @ts-ignore
+            '--waveform-width': `${WAVEFORM_CACHED_WIDTH}px`,
+          }}
+          ref={waveformContainerRef}
+        >
+          {waveformSeen && (
+            <>
               <WaveformDisplay peaks={sample.metadata.trim.waveformPeaks} />
-            )}
-          </WaveformContainer>
+              <WaveformListItemPlayback
+                isPlaybackActive={isPlaybackActive}
+                playbackProgress={playbackProgress}
+                togglePlayback={togglePlayback}
+              />
+            </>
+          )}
         </div>
-      </button>
+      </div>
     );
   }
 );
@@ -128,21 +158,23 @@ function SampleList({ samples, selectedSampleId, onSampleSelect }) {
       if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') {
         return;
       }
-      const button = /** @type {HTMLElement} */ (e.target).closest('button');
-      if (button) {
+      const listItem = /** @type {HTMLElement} */ (e.target).closest(
+        `.${classes.listItem}`
+      );
+      if (listItem) {
         e.preventDefault();
         const index = Array.prototype.indexOf.call(
           listRef.current.children,
-          button
+          listItem
         );
         if (e.key === 'ArrowUp' && index > 0) {
-          if (button.previousElementSibling instanceof HTMLButtonElement) {
-            button.previousElementSibling.focus();
+          if (listItem.previousElementSibling instanceof HTMLDivElement) {
+            listItem.previousElementSibling.focus();
           }
         }
         if (e.key === 'ArrowDown' && index + 1 < samples.length) {
-          if (button.nextElementSibling instanceof HTMLButtonElement) {
-            button.nextElementSibling.focus();
+          if (listItem.nextElementSibling instanceof HTMLDivElement) {
+            listItem.nextElementSibling.focus();
           }
         }
       }
@@ -154,7 +186,7 @@ function SampleList({ samples, selectedSampleId, onSampleSelect }) {
     (e) => {
       if (
         !listRef.current ||
-        !(document.activeElement instanceof HTMLButtonElement)
+        !(document.activeElement instanceof HTMLDivElement)
       ) {
         return;
       }

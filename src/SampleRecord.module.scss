@@ -73,7 +73,7 @@
     &:focus-visible {
       outline: 0;
       box-shadow: 0 0 $input-btn-focus-blur $input-btn-focus-width
-      rgba($secondary, 0.5);
+        rgba($secondary, 0.5);
     }
   }
 
@@ -82,11 +82,12 @@
     margin-top: 0.25rem;
     margin-bottom: 0;
   }
-}
 
-.alertContainer {
-  & > * {
-    display: inline-block;
+  .alertContainer {
+    width: var(--record-ui-width);
+    & > * {
+      display: inline-block;
+    }
   }
 }
 

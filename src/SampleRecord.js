@@ -524,8 +524,8 @@ function SampleRecord({ onRecordFinish }) {
                   Your recording was totally silent.
                 </Alert.Heading>
                 <p>
-                  Check the audio input settings and your connections, then try
-                  again.
+                  Check the <strong>Audio input settings</strong> and your
+                  connections, then try again.
                 </p>
               </Alert>
             </div>

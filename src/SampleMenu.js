@@ -108,7 +108,6 @@ const SampleMenu = React.memo(
     const factorySamplesHeaderMouseDown = useRef(false);
     useEffect(() => {
       if (!userSamplesHeader.current || !factorySamplesHeader.current) {
-        console.warn('Expected refs to be defined');
         return;
       }
       function onUserSamplesMousedown() {
@@ -241,7 +240,7 @@ const SampleMenu = React.memo(
                       }
                       onKeyDown={handleAccordionHeaderArrowDown}
                     >
-                      Your Samples
+                      {eventKey === 'user' ? 'Your samples' : 'Factory samples'}
                     </Accordion.Header>
                     <Accordion.Body className={classes.accordionBody}>
                       <SampleList

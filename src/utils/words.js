@@ -13,6 +13,8 @@ const coolAdjectives = [
   'Alright',
   'Very Good',
   'Ice Cold',
+  'Sick',
+  'Juicy'
 ];
 
 const sampleSynonyms = [

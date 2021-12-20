@@ -55,7 +55,6 @@ function SampleDetailReadonly({ sample: readonlySample, onSampleDuplicate }) {
           <span className={classes.buttonLink}>
             <Button
               variant="link"
-              className={classes.duplicateButtonLink}
               onClick={() => onSampleDuplicate(sample.id)}
             >
               make a duplicate

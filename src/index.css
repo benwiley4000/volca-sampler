@@ -42,4 +42,18 @@ code {
 a,
 .btn-link {
   font-weight: bold !important;
+  padding: 0 !important;
+  vertical-align: unset !important;
+  user-select: unset !important;
+}
+
+pre {
+  color: #fff;
+  background-color: var(--bs-dark);
+  padding: 1rem;
+  border-radius: 0.3rem;
+}
+
+img {
+  max-width: 100%;
 }

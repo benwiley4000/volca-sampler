@@ -691,7 +691,7 @@ function SampleRecord({ onRecordFinish }) {
           <input
             hidden
             type="file"
-            accept="audio/*,.wav,.mp3,.ogg"
+            accept="audio/*,video/*,.wav,.mp3,.ogg"
             onChange={importFile}
           />
         </Button>

@@ -11,11 +11,12 @@ import {
   Button,
   Alert,
   Container,
-  Nav,
   Accordion,
   Modal,
   Tab,
   Tabs,
+  ButtonGroup,
+  ToggleButton,
 } from 'react-bootstrap';
 
 import {
@@ -673,31 +674,30 @@ function SampleRecord({ onRecordFinish }) {
                     </Form.Group>
                     <Form.Group>
                       <Form.Label>Input channels</Form.Label>
-                      <Nav
-                        variant="pills"
-                        activeKey={displayedChannelCount}
-                        onSelect={(count) =>
-                          setSelectedChannelCount(Number(count))
-                        }
-                      >
+                      <ButtonGroup className={classes.channelOptionSelect}>
                         {[1, 2].map((count) => (
-                          <Nav.Item key={count}>
-                            <Nav.Link
-                              as="button"
-                              className={classes.channelOption}
-                              eventKey={count}
-                              disabled={
-                                displayedChannelCount !== count &&
-                                (selectedCaptureDevice
-                                  ? selectedCaptureDevice.channelsAvailable
-                                  : 1) < count
-                              }
-                            >
-                              {count === 1 ? 'Mono' : 'Stereo'}
-                            </Nav.Link>
-                          </Nav.Item>
+                          <ToggleButton
+                            key={count}
+                            className={classes.channelOption}
+                            type="radio"
+                            variant="outline-secondary"
+                            name="channels"
+                            value={count}
+                            checked={count === displayedChannelCount}
+                            disabled={
+                              displayedChannelCount !== count &&
+                              (selectedCaptureDevice
+                                ? selectedCaptureDevice.channelsAvailable
+                                : 1) < count
+                            }
+                            onClick={() =>
+                              setSelectedChannelCount(Number(count))
+                            }
+                          >
+                            {count === 1 ? 'Mono' : 'Stereo'}
+                          </ToggleButton>
                         ))}
-                      </Nav>
+                      </ButtonGroup>
                     </Form.Group>
                     <p
                       className={['small', classes.stereoExplanation].join(' ')}

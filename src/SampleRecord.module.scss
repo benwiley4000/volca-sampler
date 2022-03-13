@@ -59,6 +59,10 @@
     width: var(--audio-input-accordion-inner-width);
   }
 
+  .channelOptionSelect {
+    display: flex; // inline-flex is the default for btn-group
+  }
+
   .channelOption {
     width: calc(var(--audio-input-accordion-inner-width) / 2);
     text-align: center;

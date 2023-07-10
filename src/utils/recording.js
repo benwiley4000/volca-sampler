@@ -239,7 +239,7 @@ export async function captureAudio({
   });
   mediaStreamSourceNode.connect(recorderNode);
   recorderNode.connect(audioContext.destination);
-  const timeLimitSeconds = 10;
+  const timeLimitSeconds = 65;
   onStart(audioContext.sampleRate, timeLimitSeconds);
 
   const maxSamples = timeLimitSeconds * audioContext.sampleRate;

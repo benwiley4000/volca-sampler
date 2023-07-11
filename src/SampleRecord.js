@@ -304,8 +304,8 @@ function useMediaRecording(onRecordUpdate, onRecordFinish) {
             alert('Unsupported audio format detected');
             return;
           }
-          if (audioBuffer.length > 10 * audioBuffer.sampleRate) {
-            alert('Please select an audio file no more than 10 seconds long');
+          if (audioBuffer.length > 65 * audioBuffer.sampleRate) {
+            alert('Please select an audio file no more than 65 seconds long');
             return;
           }
           setCaptureState('finalizing');

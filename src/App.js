@@ -206,30 +206,31 @@ function App() {
     []
   );
 
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [selectedMobilePage, setSelectedMobilePage] = useState(
+    /** @type {'sampleList' | 'currentSample' | 'about'} */ ('currentSample')
+  );
+
   const handleSampleSelect = useCallback(
     /**
      * @param {string | null} sampleId
      */
     (sampleId) => {
       setFocusedSampleId(sampleId);
-      setSidebarOpen(false);
+      setSelectedMobilePage('currentSample');
     },
     []
   );
 
-  const handleMenuOpen = useCallback(() => setSidebarOpen(true), []);
-  const handleHeaderClick = useCallback(() => setFocusedSampleId(null), []);
+  const handleHeaderClick = useCallback(() => {
+    setFocusedSampleId(null);
+    setSelectedMobilePage('currentSample');
+  }, []);
 
   const sample = focusedSampleId ? allSamples.get(focusedSampleId) : null;
 
-  const [selectedMobilePage, setSelectedMobilePage] = useState(
-    /** @type {'sampleList' | 'currentSample' | 'about'} */ ('currentSample')
-  );
-
   return (
     <div className={classes.app}>
-      <Header onMenuOpen={handleMenuOpen} onHeaderClick={handleHeaderClick} />
+      <Header onHeaderClick={handleHeaderClick} />
       <div
         className={`${classes.mobileLayoutContainer} ${classes[selectedMobilePage]}`}
       >
@@ -266,6 +267,7 @@ function App() {
           )}
         </div>
         <div className={classes.mobileFooterContainer}>
+          <h2>About Volca Sampler</h2>
           <Footer />
         </div>
       </div>

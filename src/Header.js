@@ -5,10 +5,10 @@ import classes from './Header.module.scss';
 
 const Header = React.memo(
   /**
-   * @param {{ onMenuOpen: () => void, onHeaderClick: () => void }} props
+   * @param {{ onHeaderClick: () => void }} props
    * @returns
    */
-  function Header({ onMenuOpen, onHeaderClick }) {
+  function Header({ onHeaderClick }) {
     return (
       <div className={classes.titleBar}>
         <Container fluid="sm" className={classes.titleContainer}>

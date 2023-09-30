@@ -99,10 +99,15 @@
       display: none;
     }
   }
+
+  h2 {
+    padding-top: 2rem;
+    text-align: center;
+  }
 }
 
 .normalFooterContainer {
-  padding-top: 2rem;
+  padding-top: 3rem;
   display: none;
 
   @include media-breakpoint-up(md) {

@@ -15,7 +15,6 @@ import classes from './SampleMenu.module.scss';
 const SampleMenu = React.memo(
   /**
    * @param {{
-   *   visible: boolean;
    *   loading: boolean;
    *   focusedSampleId: string | null;
    *   userSamples: Map<string, import('./store').SampleContainer>;
@@ -24,7 +23,6 @@ const SampleMenu = React.memo(
    * }} props
    */
   function SampleMenu({
-    visible,
     loading,
     focusedSampleId,
     userSamples,

@@ -7,8 +7,6 @@
   display: flex;
   background-color: #f3f3f3;
   padding-top: 1rem;
-  padding-left: 4rem; // to make space for button
-  padding-right: 4rem; // to match padding-left for margin-auto purposes
   padding-bottom: 0;
   margin-bottom: 0px;
   border-bottom: 1px solid #ccc;
@@ -17,8 +15,6 @@
   z-index: 1030;
 
   @include media-breakpoint-up(md) {
-    padding-left: 0;
-    padding-right: 0;
 
     & > [class*="container"] {
       margin: 0 0.5rem;
@@ -137,10 +133,6 @@
   will-change: transform;
   .title:hover & {
     transform: rotate(-5deg) scale(1.1);
-  }
-  display: none;
-  @media screen and (min-width: 455px) {
-    display: unset;
   }
 }
 

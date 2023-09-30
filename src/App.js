@@ -5,9 +5,9 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { Nav } from 'react-bootstrap';
 
 import Header from './Header.js';
-import SampleMenuSidebar from './SampleMenuSidebar.js';
 import SampleDetail from './SampleDetail.js';
 import SampleDetailReadonly from './SampleDetailReadonly.js';
 import SampleRecord from './SampleRecord.js';
@@ -223,47 +223,67 @@ function App() {
 
   const sample = focusedSampleId ? allSamples.get(focusedSampleId) : null;
 
+  const [selectedMobilePage, setSelectedMobilePage] = useState(
+    /** @type {'sampleList' | 'currentSample' | 'about'} */ ('currentSample')
+  );
+
   return (
     <div className={classes.app}>
       <Header onMenuOpen={handleMenuOpen} onHeaderClick={handleHeaderClick} />
-      <SampleMenuSidebar
-        open={sidebarOpen}
-        loading={loadingSamples}
-        focusedSampleId={focusedSampleId}
-        userSamples={userSamples}
-        factorySamples={factorySamples}
-        setOpen={setSidebarOpen}
-        onSampleSelect={handleSampleSelect}
-      />
-      <div className={classes.persistentSidebar}>
-        <SampleMenu
-          visible
-          loading={loadingSamples}
-          focusedSampleId={focusedSampleId}
-          userSamples={userSamples}
-          factorySamples={factorySamples}
-          onSampleSelect={handleSampleSelect}
-        />
-      </div>
-      <div className={classes.mainLayout}>
-        {!sample ? null : sample instanceof SampleContainer.Mutable ? (
-          <SampleDetail
-            sample={sample}
-            onSampleUpdate={handleSampleUpdate}
-            onSampleDuplicate={handleSampleDuplicate}
-            onSampleDelete={handleSampleDelete}
+      <div
+        className={`${classes.mobileLayoutContainer} ${classes[selectedMobilePage]}`}
+      >
+        <div className={classes.sampleListSidebar}>
+          <SampleMenu
+            loading={loadingSamples}
+            focusedSampleId={focusedSampleId}
+            userSamples={userSamples}
+            factorySamples={factorySamples}
+            onSampleSelect={handleSampleSelect}
           />
-        ) : (
-          <SampleDetailReadonly
-            sample={sample}
-            onSampleDuplicate={handleSampleDuplicate}
-          />
-        )}
-        {!focusedSampleId && (
-          <SampleRecord onRecordFinish={handleRecordFinish} />
-        )}
-        {(!focusedSampleId || sample) && <Footer />}
+        </div>
+        <div className={classes.mainLayout}>
+          {!sample ? null : sample instanceof SampleContainer.Mutable ? (
+            <SampleDetail
+              sample={sample}
+              onSampleUpdate={handleSampleUpdate}
+              onSampleDuplicate={handleSampleDuplicate}
+              onSampleDelete={handleSampleDelete}
+            />
+          ) : (
+            <SampleDetailReadonly
+              sample={sample}
+              onSampleDuplicate={handleSampleDuplicate}
+            />
+          )}
+          {!focusedSampleId && (
+            <SampleRecord onRecordFinish={handleRecordFinish} />
+          )}
+          {(!focusedSampleId || sample) && (
+            <div className={classes.normalFooterContainer}>
+              <Footer />
+            </div>
+          )}
+        </div>
+        <div className={classes.mobileFooterContainer}>
+          <Footer />
+        </div>
       </div>
+      <Nav
+        className={classes.mobilePageNav}
+        activeKey={selectedMobilePage}
+        variant="underline"
+      >
+        <Nav.Item onClick={() => setSelectedMobilePage('sampleList')}>
+          <Nav.Link eventKey="sampleList">List</Nav.Link>
+        </Nav.Item>
+        <Nav.Item onClick={() => setSelectedMobilePage('currentSample')}>
+          <Nav.Link eventKey="currentSample">Sample</Nav.Link>
+        </Nav.Item>
+        <Nav.Item onClick={() => setSelectedMobilePage('about')}>
+          <Nav.Link eventKey="about">About</Nav.Link>
+        </Nav.Item>
+      </Nav>
     </div>
   );
 }

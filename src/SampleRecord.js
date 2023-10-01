@@ -793,11 +793,11 @@ function SampleRecord({ onRecordFinish }) {
                 </a>
                 . Make sure you download the{' '}
                 <a
-                  href="https://github.com/kyleneideck/BackgroundMusic/releases/tag/0.4.0-SNAPSHOT-b38f6dd"
+                  href="https://github.com/kyleneideck/BackgroundMusic/releases/tag/v0.4.0"
                   target="_blank"
                   rel="noreferrer"
                 >
-                  4.0.0-SNAPSHOT
+                  0.4.0
                 </a>{' '}
                 version, since earlier versions don't work well with Volca
                 Sampler.

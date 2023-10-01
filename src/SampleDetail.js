@@ -6,6 +6,8 @@ import {
   Form,
   Button,
   Modal,
+  OverlayTrigger,
+  Tooltip,
 } from 'react-bootstrap';
 import { ReactComponent as WarningIcon } from '@material-design-icons/svg/filled/warning.svg';
 
@@ -48,7 +50,13 @@ const SampleDetail = React.memo(
     return (
       <Container fluid="sm">
         <h2 className={classes.sampleName}>
-          <span title={sample.metadata.name}>{sample.metadata.name}</span>
+          <OverlayTrigger
+            delay={{ show: 400, hide: 0 }}
+            placement="right"
+            overlay={<Tooltip>{sample.metadata.name}</Tooltip>}
+          >
+            <span>{sample.metadata.name}</span>
+          </OverlayTrigger>
           <SampleDetailActions
             sampleId={sample.id}
             name={sample.metadata.name}

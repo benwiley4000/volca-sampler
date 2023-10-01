@@ -48,7 +48,7 @@ const SampleDetail = React.memo(
     return (
       <Container fluid="sm">
         <h2 className={classes.sampleName}>
-          {sample.metadata.name}
+          <span title={sample.metadata.name}>{sample.metadata.name}</span>
           <SampleDetailActions
             sampleId={sample.id}
             name={sample.metadata.name}
@@ -74,8 +74,10 @@ const SampleDetail = React.memo(
         />
         <WaveformEdit sample={sample} onSampleUpdate={onSampleUpdate} />
         <h4>Transfer</h4>
-        <VolcaTransferControl sample={sample} onSlotNumberUpdate={handleSlotNumberUpdate}
- />
+        <VolcaTransferControl
+          sample={sample}
+          onSlotNumberUpdate={handleSlotNumberUpdate}
+        />
       </Container>
     );
   }

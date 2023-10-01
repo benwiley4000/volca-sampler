@@ -7,6 +7,11 @@
   display: flex;
   justify-content: space-between;
 
+  span {
+    text-overflow: ellipsis;
+    overflow: hidden;
+  }
+
   @include media-breakpoint-up(lg) {
     flex-direction: column;
   }

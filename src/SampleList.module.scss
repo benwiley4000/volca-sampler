@@ -47,9 +47,19 @@ div.listItem {
     display: flex;
     margin-bottom: 0.5rem;
 
-    & > span {
+    .name {
       text-overflow: ellipsis;
       overflow: hidden;
+      min-width: 0;
+      flex-grow: 1;
+    }
+
+    .slot {
+      font-size: 0.8rem;
+      font-family: monospace;
+      opacity: 0.6;
+      margin-left: 0.5rem;
+      line-height: 1.5rem;
     }
   }
 

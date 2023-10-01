@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { Form, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import RangeSlider from 'react-bootstrap-range-slider';
 
@@ -27,6 +27,21 @@ const QualityBitDepthControl = React.memo(
       const qualityBitDepth = Number(e.target.value);
       setLocalQualityBitDepth(qualityBitDepth);
     }, []);
+    /** @type {React.RefObject<HTMLInputElement>} */
+    const rangeInputRef = useRef(null);
+    useEffect(() => {
+      const input = rangeInputRef.current;
+      if (input) {
+        const onChangeEnd = () => {
+          const qualityBitDepth = Number(input.value);
+          onSampleUpdate(sampleId, { qualityBitDepth });
+        };
+        input.addEventListener('change', onChangeEnd);
+        return () => {
+          input.removeEventListener('change', onChangeEnd);
+        };
+      }
+    }, [sampleId, onSampleUpdate]);
     return (
       <Form.Group className={classes.qualityBitDepthWrapper}>
         <OverlayTrigger
@@ -80,13 +95,7 @@ const QualityBitDepthControl = React.memo(
           // fixes a z-fighting issue with other parts of the UI
           tooltipStyle={{ zIndex: 1020 }}
           onChange={handleChange}
-          ref={(input) =>
-            input &&
-            input.addEventListener('change', () => {
-              const qualityBitDepth = Number(input.value);
-              onSampleUpdate(sampleId, { qualityBitDepth });
-            })
-          }
+          ref={rangeInputRef}
         />
         <div className={classes.annotations}>
           <label className="small">Faster transfer</label>

@@ -1,9 +1,32 @@
+@import 'bootstrap_custom_variables';
+@import '~bootstrap/scss/functions';
+@import '~bootstrap/scss/variables';
+@import '~bootstrap/scss/mixins';
+
 .footer {
-  text-align: center;
   padding: 1rem 1rem 0;
 
+  @include media-breakpoint-up(md) {
+    text-align: center;
+  }
+
   p {
-    margin-bottom: 0.25rem;
+    @include media-breakpoint-up(md) {
+      margin-bottom: 0.25rem;
+    }
+  }
+
+  .faqAndLicensesButton {
+    display: none;
+    @include media-breakpoint-up(md) {
+      display: unset;
+    }
+  }
+
+  .faqAndLicensesEmbedded {
+    @include media-breakpoint-up(md) {
+      display: none;
+    }
   }
 }
 

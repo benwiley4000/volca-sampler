@@ -1,7 +1,6 @@
 import React, {
   useCallback,
   useEffect,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -211,22 +210,20 @@ function App() {
     /** @type {'sampleList' | 'currentSample' | 'about'} */ ('currentSample')
   );
 
-  useLayoutEffect(() => {
-    setSelectedMobilePage('currentSample');
-  }, [focusedSampleId]);
-
   const handleSampleSelect = useCallback(
     /**
      * @param {string | null} sampleId
      */
     (sampleId) => {
       setFocusedSampleId(sampleId);
+      setSelectedMobilePage('currentSample');
     },
     []
   );
 
   const handleHeaderClick = useCallback(() => {
     setFocusedSampleId(null);
+    setSelectedMobilePage('currentSample');
   }, []);
 
   const sample = focusedSampleId ? allSamples.get(focusedSampleId) : null;

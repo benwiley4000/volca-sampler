@@ -23,7 +23,6 @@
 }
 
 .sampleListSidebar {
-  width: var(--sidebar-width);
   padding: 1rem;
   padding-top: 2rem;
   position: absolute;
@@ -41,7 +40,7 @@
   @include media-breakpoint-up(md) {
     display: flex;
     position: fixed;
-    width: unset;
+    width: var(--sidebar-width);
     top: 115px;
   }
 }

@@ -141,7 +141,7 @@ const SampleListItem = React.memo(
           >
             {isPlaybackActive ? <StopIcon /> : <PlayIcon />}
           </Button>
-          <span>{sample.metadata.name}</span>
+          <span title={sample.metadata.name}>{sample.metadata.name}</span>
         </span>
         <div
           className={[

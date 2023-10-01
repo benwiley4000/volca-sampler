@@ -44,8 +44,13 @@ div.listItem {
 
   .sampleTitle {
     white-space: nowrap;
-    display: inline-block;
+    display: flex;
     margin-bottom: 0.5rem;
+
+    & > span {
+      text-overflow: ellipsis;
+      overflow: hidden;
+    }
   }
 
   .playbackButton {

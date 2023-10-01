@@ -8,6 +8,8 @@
   justify-content: space-between;
 
   span {
+    display: flex;
+    align-items: center;
     text-overflow: ellipsis;
     overflow: hidden;
   }

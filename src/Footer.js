@@ -82,6 +82,17 @@ function FAQAndLicensesContent() {
         library published by <strong>KORG Inc.</strong>, which encodes audio
         data to be sent to the <strong>volca sample</strong>.
       </p>
+      <p>
+        Big thanks to Blairman and to{' '}
+        <a
+          href="https://soundcloud.com/southtechnique"
+          target="_blank"
+          rel="noreferrer"
+        >
+          southTechnique
+        </a>{' '}
+        for helping to test the alpha version!
+      </p>
       <h3>FAQ</h3>
       <div className={classes.qAndA}>
         <p>
@@ -130,7 +141,11 @@ function FAQAndLicensesContent() {
         </p>
         <p>
           A:{' '}
-          <a href="mailto:therealbenwiley@gmail.com?subject=Volca Sampler">
+          <a
+            href="mailto:therealbenwiley@gmail.com?subject=Volca Sampler"
+            target="_blank"
+            rel="noreferrer"
+          >
             Email
           </a>{' '}
           to get in touch with me personally, or{' '}

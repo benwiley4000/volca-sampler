@@ -279,58 +279,64 @@ const SlotNumberInput = React.memo(
                 <KeyboardArrowUpIcon />
               </span>
             </div>
-            <div
-              className={classes.slotNumber}
-              title={`Slot ${slotNumberLocal}`}
-              ref={slotNumberRef}
-              tabIndex={0}
+            <OverlayTrigger
+              delay={{ show: 400, hide: 0 }}
+              placement="right"
+              overlay={<Tooltip>Slot {slotNumberLocal}</Tooltip>}
             >
-              {/* behind the real information we just put a row of faint 8s to
+              <div
+                className={classes.slotNumber}
+                ref={slotNumberRef}
+                tabIndex={0}
+              >
+                {/* behind the real information we just put a row of faint 8s to
         simulate the effect of unilluminated character segments */}
-              <SevenSegmentDisplay
-                value="8888"
-                color="var(--bs-gray-dark)"
-                strokeColor="transparent"
-                digitCount={4}
-              />
-              <SevenSegmentDisplay
-                ref={
-                  /**
-                   * @param {React.Component} instance
-                   */
-                  (instance) => {
-                    const svg = /** @type {SVGElement} */ (
-                      findDOMNode(instance)
-                    );
-                    if (svg) {
-                      svg.querySelectorAll('circle').forEach((oldPoint) => {
-                        svg.removeChild(oldPoint);
-                      });
-                      const point = document.createElementNS(
-                        'http://www.w3.org/2000/svg',
-                        'circle'
+                <SevenSegmentDisplay
+                  value="8888"
+                  color="var(--bs-gray-dark)"
+                  strokeColor="transparent"
+                  digitCount={4}
+                />
+                <SevenSegmentDisplay
+                  ref={
+                    /**
+                     * @param {React.Component} instance
+                     */
+                    (instance) => {
+                      const svg = /** @type {SVGElement} */ (
+                        findDOMNode(instance)
                       );
-                      point.classList.add(classes.point);
-                      point.setAttribute('cx', '10.7');
-                      point.setAttribute('cy', '17');
-                      point.setAttribute('r', '1');
-                      svg.appendChild(point);
+                      if (svg) {
+                        svg.querySelectorAll('circle').forEach((oldPoint) => {
+                          svg.removeChild(oldPoint);
+                        });
+                        const point = document.createElementNS(
+                          'http://www.w3.org/2000/svg',
+                          'circle'
+                        );
+                        point.classList.add(classes.point);
+                        point.setAttribute('cx', '10.7');
+                        point.setAttribute('cy', '17');
+                        point.setAttribute('r', '1');
+                        svg.appendChild(point);
 
-                      digitElementsRef.current = /** @type {SVGGElement[]} */ (
-                        [].slice.call(svg.querySelectorAll('g'))
-                      )
-                        // call .reverse() to get the right-most (smallest) digit first
-                        .reverse()
-                        .slice(0, 3);
+                        digitElementsRef.current =
+                          /** @type {SVGGElement[]} */ (
+                            [].slice.call(svg.querySelectorAll('g'))
+                          )
+                            // call .reverse() to get the right-most (smallest) digit first
+                            .reverse()
+                            .slice(0, 3);
+                      }
                     }
                   }
-                }
-                // the 5 actually represents an S
-                value={`5${String(slotNumberLocal).padStart(3, '0')}`}
-                digitProps={{ color: 'var(--bs-primary)' }}
-                digitCount={4}
-              />
-            </div>
+                  // the 5 actually represents an S
+                  value={`5${String(slotNumberLocal).padStart(3, '0')}`}
+                  digitProps={{ color: 'var(--bs-primary)' }}
+                  digitCount={4}
+                />
+              </div>
+            </OverlayTrigger>
             <div className={classes.arrowControls}>
               <span onClick={() => handleArrowDown(2)}>
                 <KeyboardArrowDownIcon />

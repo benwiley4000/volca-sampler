@@ -141,7 +141,12 @@ const SampleListItem = React.memo(
           >
             {isPlaybackActive ? <StopIcon /> : <PlayIcon />}
           </Button>
-          <span title={sample.metadata.name}>{sample.metadata.name}</span>
+          <span className={classes.name} title={sample.metadata.name}>
+            {sample.metadata.name}
+          </span>
+          <span className={classes.slot}>
+            S.{sample.metadata.slotNumber.toString().padStart(3, '0')}
+          </span>
         </span>
         <div
           className={[

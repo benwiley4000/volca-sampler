@@ -194,6 +194,14 @@ function FAQAndLicensesContent() {
         NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
         SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       </p>
+      <h5>Other open source licenses</h5>
+      <p>
+        See the full list{' '}
+        <a href="npm-licenses.html" target="_blank" rel="noreferrer">
+          here
+        </a>
+        .
+      </p>
     </>
   );
 }

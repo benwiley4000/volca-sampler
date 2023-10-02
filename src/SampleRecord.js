@@ -885,7 +885,7 @@ function SampleRecord({ onRecordFinish }) {
               <img src="ios_go_to_saved_file.png" alt="" />
               <h4>Trim recording</h4>
               <p>
-                If your recorded video is longer than 10 seconds, you will need
+                If your recorded video is longer than 65 seconds, you will need
                 to trim it so it will be accepted by Volca Sampler's file
                 import. Tap the <strong>Edit</strong> button...
               </p>
@@ -994,7 +994,7 @@ function SampleRecord({ onRecordFinish }) {
                 Volca Sampler.
               </p>
               <p>
-                However, if your video is longer than 10 seconds, you will need
+                However, if your video is longer than 65 seconds, you will need
                 to trim it, and you might prefer to import the file in{' '}
                 <strong>WAV</strong> format. One of the best free Android apps
                 for converting MP4 video to WAV audio, and trimming it at the

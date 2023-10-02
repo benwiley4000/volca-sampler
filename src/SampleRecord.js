@@ -372,6 +372,9 @@ function drawRecordingPeaks({ canvas, peaks, drawUntil, scaleCoefficient }) {
       scaledPeakHeight
     );
   }
+  canvas.style.left = `min(0px, calc(var(--record-ui-width) - ${
+    drawUntil * groupPixelWidth
+  }px))`;
 }
 
 /**

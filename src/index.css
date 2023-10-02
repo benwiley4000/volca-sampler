@@ -39,7 +39,7 @@ code {
   z-index: 1 !important;
 }
 
-a,
+a:not(.dropdown-item),
 .btn-link {
   font-weight: bold !important;
   padding: 0 !important;

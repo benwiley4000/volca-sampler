@@ -125,9 +125,11 @@
     bottom: 0;
     left: 0;
     right: 0;
-    width: 100%;
+    // max recording length is 65 sec but we show only 10 secs at a time
+    width: 650%;
     height: 100%;
     image-rendering: pixelated;
+    will-change: left;
   }
 }
 

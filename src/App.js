@@ -11,6 +11,7 @@ import Header from './Header.js';
 import SampleDetail from './SampleDetail.js';
 import SampleDetailReadonly from './SampleDetailReadonly.js';
 import SampleRecord from './SampleRecord.js';
+import SampleMenu from './SampleMenu.js';
 import Footer from './Footer.js';
 import {
   getFactorySamples,
@@ -20,9 +21,12 @@ import {
 import { getSamplePeaksForAudioBuffer } from './utils/waveform.js';
 import { getAudioBufferForAudioFileData } from './utils/audioData.js';
 import { newSampleName } from './utils/words.js';
+import {
+  onSampleUpdateEvent,
+  sendSampleUpdateEvent,
+} from './utils/sampleTabSync.js';
 
 import classes from './App.module.scss';
-import SampleMenu from './SampleMenu.js';
 
 const sessionStorageKey = 'focused_sample_id';
 
@@ -128,6 +132,7 @@ function App() {
     await sample.persist();
     setUserSamples((samples) => new Map([[sample.id, sample], ...samples]));
     setFocusedSampleId(sample.id);
+    Promise.resolve().then(() => sendSampleUpdateEvent(sample.id, 'create'));
     return 'saved';
   }, []);
 
@@ -138,7 +143,9 @@ function App() {
     setUserSamples((samples) => {
       const sample = samples.get(id);
       if (sample && sample instanceof SampleContainer.Mutable) {
-        const updated = sample.update(updater);
+        const updated = sample.update(updater, () => {
+          sendSampleUpdateEvent(sample.id, 'edit');
+        });
         if (updated !== sample) {
           return new Map(samples).set(sample.id, updated);
         }
@@ -156,7 +163,9 @@ function App() {
     (id) => {
       const sample = allSamplesRef.current.get(id);
       if (sample) {
-        const newSample = sample.duplicate();
+        const newSample = sample.duplicate((id) => {
+          sendSampleUpdateEvent(id, 'create');
+        });
         setUserSamples(
           (samples) => new Map([[newSample.id, newSample], ...samples])
         );
@@ -172,12 +181,17 @@ function App() {
   const handleSampleDelete = useCallback(
     /**
      * @param {string} id
+     * @param {boolean} [noPersist]
      */
-    (id) => {
+    (id, noPersist) => {
       const userSamples = userSamplesRef.current;
       const sample = userSamples.get(id);
       if (sample && sample instanceof SampleContainer.Mutable) {
-        sample.remove();
+        if (!noPersist) {
+          sample.remove().then(() => {
+            sendSampleUpdateEvent(sample.id, 'delete');
+          });
+        }
         /** @type {string | null} */
         let nextFocusedSampleId = null;
         let awaitingNextBeforeBreak = false;
@@ -205,6 +219,21 @@ function App() {
     },
     []
   );
+  
+  useEffect(() => {
+    return onSampleUpdateEvent(async (event) => {
+      if (event.action === 'delete') {
+        handleSampleDelete(event.sampleId, true);
+      } else {
+        const syncedSample = await SampleContainer.getOneFromStorage(
+          event.sampleId
+        );
+        setUserSamples((samples) =>
+          new Map(samples).set(syncedSample.id, syncedSample)
+        );
+      }
+    });
+  }, [handleSampleDelete]);
 
   const [selectedMobilePage, setSelectedMobilePage] = useState(
     /** @type {'sampleList' | 'currentSample' | 'about'} */ ('currentSample')

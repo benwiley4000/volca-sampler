@@ -288,15 +288,16 @@ export class SampleContainer {
 
   /**
    * @returns {SampleContainer}
+   * @param {(sampleId: string) => void} [onPersisted]
    */
-  duplicate() {
+  duplicate(onPersisted) {
     const copy = new SampleContainer.Mutable({
       ...this.metadata,
       name: `${this.metadata.name} (copy)`,
       dateModified: new Date().toISOString(),
     });
     // async - does not block
-    copy.persist();
+    copy.persist().then(() => onPersisted && onPersisted(copy.id));
     return copy;
   }
 
@@ -322,9 +323,10 @@ export class SampleContainer {
 
     /**
      * @param {SampleMetadataUpdateArg} updater
+     * @param {() => void} [onPersisted]
      * @returns {SampleContainer}
      */
-    update(updater) {
+    update(updater, onPersisted) {
       const { id, metadata } = this;
       const update =
         typeof updater === 'function' ? updater(metadata) : updater;
@@ -346,7 +348,7 @@ export class SampleContainer {
       };
       const newContainer = new SampleContainer.Mutable({ id, ...newMetadata });
       // async - does not block
-      newContainer.persist();
+      newContainer.persist().then(onPersisted);
       return newContainer;
     }
 
@@ -503,6 +505,26 @@ export class SampleContainer {
         a > b ? -1 : b > a ? 1 : 0
     );
     return sampleContainers;
+  }
+
+  /**
+   * @param {string} sampleId
+   * @return {Promise<SampleContainer>}
+   */
+  static async getOneFromStorage(sampleId) {
+    const metadata = await sampleMetadataStore.getItem(sampleId);
+    const upgradedMetadata = await upgradeMetadata(metadata);
+    const sampleContainer = new SampleContainer.Mutable({
+      id: sampleId,
+      ...upgradedMetadata,
+    });
+    const { sourceFileId } = sampleContainer.metadata;
+    this.recentlyCachedSourceFileIds.filter((id) => id !== sourceFileId);
+    this.sourceFileData.delete(sourceFileId);
+    if (isReloadedToUpgrade) {
+      clearReloadToUpgrade();
+    }
+    return sampleContainer;
   }
 }
 

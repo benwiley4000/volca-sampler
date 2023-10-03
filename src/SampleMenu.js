@@ -84,10 +84,14 @@ const SampleMenu = React.memo(
     }, []);
     const userSamplesFiltered = useMemo(
       () =>
-        [...userSamples.values()].filter(
-          (sample) =>
-            !search || sample.metadata.name.toLowerCase().includes(search)
-        ),
+        [...userSamples.values()]
+          .filter(
+            (sample) =>
+              !search || sample.metadata.name.toLowerCase().includes(search)
+          )
+          .sort((a, b) =>
+            a.metadata.dateModified > b.metadata.dateModified ? -1 : 1
+          ),
       [userSamples, search]
     );
     const factorySamplesFiltered = useMemo(

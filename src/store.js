@@ -196,6 +196,27 @@ const metadataUpgrades = {
   },
 };
 
+let isReloadedToUpgrade = new URLSearchParams(window.location.search).has(
+  'reloaded_to_upgrade'
+);
+
+function reloadToUpgrade() {
+  const newUrl = new URL(window.location.href);
+  const newSearchParams = new URLSearchParams(window.location.search);
+  newSearchParams.set('reloaded_to_upgrade', 'true');
+  newUrl.search = newSearchParams.toString();
+  window.location.replace(newUrl.href);
+}
+
+function clearReloadToUpgrade() {
+  const newUrl = new URL(window.location.href);
+  const newSearchParams = new URLSearchParams(window.location.search);
+  newSearchParams.delete('reloaded_to_upgrade');
+  newUrl.search = newSearchParams.toString();
+  window.history.replaceState({}, '', newUrl);
+  isReloadedToUpgrade = false;
+}
+
 /**
  * @param {OldMetadata} oldMetadata
  * @returns {Promise<SampleMetadata>}
@@ -208,6 +229,9 @@ async function upgradeMetadata(oldMetadata) {
      */
     const matchedUpgrade = metadataUpgrades[prevMetadata.metadataVersion];
     if (!matchedUpgrade) {
+      if (!isReloadedToUpgrade) {
+        reloadToUpgrade();
+      }
       console.warn(
         `Failed to properly upgrade metadata for sample "${prevMetadata.name}"`
       );
@@ -447,6 +471,9 @@ export class SampleContainer {
       }
     });
     await Promise.all(upgradePromises);
+    if (isReloadedToUpgrade) {
+      clearReloadToUpgrade();
+    }
     return sampleMetadata;
   }
 

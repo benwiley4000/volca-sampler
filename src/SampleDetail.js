@@ -52,7 +52,7 @@ const SampleDetail = React.memo(
         <h2 className={classes.sampleName}>
           <OverlayTrigger
             delay={{ show: 400, hide: 0 }}
-            placement="right"
+            placement="top-start"
             overlay={<Tooltip>{sample.metadata.name}</Tooltip>}
           >
             <span>{sample.metadata.name}</span>

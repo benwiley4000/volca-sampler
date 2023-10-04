@@ -89,7 +89,7 @@ function FAQAndLicensesContent() {
           target="_blank"
           rel="noreferrer"
         >
-          southTechnique
+          Costas Chris
         </a>{' '}
         for helping to test the alpha version!
       </p>

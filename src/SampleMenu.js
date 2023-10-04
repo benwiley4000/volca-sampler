@@ -87,20 +87,22 @@ const SampleMenu = React.memo(
         [...userSamples.values()]
           .filter(
             (sample) =>
-              !search || sample.metadata.name.toLowerCase().includes(search)
+              !searchTerm ||
+              sample.metadata.name.toLowerCase().includes(searchTerm)
           )
           .sort((a, b) =>
             a.metadata.dateModified > b.metadata.dateModified ? -1 : 1
           ),
-      [userSamples, search]
+      [userSamples, searchTerm]
     );
     const factorySamplesFiltered = useMemo(
       () =>
         [...factorySamples.values()].filter(
           (sample) =>
-            !search || sample.metadata.name.toLowerCase().includes(search)
+            !searchTerm ||
+            sample.metadata.name.toLowerCase().includes(searchTerm)
         ),
-      [factorySamples, search]
+      [factorySamples, searchTerm]
     );
     /** @type {React.RefObject<HTMLHeadingElement>} */
     const userSamplesHeader = useRef(null);

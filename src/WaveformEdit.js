@@ -22,7 +22,7 @@ import {
 import { formatShortTime } from './utils/datetime.js';
 import WaveformDisplay from './WaveformDisplay.js';
 import WaveformPlayback from './WaveformPlayback.js';
-import NormalizeSwitch from './NormalizeSwitch.js';
+import NormalizeControl from './NomalizeControl.js';
 
 import classes from './WaveformEdit.module.scss';
 
@@ -51,6 +51,13 @@ const WaveformEdit = React.memo(
     const { monoSamples, waveformRef, pixelWidth, peaks, onResize } =
       useWaveformInfo(sourceAudioBuffer);
 
+    const absoluteSamplePeak = useMemo(() => {
+      return Math.max(
+        findSamplePeak(peaks.negative),
+        findSamplePeak(peaks.positive)
+      );
+    }, [peaks]);
+
     const trimmedSamplePeak = useMemo(() => {
       if (!sourceAudioBuffer) {
         return 0;
@@ -60,7 +67,10 @@ const WaveformEdit = React.memo(
       return samplePeak;
     }, [sourceAudioBuffer, monoSamples, trimFrames]);
 
-    const normalizationCoefficient = 1 / trimmedSamplePeak;
+    const normalizationCoefficient =
+      normalize === 'selection'
+        ? 1 / trimmedSamplePeak
+        : 1 / absoluteSamplePeak;
 
     const [trimFramesLocal, setTrimFramesLocal] = useState({
       trimFrames,
@@ -568,9 +578,9 @@ const WaveformEdit = React.memo(
     return (
       <>
         <Form.Group className={classes.waveformAdjacentControls}>
-          <NormalizeSwitch
-            sampleId={_sample.id}
-            normalize={_sample.metadata.normalize}
+          <NormalizeControl
+            sampleId={loadedSampleId}
+            normalize={normalize}
             onSampleUpdate={onSampleUpdate}
           />
           <Button
@@ -586,6 +596,7 @@ const WaveformEdit = React.memo(
           className={[
             classes.waveformContainer,
             isPlaybackActive ? classes.playbackActive : '',
+            normalize === 'selection' ? classes.normalizeOnlySelection : '',
           ].join(' ')}
           style={{
             // @ts-ignore
@@ -599,6 +610,7 @@ const WaveformEdit = React.memo(
             '--trim-pixels-right': `${trimPixels[1]}px`,
           }}
         >
+          <WaveformDisplay peaks={peaks} scaleCoefficient={1} />
           <WaveformDisplay
             waveformRef={waveformRef}
             peaks={peaks}

@@ -18,6 +18,10 @@ import { getSamplePeaksForAudioBuffer } from './utils/waveform.js';
  */
 
 /**
+ * @typedef {null | 'all' | 'selection'} NormalizeSetting
+ */
+
+/**
  * @typedef {object} SampleContainerParams
  * @property {string} name
  * @property {string} sourceFileId
@@ -29,7 +33,7 @@ import { getSamplePeaksForAudioBuffer } from './utils/waveform.js';
  * @property {string} [dateModified]
  * @property {boolean} [useCompression]
  * @property {number} [qualityBitDepth]
- * @property {boolean} [normalize]
+ * @property {NormalizeSetting} [normalize]
  */
 
 /**
@@ -43,7 +47,7 @@ import { getSamplePeaksForAudioBuffer } from './utils/waveform.js';
  * @property {string} dateModified
  * @property {boolean} useCompression
  * @property {number} qualityBitDepth
- * @property {boolean} normalize
+ * @property {NormalizeSetting} normalize
  * @property {string} metadataVersion
  */
 
@@ -54,7 +58,7 @@ import { getSamplePeaksForAudioBuffer } from './utils/waveform.js';
  * @property {number} [slotNumber]
  * @property {boolean} [useCompression]
  * @property {number} [qualityBitDepth]
- * @property {boolean} [normalize]
+ * @property {NormalizeSetting} [normalize]
  */
 
 /**
@@ -81,7 +85,7 @@ export async function storeAudioSourceFile(audioFileData) {
   return id;
 }
 
-const METADATA_VERSION = '0.5.0';
+const METADATA_VERSION = '0.6.0';
 
 // These properties are considered fundamental and should never break
 /**
@@ -194,6 +198,24 @@ const metadataUpgrades = {
     };
     return newMetadata;
   },
+  '0.5.0': async (oldMetadata) => {
+    /**
+     * @typedef {OldMetadata & {
+     *   normalize: boolean;
+     * }} PrevMetadata
+     */
+    const { normalize, ...prevMetadata } = /** @type {PrevMetadata} */ (
+      oldMetadata
+    );
+    /** @type {NormalizeSetting} */
+    const newNormalize = normalize ? 'selection' : null;
+    const newMetadata = {
+      ...prevMetadata,
+      normalize: newNormalize,
+      metadataVersion: '0.6.0',
+    };
+    return newMetadata;
+  },
 };
 
 let isReloadedToUpgrade =
@@ -263,7 +285,7 @@ export class SampleContainer {
     dateModified = dateSampled,
     useCompression = true,
     qualityBitDepth = 16,
-    normalize = true,
+    normalize = 'selection',
   }) {
     /** @readonly */
     this.id = id;
@@ -548,7 +570,7 @@ export async function getFactorySamples() {
       params.id,
       new SampleContainer({
         ...params,
-        normalize: false,
+        normalize: null,
         trim: {
           frames: [params.trim.frames[0], params.trim.frames[1]],
           waveformPeaks: {

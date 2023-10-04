@@ -229,11 +229,22 @@ export async function getTargetWavForSample(sampleContainer, forPreview) {
     sourceFileId,
     Boolean(userFileInfo)
   );
-  const samples =
-    sourceAudioBuffer.numberOfChannels === 1
+  const monoSamplesPreNormalize =
+    normalize === 'all'
+      ? sourceAudioBuffer.numberOfChannels === 1
+        ? sourceAudioBuffer.getChannelData(0)
+        : getMonoSamplesFromAudioBuffer(sourceAudioBuffer, [0, 0])
+      : sourceAudioBuffer.numberOfChannels === 1
       ? getTrimmedView(sourceAudioBuffer.getChannelData(0), trimFrames)
       : getMonoSamplesFromAudioBuffer(sourceAudioBuffer, trimFrames);
-  if (normalize) {
+  if (normalize === 'all') {
+    normalizeSamples(monoSamplesPreNormalize);
+  }
+  const samples =
+    normalize === 'all'
+      ? getTrimmedView(monoSamplesPreNormalize, trimFrames)
+      : monoSamplesPreNormalize;
+  if (normalize === 'selection') {
     normalizeSamples(samples);
   }
   if (forPreview && qualityBitDepth < 16) {

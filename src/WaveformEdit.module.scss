@@ -4,18 +4,12 @@
 
 .waveformAdjacentControls {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-
-  & > * {
-    margin-bottom: 1rem;
-  }
-
-  @media screen and (min-width: 390px) {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-  }
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  column-gap: 0.25rem;
+  row-gap: 1rem;
+  margin-bottom: 1rem;
 
   button {
     width: 155px;
@@ -34,6 +28,22 @@
   height: 120px;
   border-radius: 1px;
   margin-bottom: 5.5rem;
+
+  canvas:nth-child(1) {
+    position: absolute;
+    top: 0;
+    left: 0;
+    visibility: hidden;
+  }
+
+  &.normalizeOnlySelection canvas:nth-child(1) {
+    visibility: unset;
+  }
+
+  &.normalizeOnlySelection canvas:nth-child(2) {
+    will-change: clip-path;
+    clip-path: inset(0 var(--trim-pixels-right) 0 var(--trim-pixels-left));
+  }
 }
 
 .cursor {
@@ -53,6 +63,7 @@
   top: 0;
   bottom: 0;
   background-color: rgba(#fff, 0.85);
+  pointer-events: none;
 
   .waveformContainer.playbackActive & {
     backdrop-filter: var(--grayscale-filter);
@@ -75,6 +86,7 @@
     outline: 1px solid #fff;
     border-radius: 50%;
     cursor: col-resize;
+    pointer-events: all;
 
     &:active {
       cursor: grabbing;

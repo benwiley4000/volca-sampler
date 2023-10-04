@@ -5,7 +5,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Nav } from 'react-bootstrap';
+import { Container, Nav } from 'react-bootstrap';
 
 import Header from './Header.js';
 import SampleDetail from './SampleDetail.js';
@@ -219,7 +219,7 @@ function App() {
     },
     []
   );
-  
+
   useEffect(() => {
     return onSampleUpdateEvent(async (event) => {
       if (event.action === 'delete') {
@@ -296,8 +296,10 @@ function App() {
           )}
         </div>
         <div className={classes.mobileFooterContainer}>
-          <h2>About Volca Sampler</h2>
-          <Footer />
+          <Container fluid="sm">
+            <h2>About Volca Sampler</h2>
+            <Footer />
+          </Container>
         </div>
       </div>
       <Nav

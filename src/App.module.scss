@@ -37,7 +37,16 @@
     display: flex;
   }
 
+  @include media-breakpoint-up(sm) {
+    max-width: map-get($container-max-widths, sm);
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
   @include media-breakpoint-up(md) {
+    max-width: unset;
+    left: 0;
+    transform: unset;
     display: flex;
     position: fixed;
     width: var(--sidebar-width);
@@ -101,8 +110,7 @@
   }
 
   h2 {
-    padding-top: 2rem;
-    text-align: center;
+    padding: 2rem 1rem 0;
   }
 }
 

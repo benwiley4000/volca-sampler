@@ -196,9 +196,9 @@ const metadataUpgrades = {
   },
 };
 
-let isReloadedToUpgrade = new URLSearchParams(window.location.search).has(
-  'reloaded_to_upgrade'
-);
+let isReloadedToUpgrade =
+  typeof window !== 'undefined' &&
+  new URLSearchParams(window.location.search).has('reloaded_to_upgrade');
 
 function reloadToUpgrade() {
   const newUrl = new URL(window.location.href);

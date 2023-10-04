@@ -15,7 +15,7 @@ jobs:
       - run: npm run build
       - add_ssh_keys:
           fingerprints:
-            - '7d:8c:47:41:89:13:de:96:05:bf:10:64:33:03:7b:b2'
+            - 'b2:9e:19:9a:08:bf:99:8f:3e:ba:c3:7f:70:da:b4:d1'
       - run:
           name: Deploy to GitHub Pages
           command: |

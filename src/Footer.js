@@ -93,6 +93,17 @@ function FAQAndLicensesContent() {
         </a>{' '}
         for helping to test the alpha version!
       </p>
+      <p>
+        And thanks again to KORG for developing the{' '}
+        <a
+          href="https://apps.apple.com/us/app/audiopocket-for-volca-sample/id927415821"
+          target="_blank"
+          rel="noreferrer"
+        >
+          AudioPocket
+        </a>{' '}
+        app, which inspired the core functionality of Volca Sampler.
+      </p>
       <h3>FAQ</h3>
       <div className={classes.qAndA}>
         <p>

@@ -2,7 +2,7 @@
 
 [![CircleCI](https://circleci.com/gh/benwiley4000/volca-sampler/tree/master.svg?style=svg)](https://circleci.com/gh/benwiley4000/volca-sampler/tree/master)
 
-This is an app that aims to make it easy to record a sample and transfer it to the Korg Volca Sample. The functionality is inspired heavily by the Audio Pocket app for iOS, built by Korg. This app runs in any modern web browser, desktop or mobile and allows you to either record audio from one of your input audio devices, or import an existing audio file (WAV, MP3, OGG, etc).
+This is an app that aims to make it easy to record a sample and transfer it to the Korg Volca Sample. The functionality is inspired heavily by the [AudioPocket app for iOS](https://apps.apple.com/us/app/audiopocket-for-volca-sample/id927415821), built by Korg. Volca Sampler runs in any modern web browser, desktop or mobile and allows you to either record audio from one of your input audio devices, or import an existing audio file (WAV, MP3, OGG, etc).
 
 ## Developing locally
 
@@ -41,11 +41,11 @@ docker run --rm -it -v "$(pwd)":/src benwiley4000/emsdk-puppeteer /bin/bash
 
 Once inside the Docker container, you'll have access to Node.js, npm, Emscripten, GCC and Git (although it's probably better to git-clone the repository before creating the container, and mount the repository as a volume - as shown above).
 
-*Note that this image is the same as [emscripten/emsdk](https://hub.docker.com/r/emscripten/emsdk) except it includes additional runtime dependencies needed for running Puppeteer, which is only used during the tests. If you don't intend to run the tests, you can use emscripten/emsdk, if you prefer.*
+_Note that this image is the same as [emscripten/emsdk](https://hub.docker.com/r/emscripten/emsdk) except it includes additional runtime dependencies needed for running Puppeteer, which is only used during the tests. If you don't intend to run the tests, you can use emscripten/emsdk, if you prefer._
 
 ### Install and build app
 
- install the required node modules:
+install the required node modules:
 
 ```console
 # From inside volca-sampler/ directory:

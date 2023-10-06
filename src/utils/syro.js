@@ -5,11 +5,11 @@ import { getTargetWavForSample } from './audioData.js';
  * @param {import('../store').SampleContainer} sampleContainer
  * @param {(progress: number) => void} onProgress
  * @returns {{
- *   sampleBufferPromise: Promise<{ sampleBuffer: Uint8Array; dataSize: number }>;
+ *   syroBufferPromise: Promise<{ syroBuffer: Uint8Array; dataSize: number }>;
  *   cancelWork: () => void;
  * }}
  */
-export function getSampleBuffer(sampleContainer, onProgress) {
+export function getSyroBuffer(sampleContainer, onProgress) {
   let cancelled = false;
   let onCancel = () => {};
   return {
@@ -17,7 +17,7 @@ export function getSampleBuffer(sampleContainer, onProgress) {
       cancelled = true;
       onCancel();
     },
-    sampleBufferPromise: (async () => {
+    syroBufferPromise: (async () => {
       const {
         allocateSyroData,
         createSyroDataFromWavData,
@@ -32,7 +32,7 @@ export function getSampleBuffer(sampleContainer, onProgress) {
         heap8Buffer,
       } = await getSyroBindings();
       const emptyResponse = {
-        sampleBuffer: new Uint8Array(),
+        syroBuffer: new Uint8Array(),
         dataSize: 0,
       };
       if (cancelled) {
@@ -45,15 +45,15 @@ export function getSampleBuffer(sampleContainer, onProgress) {
       /**
        * @type {Uint8Array | undefined}
        */
-      let sampleBuffer;
+      let syroBuffer;
       let progress = 0;
       const onUpdate = registerUpdateCallback((sampleBufferUpdatePointer) => {
         if (cancelled) {
           return;
         }
         const totalSize = getSampleBufferTotalSize(sampleBufferUpdatePointer);
-        if (!sampleBuffer) {
-          sampleBuffer = new Uint8Array(totalSize);
+        if (!syroBuffer) {
+          syroBuffer = new Uint8Array(totalSize);
         }
         const chunkPointer = getSampleBufferChunkPointer(
           sampleBufferUpdatePointer
@@ -63,7 +63,7 @@ export function getSampleBuffer(sampleContainer, onProgress) {
           sampleBufferUpdatePointer
         );
         // save a new copy of the data so it doesn't disappear
-        sampleBuffer.set(
+        syroBuffer.set(
           new Uint8Array(heap8Buffer(), chunkPointer, chunkSize),
           bytesProgress - chunkSize
         );
@@ -123,11 +123,11 @@ export function getSampleBuffer(sampleContainer, onProgress) {
       if (cancelled) {
         return emptyResponse;
       }
-      if (!sampleBuffer) {
-        throw new Error('Unexpected condition: sampleBuffer should be defined');
+      if (!syroBuffer) {
+        throw new Error('Unexpected condition: syroBuffer should be defined');
       }
       return {
-        sampleBuffer,
+        syroBuffer,
         dataSize: data.length,
       };
     })(),

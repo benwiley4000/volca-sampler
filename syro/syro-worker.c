@@ -44,7 +44,7 @@ void startSyroBufferWork(char *data, int size) {
       (uint8_t *)data + sizeof(uint32_t) + sizeof(SyroData) * NumOfData;
   uint32_t pDataOffset = 0;
   for (uint32_t i = 0; i < NumOfData; i++) {
-    SyroData *current_syro_data = syro_data + i * sizeof(SyroData);
+    SyroData *current_syro_data = syro_data + i;
     current_syro_data->pData = (uint8_t *)(pDataBuffer + pDataOffset);
     pDataOffset += current_syro_data->Size;
   }

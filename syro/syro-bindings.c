@@ -74,9 +74,10 @@ prepareSampleBufferFromSyroData(SyroData *syro_data, uint32_t NumOfData,
                                 void (*onUpdate)(SampleBufferUpdate *)) {
   // count buffer size
   // buffer contains: NumOfData:SyroDataList:WavDataList
-  int startMessageBufferSize = sizeof(uint32_t);
+  int startMessageBufferSize = 0;
+  startMessageBufferSize += sizeof(uint32_t);
   for (uint32_t i = 0; i < NumOfData; i++) {
-    SyroData *current_syro_data = syro_data + i * sizeof(SyroData);
+    SyroData *current_syro_data = syro_data + i;
     startMessageBufferSize += sizeof(SyroData) + current_syro_data->Size;
   }
 
@@ -96,7 +97,7 @@ prepareSampleBufferFromSyroData(SyroData *syro_data, uint32_t NumOfData,
       startMessageBuffer + sizeof(uint32_t) + sizeof(SyroData) * NumOfData;
   uint32_t pDataOffset = 0;
   for (uint32_t i = 0; i < NumOfData; i++) {
-    SyroData *current_syro_data = syro_data + i * sizeof(SyroData);
+    SyroData *current_syro_data = syro_data + i;
     uint8_t *pData = pDataBuffer + pDataOffset;
     memcpy(pData, current_syro_data->pData, current_syro_data->Size);
     pDataOffset += current_syro_data->Size;
@@ -123,7 +124,7 @@ void createSyroDataFromWavData(SyroData *syro_data, uint32_t syro_data_index,
                                uint8_t *wavData, uint32_t bytes,
                                uint32_t slotNumber, uint32_t quality,
                                uint32_t useCompression) {
-  SyroData *current_syro_data = syro_data + syro_data_index * sizeof(SyroData);
+  SyroData *current_syro_data = syro_data + syro_data_index;
   current_syro_data->DataType =
       useCompression == 0 ? DataType_Sample_Liner : DataType_Sample_Compress;
   current_syro_data->Number = slotNumber;

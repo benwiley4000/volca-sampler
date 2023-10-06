@@ -206,13 +206,33 @@ function printDiffForWavBuffers(t, receivedBuffer, expectedBuffer) {
   }
 }
 
-const sourceFileId = '/factory-samples/02 Kick 3.wav';
-const slotNumber = 2;
+const samples = [
+  {
+    sourceFileId: '/factory-samples/02 Kick 3.wav',
+    slotNumber: 2,
+  },
+  {
+    sourceFileId: '/factory-samples/77 OrganChord.wav',
+    slotNumber: 77,
+  },
+  {
+    sourceFileId: '/factory-samples/83 GuitarHit 1.wav',
+    slotNumber: 83,
+  },
+];
 
 /**
- * @type {Record<'compressed' | 'uncompressed', Buffer>}
+ * @type {Record<'compressed'
+ *   | 'uncompressed'
+ *   | 'multi_compressed'
+ *   | 'multi_uncompressed', Buffer>}
  */
-const snapshots = ['compressed', 'uncompressed']
+const snapshots = [
+  'compressed',
+  'uncompressed',
+  'multi_compressed',
+  'multi_uncompressed',
+]
   .map((suffix) => {
     const snapshot = require('fs').readFileSync(
       path.join(__dirname, 'snapshots', `syro_stream_${suffix}.wav`)
@@ -334,6 +354,7 @@ test('syroBindings load correctly', async (t) => {
 });
 
 test('syro-utils.c', async (t) => {
+  const { sourceFileId, slotNumber } = samples[0];
   /**
    * @type {Record<'compressed' | 'uncompressed', string>}
    */
@@ -394,59 +415,66 @@ test('getSyroBuffer', async (t) => {
         window.SampleContainer = storeModule.SampleContainer;
         window.getSyroBuffer = syroUtilsModule.getSyroBuffer;
       });
-      for (const key of /** @type {('compressed' | 'uncompressed')[]} */ ([
+      for (const key of /** @type {('compressed' | 'uncompressed' | 'multi_compressed' | 'multi_uncompressed')[]} */ ([
         'compressed',
         'uncompressed',
+        'multi_compressed',
+        'multi_uncompressed',
       ])) {
+        const samplesForKey = key.includes('multi_')
+          ? samples
+          : samples.slice(0, 1);
         /**
-         * @type {puppeteer.JSHandle<import('../src/store').SampleContainer>}
+         * @type {puppeteer.JSHandle<(import('../src/store').SampleContainer)[]>}
          */
-        const sampleContainerHandle = await page.evaluateHandle(
-          async (sourceFileId, slotNumber, useCompression) => {
+        const sampleContainersHandle = await page.evaluateHandle(
+          async (samples, useCompression) => {
             /**
              * @type {typeof import('../src/store').SampleContainer}
              */
             const SampleContainer = window.SampleContainer;
-            return new SampleContainer.Mutable({
-              name: 'textSample',
-              sourceFileId,
-              slotNumber,
-              useCompression,
-              trim: {
-                frames: [0, 0],
-                // for render only; irrelevant for test but required
-                waveformPeaks: {
-                  positive: new Float32Array(),
-                  negative: new Float32Array(),
-                },
-              },
-              normalize: null,
-            });
+            return samples.map(
+              ({ sourceFileId, slotNumber }) =>
+                new SampleContainer.Mutable({
+                  name: 'textSample',
+                  sourceFileId,
+                  slotNumber,
+                  useCompression,
+                  trim: {
+                    frames: [0, 0],
+                    // for render only; irrelevant for test but required
+                    waveformPeaks: {
+                      positive: new Float32Array(),
+                      negative: new Float32Array(),
+                    },
+                  },
+                  normalize: null,
+                })
+            );
           },
-          sourceFileId,
-          slotNumber,
-          key === 'compressed'
+          samplesForKey,
+          ['compressed', 'multi_compressed'].includes(key)
         );
         const webSampleBufferContents = Buffer.from(
-          await page.evaluate(async (sampleContainer) => {
+          await page.evaluate(async (sampleContainers) => {
             /**
              * @type {typeof import('../src/utils/syro').getSyroBuffer}
              */
             const getSyroBuffer = window.getSyroBuffer;
             const { syroBuffer } = await getSyroBuffer(
-              [sampleContainer],
+              sampleContainers,
               () => null
             ).syroBufferPromise;
             const sampleBufferContents = [...syroBuffer];
             return sampleBufferContents;
-          }, sampleContainerHandle)
+          }, sampleContainersHandle)
         );
         await fs.writeFile(
           path.join(
             artifactsDir,
-            `${
-              sourceFileId.split('/').pop().split('.wav')[0]
-            } [wasm] (${key}).syrostream.wav`
+            `${samplesForKey
+              .map((s) => s.sourceFileId.split('/').pop().split('.wav')[0])
+              .join(' + ')} [wasm] (${key}).syrostream.wav`
           ),
           webSampleBufferContents
         );

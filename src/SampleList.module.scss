@@ -63,6 +63,20 @@ div.listItem {
     }
   }
 
+  .multiSelector {
+    align-self: center;
+    margin-right: 1rem;
+    display: none;
+
+    .multiSelect & {
+      display: unset;
+    }
+
+    input:checked {
+      accent-color: var(--bs-primary);
+    }
+  }
+
   .playbackButton {
     border-radius: 50%;
     position: relative;

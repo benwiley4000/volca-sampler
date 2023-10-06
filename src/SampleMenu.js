@@ -138,10 +138,38 @@ const SampleMenu = React.memo(
         window.removeEventListener('mouseup', onMouseUp);
       };
     }, [loading]);
+
+    const [multipleSelection, setMultipleSelection] = useState(
+      /** @type {Set<string> | null} */ (null)
+    );
+
+    const hasMultiSelection = Boolean(multipleSelection);
+    /** @type {typeof onSampleSelect} */
+    const handleSampleSelect = useCallback(
+      (sampleId) => {
+        if (hasMultiSelection) {
+          setMultipleSelection((multipleSelection) => {
+            if (!multipleSelection || !sampleId) return multipleSelection;
+            const newSelection = new Set(multipleSelection);
+            if (multipleSelection.has(sampleId)) {
+              newSelection.delete(sampleId);
+            } else {
+              newSelection.add(sampleId);
+            }
+            return newSelection;
+          });
+        } else {
+          onSampleSelect(sampleId);
+        }
+      },
+      [hasMultiSelection, onSampleSelect]
+    );
+
     return (
       <>
         <Button
-          className={classes.newSampleButton}
+          hidden={hasMultiSelection}
+          className={classes.sampleMenuButtonFullWidth}
           type="button"
           variant="primary"
           onClick={() => {
@@ -165,6 +193,54 @@ const SampleMenu = React.memo(
         >
           New sample
         </Button>
+        <Button
+          hidden={hasMultiSelection || true}
+          className={classes.sampleMenuButtonFullWidth}
+          type="button"
+          variant="outline-secondary"
+          onClick={() => setMultipleSelection(new Set())}
+        >
+          Select multiple
+        </Button>
+        <Button
+          hidden={!hasMultiSelection}
+          className={classes.sampleMenuButtonFullWidth}
+          type="button"
+          variant="secondary"
+          onClick={() =>
+            setMultipleSelection((s) => (s && s.size ? new Set() : null))
+          }
+        >
+          {multipleSelection && multipleSelection.size
+            ? `Clear selection (${multipleSelection.size})`
+            : 'Done'}
+        </Button>
+        <div
+          hidden={!hasMultiSelection}
+          className={classes.sampleMenuButtonsContainer}
+        >
+          <Button
+            type="button"
+            disabled={!multipleSelection || !multipleSelection.size}
+            variant="outline-secondary"
+            onClick={() => {
+              // TODO: pop transfer modal with an extra screen
+              // confirming the list of samples to transfer
+            }}
+          >
+            Volca transfer
+          </Button>
+          <Button
+            type="button"
+            disabled={!multipleSelection || !multipleSelection.size}
+            variant="outline-primary"
+            onClick={() => {
+              // TODO: pop modal confirming sample deletion
+            }}
+          >
+            Delete samples
+          </Button>
+        </div>
         <Form.Control
           className={classes.search}
           placeholder="Search for a sample..."
@@ -250,7 +326,8 @@ const SampleMenu = React.memo(
                       <SampleList
                         samples={filteredSamples}
                         selectedSampleId={focusedSampleId}
-                        onSampleSelect={onSampleSelect}
+                        multipleSelection={multipleSelection}
+                        onSampleSelect={handleSampleSelect}
                       />
                     </Accordion.Body>
                   </Accordion.Item>

@@ -131,6 +131,9 @@ const SampleListItem = React.memo(
         ref={listItemRef}
       >
         <span className={classes.sampleTitle}>
+          <div className={classes.multiSelector}>
+            <input type="radio" checked={selected} />
+          </div>
           <Button
             className={classes.playbackButton}
             tabIndex={-1}
@@ -179,10 +182,16 @@ const SampleListItem = React.memo(
  * @param {{
  *   samples: import('./store').SampleContainer[];
  *   selectedSampleId: string | null;
+ *   multipleSelection: Set<string> | null;
  *   onSampleSelect: (id: string) => void;
  * }} props
  */
-function SampleList({ samples, selectedSampleId, onSampleSelect }) {
+function SampleList({
+  samples,
+  selectedSampleId,
+  multipleSelection,
+  onSampleSelect,
+}) {
   /** @type {React.RefObject<HTMLUListElement>} */
   const listRef = useRef(null);
   /** @type {React.KeyboardEventHandler} */
@@ -247,7 +256,10 @@ function SampleList({ samples, selectedSampleId, onSampleSelect }) {
   return (
     <ul
       ref={listRef}
-      className="list-group list-group-flush"
+      className={[
+        'list-group list-group-flush',
+        multipleSelection ? classes.multiSelect : '',
+      ].join(' ')}
       onKeyDown={handleKeyDown}
       onKeyUp={handleKeyUp}
     >
@@ -256,7 +268,11 @@ function SampleList({ samples, selectedSampleId, onSampleSelect }) {
           <SampleListItem
             key={sample.id}
             sample={sample}
-            selected={sample.id === selectedSampleId}
+            selected={
+              multipleSelection
+                ? multipleSelection.has(sample.id)
+                : sample.id === selectedSampleId
+            }
             onSampleSelect={onSampleSelect}
           />
         ))

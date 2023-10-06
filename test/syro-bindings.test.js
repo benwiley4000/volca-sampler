@@ -248,20 +248,25 @@ test('syroBindings load correctly', async (t) => {
         'Syro bindings should load'
       );
       t.equal(
-        await page.evaluate(
-          (bindings) => typeof bindings.prepareSampleBufferFromWavData,
-          b
-        ),
+        await page.evaluate((bindings) => typeof bindings.allocateSyroData, b),
         'function',
-        'prepareSampleBufferFromWavData is defined'
+        'allocateSyroData is defined'
       );
       t.equal(
         await page.evaluate(
-          (bindings) => typeof bindings.prepareSampleBufferFrom16BitPcmData,
+          (bindings) => typeof bindings.createSyroDataFromWavData,
           b
         ),
         'function',
-        'prepareSampleBufferFrom16BitPcmData is defined'
+        'createSyroDataFromWavData is defined'
+      );
+      t.equal(
+        await page.evaluate(
+          (bindings) => typeof bindings.prepareSampleBufferFromSyroData,
+          b
+        ),
+        'function',
+        'prepareSampleBufferFromSyroData is defined'
       );
       t.equal(
         await page.evaluate(

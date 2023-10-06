@@ -19,7 +19,9 @@ export function getSampleBuffer(sampleContainer, onProgress) {
     },
     sampleBufferPromise: (async () => {
       const {
-        prepareSampleBufferFromWavData,
+        allocateSyroData,
+        createSyroDataFromWavData,
+        prepareSampleBufferFromSyroData,
         getSampleBufferChunkPointer,
         getSampleBufferChunkSize,
         getSampleBufferProgress,
@@ -67,12 +69,23 @@ export function getSampleBuffer(sampleContainer, onProgress) {
         );
         progress = bytesProgress / totalSize;
       });
-      const workHandle = prepareSampleBufferFromWavData(
-        data,
-        data.length,
-        sampleContainer.metadata.slotNumber,
-        sampleContainer.metadata.qualityBitDepth,
-        sampleContainer.metadata.useCompression ? 1 : 0,
+      const numberOfSamples = 1;
+      const syroDataHandle = allocateSyroData(numberOfSamples);
+      const samples = [{ data, sampleContainer }];
+      samples.forEach(({ data, sampleContainer }, i) => {
+        createSyroDataFromWavData(
+          syroDataHandle,
+          i,
+          data,
+          data.length,
+          sampleContainer.metadata.slotNumber,
+          sampleContainer.metadata.qualityBitDepth,
+          sampleContainer.metadata.useCompression ? 1 : 0
+        );
+      });
+      const workHandle = prepareSampleBufferFromSyroData(
+        syroDataHandle,
+        numberOfSamples,
         onUpdate
       );
       onProgress(progress);

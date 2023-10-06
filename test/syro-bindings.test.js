@@ -434,7 +434,7 @@ test('getSyroBuffer', async (t) => {
              */
             const getSyroBuffer = window.getSyroBuffer;
             const { syroBuffer } = await getSyroBuffer(
-              sampleContainer,
+              [sampleContainer],
               () => null
             ).syroBufferPromise;
             const sampleBufferContents = [...syroBuffer];

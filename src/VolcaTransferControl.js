@@ -64,7 +64,7 @@ function VolcaTransferControl({ sample, onSlotNumberUpdate }) {
     };
     try {
       const { syroBufferPromise, cancelWork } = getSyroBuffer(
-        sample,
+        [sample],
         (progress) => {
           if (!cancelled) {
             setSyroProgress(progress);
@@ -75,11 +75,11 @@ function VolcaTransferControl({ sample, onSlotNumberUpdate }) {
         cancelWork();
         cancelled = true;
       };
-      syroBufferPromise.then(async ({ syroBuffer, dataSize }) => {
+      syroBufferPromise.then(async ({ syroBuffer, dataSizes }) => {
         if (cancelled) {
           return;
         }
-        setTargetWavDataSize(dataSize);
+        setTargetWavDataSize(dataSizes[0]);
         stop.current = () => {
           cancelled = true;
         };

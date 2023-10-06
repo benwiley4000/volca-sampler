@@ -2,14 +2,17 @@ import { getSyroBindings } from './getSyroBindings.js';
 import { getTargetWavForSample } from './audioData.js';
 
 /**
- * @param {import('../store').SampleContainer} sampleContainer
+ * @param {(import('../store').SampleContainer)[]} sampleContainers
  * @param {(progress: number) => void} onProgress
  * @returns {{
- *   syroBufferPromise: Promise<{ syroBuffer: Uint8Array; dataSize: number }>;
+ *   syroBufferPromise: Promise<{
+ *     syroBuffer: Uint8Array;
+ *     dataSizes: number[]
+ *   }>;
  *   cancelWork: () => void;
  * }}
  */
-export function getSyroBuffer(sampleContainer, onProgress) {
+export function getSyroBuffer(sampleContainers, onProgress) {
   let cancelled = false;
   let onCancel = () => {};
   return {
@@ -33,14 +36,19 @@ export function getSyroBuffer(sampleContainer, onProgress) {
       } = await getSyroBindings();
       const emptyResponse = {
         syroBuffer: new Uint8Array(),
-        dataSize: 0,
+        dataSizes: [],
       };
       if (cancelled) {
         return emptyResponse;
       }
-      const { data } = await getTargetWavForSample(sampleContainer);
-      if (cancelled) {
-        return emptyResponse;
+      /** @type {Uint8Array[]} */
+      const targetWavs = [];
+      for (const sampleContainer of sampleContainers) {
+        const { data } = await getTargetWavForSample(sampleContainer);
+        if (cancelled) {
+          return emptyResponse;
+        }
+        targetWavs.push(data);
       }
       /**
        * @type {Uint8Array | undefined}
@@ -69,10 +77,9 @@ export function getSyroBuffer(sampleContainer, onProgress) {
         );
         progress = bytesProgress / totalSize;
       });
-      const numberOfSamples = 1;
-      const syroDataHandle = allocateSyroData(numberOfSamples);
-      const samples = [{ data, sampleContainer }];
-      samples.forEach(({ data, sampleContainer }, i) => {
+      const syroDataHandle = allocateSyroData(sampleContainers.length);
+      sampleContainers.forEach((sampleContainer, i) => {
+        const data = targetWavs[i];
         createSyroDataFromWavData(
           syroDataHandle,
           i,
@@ -85,7 +92,7 @@ export function getSyroBuffer(sampleContainer, onProgress) {
       });
       const workHandle = prepareSampleBufferFromSyroData(
         syroDataHandle,
-        numberOfSamples,
+        sampleContainers.length,
         onUpdate
       );
       onProgress(progress);
@@ -128,7 +135,7 @@ export function getSyroBuffer(sampleContainer, onProgress) {
       }
       return {
         syroBuffer,
-        dataSize: data.length,
+        dataSizes: targetWavs.map((wav) => wav.length),
       };
     })(),
   };

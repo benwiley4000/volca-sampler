@@ -1,20 +1,18 @@
 /**
  * @typedef {{
- *   prepareSampleBufferFromWavData(
+ *   allocateSyroData(numOfData: number): number;
+ *   createSyroDataFromWavData(
+ *     syroDataHandle: number,
+ *     syroDataIndex: number,
  *     wavData: Uint8Array,
  *     bytes: number,
  *     slotNumber: number,
  *     quality: number,
- *     useCompression: 0 | 1,
- *     onUpdate: number
- *   ): number;
- *   prepareSampleBufferFrom16BitPcmData(
- *     wavData: Uint8Array,
- *     bytes: number,
- *     rate: number,
- *     slotNumber: number,
- *     quality: number,
- *     useCompression: 0 | 1,
+ *     useCompression: 0 | 1
+ *   ): void;
+ *   prepareSampleBufferFromSyroData(
+ *     syroDataHandle: number,
+ *     numOfData: number,
  *     onUpdate: number
  *   ): number;
  *   getSampleBufferChunkPointer(sampleBufferUpdate: number): number;
@@ -48,22 +46,21 @@ export async function getSyroBindings() {
        * @type {SyroBindings}
        */
       const bindings = {
-        prepareSampleBufferFromWavData: Module.cwrap(
-          'prepareSampleBufferFromWavData',
+        allocateSyroData: Module.cwrap(
+          'allocateSyroData',
           'number',
-          ['array', 'number', 'number', 'number', 'number']
+          ['number']
         ),
-        // TODO: put this back when C function works correctly
-        // prepareSampleBufferFrom16BitPcmData: Module.cwrap(
-        //   'prepareSampleBufferFrom16BitPcmData',
-        //   'number',
-        //   ['array', 'number', 'number', 'number', 'number', 'number']
-        // ),
-        prepareSampleBufferFrom16BitPcmData() {
-          throw new Error(
-            'This function does not work. Use prepareSampleBufferFromWavData.'
-          );
-        },
+        createSyroDataFromWavData: Module.cwrap(
+          'createSyroDataFromWavData',
+          null,
+          ['number', 'number', 'array', 'number', 'number', 'number']
+        ),
+        prepareSampleBufferFromSyroData: Module.cwrap(
+          'prepareSampleBufferFromSyroData',
+          'number',
+          ['number', 'number', 'number']
+        ),
         getSampleBufferChunkPointer: Module.cwrap(
           'getSampleBufferChunkPointer',
           'number',

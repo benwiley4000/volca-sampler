@@ -72,7 +72,7 @@ int convertSample(char *filename, uint8_t *inputArray, uint32_t bytes,
                   uint32_t slotNumber, bool useCompression) {
   SyroData *syro_data = getSyroDataForWavData(inputArray, bytes, slotNumber, 16,
                                               useCompression ? 1 : 0);
-  SampleBufferContainer *sampleBuffer = startSampleBuffer(syro_data);
+  SampleBufferContainer *sampleBuffer = startSampleBuffer(syro_data, 1);
   if (!sampleBuffer) {
     printf("Oops!\n");
     return 1;

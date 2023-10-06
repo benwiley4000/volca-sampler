@@ -68,17 +68,43 @@ void onWorkerMessage(char *data, int size, void *updateArgPointer) {
   }
 }
 
+EMSCRIPTEN_KEEPALIVE
 WorkerUpdateArg *
-prepareSampleBufferFromSyroData(SyroData *syro_data,
+prepareSampleBufferFromSyroData(SyroData *syro_data, uint32_t NumOfData,
                                 void (*onUpdate)(SampleBufferUpdate *)) {
-  int startMessageBufferSize = sizeof(SyroData) + syro_data->Size;
+  // count buffer size
+  // buffer contains: NumOfData:SyroDataList:WavDataList
+  int startMessageBufferSize = sizeof(uint32_t);
+  for (uint32_t i = 0; i < NumOfData; i++) {
+    SyroData *current_syro_data = syro_data + i * sizeof(SyroData);
+    startMessageBufferSize += sizeof(SyroData) + current_syro_data->Size;
+  }
+
   uint8_t *startMessageBuffer = malloc(startMessageBufferSize);
-  SyroData *syroDataCopy = (SyroData *)startMessageBuffer;
-  *syroDataCopy = *syro_data;
-  uint8_t *pData = startMessageBuffer + sizeof(SyroData);
-  memcpy(pData, syro_data->pData, syro_data->Size);
-  free_syrodata(syro_data, 1);
+
+  // write NumOfData to buffer
+  uint32_t *numOfDataBuffer = (uint32_t *)startMessageBuffer;
+  *numOfDataBuffer = NumOfData;
+
+  // copy syro data list into buffer
+  SyroData *syroDataCopy = (SyroData *)(startMessageBuffer + sizeof(uint32_t));
+  memcpy(syroDataCopy, syro_data, sizeof(SyroData) * NumOfData);
+
+  // iterate through list of syro data and copy wav data one at a time
+  // into the buffer
+  uint8_t *pDataBuffer =
+      startMessageBuffer + sizeof(uint32_t) + sizeof(SyroData) * NumOfData;
+  uint32_t pDataOffset = 0;
+  for (uint32_t i = 0; i < NumOfData; i++) {
+    SyroData *current_syro_data = syro_data + i * sizeof(SyroData);
+    uint8_t *pData = pDataBuffer + pDataOffset;
+    memcpy(pData, current_syro_data->pData, current_syro_data->Size);
+    pDataOffset += current_syro_data->Size;
+  }
+
+  free_syrodata(syro_data, NumOfData);
   free(syro_data);
+
   worker_handle worker = emscripten_create_worker("syro-worker.js");
   WorkerUpdateArg *updateArg = malloc(sizeof(WorkerUpdateArg));
   updateArg->worker = worker;
@@ -92,32 +118,25 @@ prepareSampleBufferFromSyroData(SyroData *syro_data,
   return updateArg;
 }
 
-// DO NOT USE; broken
-// TODO: fix
 EMSCRIPTEN_KEEPALIVE
-WorkerUpdateArg *
-prepareSampleBufferFrom16BitPcmData(uint8_t *pcmData, uint32_t bytes,
-                                    uint32_t rate, uint32_t slotNumber,
-                                    uint32_t quality, uint32_t useCompression,
-                                    void (*onUpdate)(SampleBufferUpdate *)) {
-  SyroData *syro_data = getSyroDataFor16BitPcmData(
-      pcmData, bytes, rate, slotNumber, quality, useCompression);
-  return prepareSampleBufferFromSyroData(syro_data, onUpdate);
-}
-
-EMSCRIPTEN_KEEPALIVE
-WorkerUpdateArg *prepareSampleBufferFromWavData(
-    uint8_t *wavData, uint32_t bytes, uint32_t slotNumber, uint32_t quality,
-    uint32_t useCompression, void (*onUpdate)(SampleBufferUpdate *)) {
-  SyroData *syro_data = malloc(sizeof(SyroData));
-  syro_data->DataType =
+void createSyroDataFromWavData(SyroData *syro_data, uint32_t syro_data_index,
+                               uint8_t *wavData, uint32_t bytes,
+                               uint32_t slotNumber, uint32_t quality,
+                               uint32_t useCompression) {
+  SyroData *current_syro_data = syro_data + syro_data_index * sizeof(SyroData);
+  current_syro_data->DataType =
       useCompression == 0 ? DataType_Sample_Liner : DataType_Sample_Compress;
-  syro_data->Number = slotNumber;
-  syro_data->Quality = quality;
-  bool ok = setup_file_sample(wavData, bytes, syro_data);
+  current_syro_data->Number = slotNumber;
+  current_syro_data->Quality = quality;
+  bool ok = setup_file_sample(wavData, bytes, current_syro_data);
   if (!ok) {
     printf("Oops!\n");
     exit(1);
   }
-  return prepareSampleBufferFromSyroData(syro_data, onUpdate);
+}
+
+EMSCRIPTEN_KEEPALIVE
+SyroData *allocateSyroData(uint32_t NumOfData) {
+  SyroData *syro_data = malloc(sizeof(SyroData) * NumOfData);
+  return syro_data;
 }

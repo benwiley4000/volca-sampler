@@ -17,8 +17,8 @@ void freeSampleBuffer(SampleBufferContainer *sampleBuffer) {
 /**
  * Returns a non-zero pointer if successful or 0 if not
  */
-SampleBufferContainer *startSampleBuffer(SyroData *syro_data) {
-  const int num_of_data = 1;
+SampleBufferContainer *startSampleBuffer(SyroData *syro_data,
+                                         uint32_t NumOfData) {
   uint32_t frame;
   SampleBufferContainer *sampleBuffer = malloc(sizeof(SampleBufferContainer));
   sampleBuffer->syro_data = syro_data;
@@ -26,10 +26,10 @@ SampleBufferContainer *startSampleBuffer(SyroData *syro_data) {
   //----- Start ------
   SyroStatus status =
       SyroVolcaSample_Start(&(sampleBuffer->syro_handle),
-                            sampleBuffer->syro_data, num_of_data, 0, &frame);
+                            sampleBuffer->syro_data, NumOfData, 0, &frame);
   if (status != Status_Success) {
     printf(" Start error, %d \n", status);
-    free_syrodata(sampleBuffer->syro_data, num_of_data);
+    free_syrodata(sampleBuffer->syro_data, NumOfData);
     return 0;
   }
 
@@ -40,7 +40,7 @@ SampleBufferContainer *startSampleBuffer(SyroData *syro_data) {
   if (!sampleBuffer->buffer) {
     printf(" Not enough memory for write file.\n");
     SyroVolcaSample_End(sampleBuffer->syro_handle);
-    free_syrodata(sampleBuffer->syro_data, num_of_data);
+    free_syrodata(sampleBuffer->syro_data, NumOfData);
     return 0;
   }
 
@@ -71,22 +71,6 @@ void iterateSampleBuffer(SampleBufferContainer *sampleBuffer,
     SyroVolcaSample_End(sampleBuffer->syro_handle);
     free_syrodata(sampleBuffer->syro_data, num_of_data);
   }
-}
-
-SyroData *getSyroDataFor16BitPcmData(uint8_t *pcmData, uint32_t bytes,
-                                     uint32_t rate, uint32_t slotNumber,
-                                     uint32_t quality,
-                                     uint32_t useCompression) {
-  SyroData *syro_data = malloc(sizeof(SyroData));
-  syro_data->DataType =
-      useCompression == 0 ? DataType_Sample_Liner : DataType_Sample_Compress;
-  syro_data->Number = slotNumber;
-  syro_data->Quality = quality;
-  syro_data->pData = pcmData;
-  syro_data->Size = bytes;
-  syro_data->Fs = rate;
-  syro_data->SampleEndian = LittleEndian;
-  return syro_data;
 }
 
 SyroData *getSyroDataForWavData(uint8_t *wavData, uint32_t bytes,

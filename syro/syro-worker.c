@@ -34,17 +34,22 @@ void iterateSyroBufferWork(char *data, int size) {
 
 EMSCRIPTEN_KEEPALIVE
 void startSyroBufferWork(char *data, int size) {
-  SyroData *syro_data = (SyroData *)data;
-  if (size - sizeof(SyroData) != syro_data->Size) {
-    // TODO: error case... maybe handle it?
-  }
+  uint32_t NumOfData = *(uint32_t *)data;
+  SyroData *syro_data = (SyroData *)(data + sizeof(uint32_t));
   // The passed pData pointer points to memory in the main thread, not the
   // worker thread. We pass the actual data as part of the input buffer so
   // we can replace the pData pointer with one that references memory in the
   // worker thread.
-  syro_data->pData = (uint8_t *)(data + sizeof(SyroData));
+  uint8_t *pDataBuffer =
+      (uint8_t *)data + sizeof(uint32_t) + sizeof(SyroData) * NumOfData;
+  uint32_t pDataOffset = 0;
+  for (uint32_t i = 0; i < NumOfData; i++) {
+    SyroData *current_syro_data = syro_data + i * sizeof(SyroData);
+    current_syro_data->pData = (uint8_t *)(pDataBuffer + pDataOffset);
+    pDataOffset += current_syro_data->Size;
+  }
 
-  SampleBufferContainer *sampleBuffer = startSampleBuffer(syro_data);
+  SampleBufferContainer *sampleBuffer = startSampleBuffer(syro_data, NumOfData);
 
   iterateSyroBufferWork((char *)&sampleBuffer, sizeof(SampleBufferContainer *));
 }

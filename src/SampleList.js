@@ -194,65 +194,65 @@ function SampleList({
 }) {
   /** @type {React.RefObject<HTMLUListElement>} */
   const listRef = useRef(null);
+
+  const samplesRef = useRef(samples);
+  samplesRef.current = samples;
+  const onSampleSelectRef = useRef(onSampleSelect);
+  onSampleSelectRef.current = onSampleSelect;
+
   /** @type {React.KeyboardEventHandler} */
-  const handleKeyDown = useCallback(
-    (e) => {
-      if (!listRef.current) {
-        return;
-      }
-      if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') {
-        return;
-      }
-      const listItem = /** @type {HTMLElement} */ (e.target).closest(
-        `.${classes.listItem}`
-      );
-      if (listItem) {
-        e.preventDefault();
-        const index = Array.prototype.indexOf.call(
-          listRef.current.children,
-          listItem
-        );
-        if (e.key === 'ArrowUp' && index > 0) {
-          if (listItem.previousElementSibling instanceof HTMLDivElement) {
-            listItem.previousElementSibling.focus();
-          }
-        }
-        if (e.key === 'ArrowDown' && index + 1 < samples.length) {
-          if (listItem.nextElementSibling instanceof HTMLDivElement) {
-            listItem.nextElementSibling.focus();
-          }
-        }
-      }
-    },
-    [samples]
-  );
-  /** @type {React.KeyboardEventHandler} */
-  const handleKeyUp = useCallback(
-    (e) => {
-      if (
-        !listRef.current ||
-        !(document.activeElement instanceof HTMLDivElement)
-      ) {
-        return;
-      }
-      if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') {
-        return;
-      }
+  const handleKeyDown = useCallback((e) => {
+    if (!listRef.current) {
+      return;
+    }
+    if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') {
+      return;
+    }
+    const listItem = /** @type {HTMLElement} */ (e.target).closest(
+      `.${classes.listItem}`
+    );
+    if (listItem) {
+      e.preventDefault();
       const index = Array.prototype.indexOf.call(
         listRef.current.children,
-        document.activeElement
+        listItem
       );
-      if (index === -1) {
-        return;
+      if (e.key === 'ArrowUp' && index > 0) {
+        if (listItem.previousElementSibling instanceof HTMLDivElement) {
+          listItem.previousElementSibling.focus();
+        }
       }
-      e.preventDefault();
-      const sampleToSelect = samples[index];
-      if (sampleToSelect) {
-        onSampleSelect(sampleToSelect.id);
+      if (e.key === 'ArrowDown' && index + 1 < samplesRef.current.length) {
+        if (listItem.nextElementSibling instanceof HTMLDivElement) {
+          listItem.nextElementSibling.focus();
+        }
       }
-    },
-    [samples, onSampleSelect]
-  );
+    }
+  }, []);
+  /** @type {React.KeyboardEventHandler} */
+  const handleKeyUp = useCallback((e) => {
+    if (
+      !listRef.current ||
+      !(document.activeElement instanceof HTMLDivElement)
+    ) {
+      return;
+    }
+    if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') {
+      return;
+    }
+    const index = Array.prototype.indexOf.call(
+      listRef.current.children,
+      document.activeElement
+    );
+    if (index === -1) {
+      return;
+    }
+    e.preventDefault();
+    const sampleToSelect = samplesRef.current[index];
+    if (sampleToSelect) {
+      onSampleSelectRef.current(sampleToSelect.id);
+    }
+  }, []);
   return (
     <ul
       ref={listRef}

@@ -6,20 +6,25 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Accordion, Button, Form, ListGroup } from 'react-bootstrap';
+import { Accordion, Button, Form, ListGroup, Modal } from 'react-bootstrap';
+import { ReactComponent as WarningIcon } from '@material-design-icons/svg/filled/warning.svg';
 
 import SampleList from './SampleList.js';
 
 import classes from './SampleMenu.module.scss';
+import VolcaTransferControl from './VolcaTransferControl.js';
+
+/** @typedef {import('./store').SampleContainer} SampleContainer */
 
 const SampleMenu = React.memo(
   /**
    * @param {{
    *   loading: boolean;
    *   focusedSampleId: string | null;
-   *   userSamples: Map<string, import('./store').SampleContainer>;
-   *   factorySamples: Map<string, import('./store').SampleContainer>;
+   *   userSamples: Map<string, SampleContainer>;
+   *   factorySamples: Map<string, SampleContainer>;
    *   onSampleSelect: (id: string | null) => void;
+   *   onSampleDelete: (id: string | string[]) => void;
    * }} props
    */
   function SampleMenu({
@@ -28,6 +33,7 @@ const SampleMenu = React.memo(
     userSamples,
     factorySamples,
     onSampleSelect,
+    onSampleDelete,
   }) {
     const [search, setSearch] = useState('');
     const searchTerm = search.trim().toLowerCase();
@@ -165,6 +171,26 @@ const SampleMenu = React.memo(
       [hasMultiSelection, onSampleSelect]
     );
 
+    const multiSelectedSampleList = useMemo(() => {
+      return (
+        multipleSelection &&
+        /** @type {SampleContainer[]} */ (
+          [...multipleSelection]
+            .map((id) => userSamples.get(id) || factorySamples.get(id))
+            .filter(Boolean)
+        ).sort((a, b) => a.metadata.slotNumber - b.metadata.slotNumber)
+      );
+    }, [userSamples, factorySamples, multipleSelection]);
+
+    const multiSelectDeleteCandidates = useMemo(() => {
+      return (
+        multiSelectedSampleList &&
+        multiSelectedSampleList.filter((sample) => userSamples.has(sample.id))
+      );
+    }, [multiSelectedSampleList, userSamples]);
+
+    const [deleting, setDeleting] = useState(false);
+
     return (
       <>
         <Button
@@ -194,7 +220,7 @@ const SampleMenu = React.memo(
           New sample
         </Button>
         <Button
-          hidden={hasMultiSelection || true}
+          hidden={hasMultiSelection}
           className={classes.sampleMenuButtonFullWidth}
           type="button"
           variant="outline-secondary"
@@ -219,24 +245,31 @@ const SampleMenu = React.memo(
           hidden={!hasMultiSelection}
           className={classes.sampleMenuButtonsContainer}
         >
+          {(multiSelectedSampleList && (
+            <VolcaTransferControl
+              samples={multiSelectedSampleList}
+              justTheButton
+              showInfoBeforeTransfer
+              button={
+                <Button
+                  type="button"
+                  disabled={!multipleSelection || !multipleSelection.size}
+                  variant="outline-secondary"
+                >
+                  Volca transfer
+                </Button>
+              }
+            />
+          )) ||
+            null}
           <Button
             type="button"
-            disabled={!multipleSelection || !multipleSelection.size}
-            variant="outline-secondary"
-            onClick={() => {
-              // TODO: pop transfer modal with an extra screen
-              // confirming the list of samples to transfer
-            }}
-          >
-            Volca transfer
-          </Button>
-          <Button
-            type="button"
-            disabled={!multipleSelection || !multipleSelection.size}
+            disabled={
+              !multiSelectDeleteCandidates ||
+              !multiSelectDeleteCandidates.length
+            }
             variant="outline-primary"
-            onClick={() => {
-              // TODO: pop modal confirming sample deletion
-            }}
+            onClick={() => setDeleting(true)}
           >
             Delete samples
           </Button>
@@ -335,6 +368,54 @@ const SampleMenu = React.memo(
               )
             )}
         </ListGroup>
+        <Modal
+          onHide={() => setDeleting(false)}
+          show={deleting}
+          aria-labelledby="delete-modal"
+        >
+          <Form
+            className={classes.deleteModalForm}
+            onSubmit={async (e) => {
+              e.preventDefault();
+              if (multiSelectDeleteCandidates) {
+                onSampleDelete(multiSelectDeleteCandidates.map((s) => s.id));
+              }
+              setMultipleSelection(null);
+              setDeleting(false);
+            }}
+          >
+            <Modal.Header className={classes.deleteModalHeader}>
+              <WarningIcon />
+              <Modal.Title id="delete-modal">Deleting samples</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+              <p>
+                Are you sure you want to delete these samples? This can't be
+                undone.
+              </p>
+              <ul>
+                {(multiSelectDeleteCandidates || []).map((sample) => (
+                  <li key={sample.id}>
+                    <strong>{sample.metadata.name}</strong> (slot{' '}
+                    {sample.metadata.slotNumber})
+                  </li>
+                ))}
+              </ul>
+            </Modal.Body>
+            <Modal.Footer>
+              <Button
+                type="button"
+                variant="light"
+                onClick={() => setDeleting(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary">
+                Delete
+              </Button>
+            </Modal.Footer>
+          </Form>
+        </Modal>
       </>
     );
   }

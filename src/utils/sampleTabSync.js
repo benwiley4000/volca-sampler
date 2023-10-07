@@ -2,18 +2,18 @@ const SAMPLE_UPDATE_EVENT_NAME = 'sampleUpdateEvent';
 
 /**
  * @typedef {object} SampleUpdateEvent
- * @property {string} sampleId
+ * @property {string[]} sampleIds
  * @property {'create' | 'edit' | 'delete'} action
  * @property {number} when
  */
 
 /**
- * @param {string} sampleId
+ * @param {string[]} sampleIds
  * @param {SampleUpdateEvent['action']} action
  */
-export function sendSampleUpdateEvent(sampleId, action) {
+export function sendSampleUpdateEvent(sampleIds, action) {
   /** @type {SampleUpdateEvent} */
-  const event = { sampleId, action, when: Date.now() };
+  const event = { sampleIds, action, when: Date.now() };
   localStorage.setItem(SAMPLE_UPDATE_EVENT_NAME, JSON.stringify(event));
 }
 

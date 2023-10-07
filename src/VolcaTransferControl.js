@@ -2,6 +2,7 @@ import React, {
   useCallback,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -19,13 +20,29 @@ import classes from './VolcaTransferControl.module.scss';
 import SlotNumberInput from './SlotNumberInput.js';
 
 /**
+ * @typedef {import('./store').SampleContainer} SampleContainer
  * @param {{
- *   sample: import('./store').SampleContainer;
- *   onSlotNumberUpdate: (update: number | ((slotNumber: number) => number)) => void;
+ *   samples: (SampleContainer)[] | SampleContainer;
+ *   justTheButton?: boolean;
+ *   showInfoBeforeTransfer?: boolean;
+ *   button?: React.ReactElement;
+ *   onSlotNumberUpdate?: (update: number | ((slotNumber: number) => number)) => void;
  * }} props
  */
-function VolcaTransferControl({ sample, onSlotNumberUpdate }) {
-  const [syroProgress, setSyroProgress] = useState(0);
+function VolcaTransferControl({
+  samples: _samples,
+  justTheButton,
+  showInfoBeforeTransfer,
+  button,
+  onSlotNumberUpdate,
+}) {
+  const samples = useMemo(
+    () => (_samples instanceof Array ? _samples : [_samples]),
+    [_samples]
+  );
+  const [syroProgress, setSyroProgress] = useState(1);
+  const [infoBeforeTransferModalOpen, setInfoBeforeTransferModalOpen] =
+    useState(false);
   const [preTransferModalOpen, setPreTransferModalOpen] = useState(false);
   const [syroTransferState, setSyroTransferState] = useState(
     /** @type {'idle' | 'transferring' | 'error'} */ ('idle')
@@ -33,6 +50,10 @@ function VolcaTransferControl({ sample, onSlotNumberUpdate }) {
   useLayoutEffect(() => {
     if (syroTransferState === 'transferring') {
       setPreTransferModalOpen(false);
+      return () => {
+        // reset progress for next time modal is open
+        setTimeout(() => setSyroProgress(1), 100);
+      };
     }
   }, [syroTransferState]);
   const [targetWavDataSize, setTargetWavDataSize] = useState(
@@ -53,6 +74,7 @@ function VolcaTransferControl({ sample, onSlotNumberUpdate }) {
   // to be set when transfer or playback is started
   const stop = useRef(() => {});
   useEffect(() => {
+    if (!samples.length) return;
     let cancelled = false;
     setSyroProgress(0);
     setSyroTransferState('idle');
@@ -64,7 +86,7 @@ function VolcaTransferControl({ sample, onSlotNumberUpdate }) {
     };
     try {
       const { syroBufferPromise, cancelWork } = getSyroBuffer(
-        [sample],
+        samples,
         (progress) => {
           if (!cancelled) {
             setSyroProgress(progress);
@@ -74,6 +96,7 @@ function VolcaTransferControl({ sample, onSlotNumberUpdate }) {
       stop.current = () => {
         cancelWork();
         cancelled = true;
+        setSyroProgress(1);
       };
       syroBufferPromise.then(async ({ syroBuffer, dataSizes }) => {
         if (cancelled) {
@@ -93,7 +116,7 @@ function VolcaTransferControl({ sample, onSlotNumberUpdate }) {
       setSyroAudioBuffer(new Error(String(err)));
     }
     return () => stop.current();
-  }, [sample]);
+  }, [samples]);
   const { playAudioBuffer } = useAudioPlaybackContext();
   /** @type {React.MouseEventHandler} */
   const handleTransfer = useCallback(
@@ -130,33 +153,145 @@ function VolcaTransferControl({ sample, onSlotNumberUpdate }) {
   const handleCancel = useCallback(() => stop.current(), []);
   const transferInProgress =
     syroTransferState === 'transferring' && syroProgress < 1;
+
+  const transferInfo = (
+    <div className={classes.transferInfo}>
+      <strong>Memory footprint:</strong>{' '}
+      {typeof targetWavDataSize === 'number'
+        ? byteSize(targetWavDataSize).toString()
+        : 'checking...'}
+      <br />
+      <strong>Time to transfer:</strong>{' '}
+      {syroAudioBuffer instanceof AudioBuffer
+        ? formatLongTime(syroAudioBuffer.duration)
+        : syroAudioBuffer instanceof Error
+        ? 'error'
+        : 'checking...'}
+    </div>
+  );
+
+  const duplicateSlots = useMemo(() => {
+    /** @type {Map<number, number>}  */
+    const slotCounts = new Map();
+    for (const sample of samples) {
+      const { slotNumber } = sample.metadata;
+      slotCounts.set(slotNumber, (slotCounts.get(slotNumber) || 0) + 1);
+    }
+    return [...slotCounts]
+      .filter(([_, count]) => count > 1)
+      .map(([slotNumber]) => slotNumber);
+  }, [samples]);
+
   return (
     <>
-      <div className={classes.transferInfo}>
-        <strong>Memory footprint:</strong>{' '}
-        {typeof targetWavDataSize === 'number'
-          ? byteSize(targetWavDataSize).toString()
-          : 'checking...'}
-        <br />
-        <strong>Time to transfer:</strong>{' '}
-        {syroAudioBuffer instanceof AudioBuffer
-          ? formatLongTime(syroAudioBuffer.duration)
-          : syroAudioBuffer instanceof Error
-          ? 'error'
-          : 'checking...'}
-      </div>
-      <SlotNumberInput
-        slotNumber={sample.metadata.slotNumber}
-        onSlotNumberUpdate={onSlotNumberUpdate}
-      />
-      <Button
-        className={classes.transferButton}
-        type="button"
-        variant="primary"
-        onClick={() => setPreTransferModalOpen(true)}
+      {!justTheButton && (
+        <>
+          {transferInfo}
+          <SlotNumberInput
+            slotNumber={samples[0].metadata.slotNumber}
+            onSlotNumberUpdate={
+              /** @type {NonNullable<typeof onSlotNumberUpdate>} */ (
+                onSlotNumberUpdate
+              )
+            }
+          />
+        </>
+      )}
+      {React.cloneElement(
+        button || (
+          <Button
+            className={classes.transferButton}
+            type="button"
+            variant="primary"
+          >
+            Transfer to volca sample
+          </Button>
+        ),
+        {
+          ...(samples.length > 110
+            ? {
+                disabled: true,
+                children: 'Too many samples',
+              }
+            : {}),
+          onClick() {
+            if (showInfoBeforeTransfer) {
+              setInfoBeforeTransferModalOpen(true);
+            } else {
+              setPreTransferModalOpen(true);
+            }
+          },
+        }
+      )}
+      <Modal
+        onHide={() => setInfoBeforeTransferModalOpen(false)}
+        className={classes.preTransferModal}
+        show={infoBeforeTransferModalOpen}
+        aria-labelledby="info-before-transfer-modal"
       >
-        Transfer to volca sample
-      </Button>
+        <Modal.Header>
+          <Modal.Title id="info-before-modal">
+            Confirm samples to be transferred
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {transferInfo}
+          {duplicateSlots.length > 0 && (
+            <p className={classes.duplicate}>
+              <strong>
+                You cannot transfer multiple samples to the same slot.
+              </strong>
+            </p>
+          )}
+          {samples.length > 110 && (
+            <p className={classes.duplicate}>
+              <strong>
+                You cannot transfer more than 110 samples at a time.
+              </strong>
+            </p>
+          )}
+          <ul>
+            {samples.map((sample) => (
+              <li key={sample.id}>
+                <strong>{sample.metadata.name}</strong> to{' '}
+                <strong
+                  className={
+                    duplicateSlots.includes(sample.metadata.slotNumber)
+                      ? classes.duplicate
+                      : ''
+                  }
+                >
+                  slot {sample.metadata.slotNumber}
+                </strong>
+              </li>
+            ))}
+          </ul>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            type="button"
+            variant="light"
+            onClick={() => setInfoBeforeTransferModalOpen(false)}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            variant="primary"
+            disabled={
+              !(syroAudioBuffer instanceof AudioBuffer) ||
+              duplicateSlots.length > 0
+            }
+            onClick={() => {
+              setPreTransferModalOpen(true);
+              setInfoBeforeTransferModalOpen(false);
+            }}
+          >
+            Continue{' '}
+            {syroProgress < 1 && `(${(syroProgress * 100).toFixed(0)}%)`}
+          </Button>
+        </Modal.Footer>
+      </Modal>
       <Modal
         onHide={() => setPreTransferModalOpen(false)}
         className={classes.preTransferModal}
@@ -214,11 +349,18 @@ function VolcaTransferControl({ sample, onSlotNumberUpdate }) {
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <p>
-            Transferring <strong>{sample.metadata.name}</strong> to slot{' '}
-            <strong>{sample.metadata.slotNumber}</strong> on your your volca
-            sample. Don't disconnect anything.
-          </p>
+          {samples.length > 1 ? (
+            <p>
+              Transferring samples to your volca sample. Don't disconnect
+              anything.
+            </p>
+          ) : samples[0] ? (
+            <p>
+              Transferring <strong>{samples[0].metadata.name}</strong> to slot{' '}
+              <strong>{samples[0].metadata.slotNumber}</strong> on your your
+              volca sample. Don't disconnect anything.
+            </p>
+          ) : null}
           <ProgressBar
             striped
             animated
@@ -258,11 +400,15 @@ function VolcaTransferControl({ sample, onSlotNumberUpdate }) {
             </p>
           ) : (
             <>
-              <p>
-                <strong>{sample.metadata.name}</strong> was transferred to slot{' '}
-                <strong>{sample.metadata.slotNumber}</strong> on your volca
-                sample.
-              </p>
+              {samples.length > 1 ? (
+                <p>Your samples were transferred to your volca sample.</p>
+              ) : samples[0] ? (
+                <p>
+                  <strong>{samples[0].metadata.name}</strong> was transferred to
+                  slot <strong>{samples[0].metadata.slotNumber}</strong> on your
+                  volca sample.
+                </p>
+              ) : null}
               <h5>
                 If you see <strong>[End]</strong>:
               </h5>

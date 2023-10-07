@@ -80,3 +80,21 @@
 .accordionBody {
   padding: 0;
 }
+
+// This is needed to accomodate for the styles on .modal-content which is
+// supposed to be the parent of .modal-body
+.deleteModalForm {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.deleteModalHeader {
+  justify-content: flex-start;
+
+  & > svg {
+    fill: var(--bs-primary);
+    margin-right: 1rem;
+    transform: scale(calc(2 / 1.5));
+  }
+}

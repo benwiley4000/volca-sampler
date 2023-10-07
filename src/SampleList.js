@@ -132,7 +132,7 @@ const SampleListItem = React.memo(
       >
         <span className={classes.sampleTitle}>
           <div className={classes.multiSelector}>
-            <input type="radio" checked={selected} />
+            <input readOnly type="radio" checked={selected} />
           </div>
           <Button
             className={classes.playbackButton}

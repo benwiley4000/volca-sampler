@@ -522,10 +522,7 @@ export class SampleContainer {
           return new SampleContainer.Mutable({ id, ...metadata });
         })
         .filter(Boolean)
-    ).sort(
-      ({ metadata: { dateModified: a } }, { metadata: { dateModified: b } }) =>
-        a > b ? -1 : b > a ? 1 : 0
-    );
+    ).sort(sampleContainerDateCompare);
     return sampleContainers;
   }
 
@@ -590,4 +587,16 @@ export async function getFactorySamples() {
       }),
     ])
   );
+}
+
+/**
+ * @param {SampleContainer} a
+ * @param {SampleContainer} b
+ */
+export function sampleContainerDateCompare(a, b) {
+  return a.metadata.dateModified > b.metadata.dateModified
+    ? -1
+    : b.metadata.dateModified > a.metadata.dateModified
+    ? 1
+    : 0;
 }

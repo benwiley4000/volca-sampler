@@ -16,6 +16,7 @@ import Footer from './Footer.js';
 import {
   getFactorySamples,
   SampleContainer,
+  sampleContainerDateCompare,
   storeAudioSourceFile,
 } from './store.js';
 import { getSamplePeaksForAudioBuffer } from './utils/waveform.js';
@@ -63,17 +64,20 @@ function App() {
     // TODO: error handling
     SampleContainer.getAllFromStorage()
       .then((storedSamples) => {
-        setUserSamples(
-          (samples) =>
-            new Map([
-              ...samples,
-              ...storedSamples.map(
-                (sample) =>
-                  /** @type {[string, SampleContainer]} */ ([sample.id, sample])
-              ),
-            ])
-        );
-        // TODO: automatically set focused sample id to first.. easier with useReducer maybe
+        setUserSamples((samples) => {
+          const newSamples = new Map([
+            ...samples,
+            ...storedSamples.map(
+              (sample) =>
+                /** @type {[string, SampleContainer]} */ ([sample.id, sample])
+            ),
+          ]);
+          return new Map(
+            [...newSamples].sort(([, a], [, b]) =>
+              sampleContainerDateCompare(a, b)
+            )
+          );
+        });
       })
       .finally(() => {
         setLoadingSamples(false);
@@ -147,7 +151,9 @@ function App() {
           sendSampleUpdateEvent([sample.id], 'edit');
         });
         if (updated !== sample) {
-          return new Map(samples).set(sample.id, updated);
+          const newSamples = new Map(samples);
+          newSamples.delete(sample.id);
+          return new Map([[sample.id, updated], ...newSamples]);
         }
       }
       return samples;
@@ -194,22 +200,18 @@ function App() {
         focusedSampleIdRef.current &&
         ids.includes(focusedSampleIdRef.current)
       ) {
-        const sortedUserSamples = [...userSamples]
-          .map(([, s]) => s)
-          .sort((a, b) =>
-            a.metadata.dateModified > b.metadata.dateModified ? -1 : 1
-          );
-        const focusedSampleIndex = sortedUserSamples.findIndex(
+        const userSamplesList = [...userSamples.values()];
+        const focusedSampleIndex = userSamplesList.findIndex(
           (s) => s.id === focusedSampleIdRef.current
         );
-        const nextNewerAvailableSample = sortedUserSamples
+        const nextNewerAvailableSample = userSamplesList
           .slice(0, focusedSampleIndex)
           .reverse()
           .find((s) => !ids.includes(s.id));
         const nextFocusedSample = nextNewerAvailableSample
           ? nextNewerAvailableSample
           : // if there is no newer sample left then try to find the next after
-            sortedUserSamples
+            userSamplesList
               .slice(focusedSampleIndex + 1)
               .find((s) => !ids.includes(s.id));
         if (nextFocusedSample) {
@@ -246,11 +248,17 @@ function App() {
           event.sampleIds
         );
         setUserSamples((samples) => {
-          const newSamples = new Map(samples);
-          for (const syncedSample of syncedSamples) {
-            newSamples.set(syncedSample.id, syncedSample);
-          }
-          return newSamples;
+          const newSamples = new Map([
+            ...samples,
+            ...syncedSamples.map(
+              (s) => /** @type {[string, SampleContainer]} */ ([s.id, s])
+            ),
+          ]);
+          return new Map(
+            [...newSamples].sort(([, a], [, b]) =>
+              sampleContainerDateCompare(a, b)
+            )
+          );
         });
       }
     });

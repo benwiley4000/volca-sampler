@@ -17,6 +17,10 @@
   }
 }
 
+.multiSelect {
+  user-select: none;
+}
+
 div.listItem {
   cursor: initial;
   text-align: left;

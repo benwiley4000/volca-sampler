@@ -199,13 +199,19 @@ function SampleList({
   samplesRef.current = samples;
   const onSampleSelectRef = useRef(onSampleSelect);
   onSampleSelectRef.current = onSampleSelect;
+  const hasMultiSelectionRef = useRef(Boolean(multipleSelection));
+  hasMultiSelectionRef.current = Boolean(multipleSelection);
 
   /** @type {React.KeyboardEventHandler} */
   const handleKeyDown = useCallback((e) => {
     if (!listRef.current) {
       return;
     }
-    if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') {
+    if (
+      e.key !== 'ArrowUp' &&
+      e.key !== 'ArrowDown' &&
+      !(hasMultiSelectionRef.current && e.key === ' ')
+    ) {
       return;
     }
     const listItem = /** @type {HTMLElement} */ (e.target).closest(
@@ -213,18 +219,26 @@ function SampleList({
     );
     if (listItem) {
       e.preventDefault();
-      const index = Array.prototype.indexOf.call(
-        listRef.current.children,
-        listItem
-      );
-      if (e.key === 'ArrowUp' && index > 0) {
-        if (listItem.previousElementSibling instanceof HTMLDivElement) {
-          listItem.previousElementSibling.focus();
+      if (e.key === ' ') {
+        e.stopPropagation();
+        const playButton = listItem.querySelector(`.${classes.playbackButton}`);
+        if (playButton) {
+          playButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
         }
-      }
-      if (e.key === 'ArrowDown' && index + 1 < samplesRef.current.length) {
-        if (listItem.nextElementSibling instanceof HTMLDivElement) {
-          listItem.nextElementSibling.focus();
+      } else {
+        const index = Array.prototype.indexOf.call(
+          listRef.current.children,
+          listItem
+        );
+        if (e.key === 'ArrowUp' && index > 0) {
+          if (listItem.previousElementSibling instanceof HTMLDivElement) {
+            listItem.previousElementSibling.focus();
+          }
+        }
+        if (e.key === 'ArrowDown' && index + 1 < samplesRef.current.length) {
+          if (listItem.nextElementSibling instanceof HTMLDivElement) {
+            listItem.nextElementSibling.focus();
+          }
         }
       }
     }
@@ -237,7 +251,11 @@ function SampleList({
     ) {
       return;
     }
-    if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') {
+    if (
+      hasMultiSelectionRef.current
+        ? e.key !== 'Enter'
+        : e.key !== 'ArrowUp' && e.key !== 'ArrowDown'
+    ) {
       return;
     }
     const index = Array.prototype.indexOf.call(

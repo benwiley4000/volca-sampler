@@ -205,14 +205,83 @@ function SampleList({
   const lastSampleIdClickedWithoutShiftRef = useRef(
     /** @type {string | null} */ (null)
   );
-  const lastSampleIdClickedWithShiftRef = useRef(
+  const lastSampleIdSelectedWithShiftRef = useRef(
     /** @type {string | null} */ (null)
   );
 
-  useEffect(() => {
+  // clear refs to shift-selected samples when we update the sample list
+  useEffect(() => {
     lastSampleIdClickedWithoutShiftRef.current = null;
-    lastSampleIdClickedWithShiftRef.current = null;
+    lastSampleIdSelectedWithShiftRef.current = null;
   }, [samples.length]);
+
+  // clear refs to shift-selected samples when they are no longer selected
+  useEffect(() => {
+    if (
+      lastSampleIdClickedWithoutShiftRef.current &&
+      (!multipleSelection ||
+        !multipleSelection.has(lastSampleIdClickedWithoutShiftRef.current))
+    ) {
+      lastSampleIdClickedWithoutShiftRef.current = null;
+    }
+    if (
+      lastSampleIdSelectedWithShiftRef.current &&
+      (!multipleSelection ||
+        !multipleSelection.has(lastSampleIdSelectedWithShiftRef.current))
+    ) {
+      lastSampleIdSelectedWithShiftRef.current = null;
+    }
+  }, [multipleSelection]);
+
+  const handleShiftMultiSelect = useCallback(
+    /**
+     * @param {string} sampleId
+     * @param {React.MouseEvent | React.KeyboardEvent} e
+     * @return {boolean}
+     */
+    (sampleId, e) => {
+      const sampleIds = samplesRef.current.map((s) => s.id);
+      const multipleSelection = multipleSelectionRef.current;
+      let firstSampleIndex = -1;
+      if (
+        e.shiftKey &&
+        lastSampleIdClickedWithoutShiftRef.current &&
+        multipleSelection &&
+        multipleSelection.has(lastSampleIdClickedWithoutShiftRef.current) &&
+        (firstSampleIndex = sampleIds.indexOf(
+          lastSampleIdClickedWithoutShiftRef.current
+        )) !== -1
+      ) {
+        const lastSampleIndex = sampleIds.indexOf(sampleId);
+        const sampleIdsToSelect = sampleIds.slice(
+          Math.min(firstSampleIndex, lastSampleIndex),
+          Math.max(firstSampleIndex, lastSampleIndex) + 1
+        );
+        const previousLastSampleIndex = lastSampleIdSelectedWithShiftRef.current
+          ? sampleIds.indexOf(lastSampleIdSelectedWithShiftRef.current)
+          : -1;
+        /** @type {string[]} */
+        let sampleIdsToUnselect = [];
+        if (previousLastSampleIndex !== -1) {
+          sampleIdsToUnselect = sampleIds
+            .slice(
+              Math.min(previousLastSampleIndex, lastSampleIndex),
+              Math.max(previousLastSampleIndex, lastSampleIndex) + 1
+            )
+            .filter((id) => !sampleIdsToSelect.includes(id));
+          console.log({ sampleIdsToUnselect });
+        }
+        onSampleSelectRef.current(
+          ...sampleIdsToSelect.filter((id) => !multipleSelection.has(id)),
+          ...sampleIdsToUnselect.filter((id) => multipleSelection.has(id))
+        );
+        lastSampleIdSelectedWithShiftRef.current = sampleId;
+        return true;
+      }
+      return false;
+    },
+    []
+  );
 
   /** @type {React.KeyboardEventHandler} */
   const handleKeyDown = useCallback((e) => {
@@ -256,33 +325,41 @@ function SampleList({
     }
   }, []);
   /** @type {React.KeyboardEventHandler} */
-  const handleKeyUp = useCallback((e) => {
-    if (
-      !listRef.current ||
-      !(document.activeElement instanceof HTMLDivElement)
-    ) {
-      return;
-    }
-    if (
-      multipleSelectionRef.current
-        ? e.key !== 'Enter'
-        : e.key !== 'ArrowUp' && e.key !== 'ArrowDown'
-    ) {
-      return;
-    }
-    const index = Array.prototype.indexOf.call(
-      listRef.current.children,
-      document.activeElement
-    );
-    if (index === -1) {
-      return;
-    }
-    e.preventDefault();
-    const sampleToSelect = samplesRef.current[index];
-    if (sampleToSelect) {
-      onSampleSelectRef.current(sampleToSelect.id);
-    }
-  }, []);
+  const handleKeyUp = useCallback(
+    (e) => {
+      if (
+        !listRef.current ||
+        !(document.activeElement instanceof HTMLDivElement)
+      ) {
+        return;
+      }
+      if (
+        multipleSelectionRef.current && !e.shiftKey
+          ? e.key !== 'Enter'
+          : e.key !== 'ArrowUp' && e.key !== 'ArrowDown'
+      ) {
+        return;
+      }
+      const index = Array.prototype.indexOf.call(
+        listRef.current.children,
+        document.activeElement
+      );
+      if (index === -1) {
+        return;
+      }
+      e.preventDefault();
+      const sampleToSelect = samplesRef.current[index];
+      if (sampleToSelect) {
+        if (multipleSelectionRef.current && e.shiftKey) {
+          handleShiftMultiSelect(sampleToSelect.id, e) ||
+            onSampleSelectRef.current(sampleToSelect.id);
+        } else {
+          onSampleSelectRef.current(sampleToSelect.id);
+        }
+      }
+    },
+    [handleShiftMultiSelect]
+  );
 
   // support shift+click
   const handleSampleSelectClick = useCallback(
@@ -291,49 +368,13 @@ function SampleList({
      * @param {React.MouseEvent} e
      */
     (sampleId, e) => {
-      const sampleIds = samplesRef.current.map((s) => s.id);
-      const multipleSelection = multipleSelectionRef.current;
-      let firstSampleIndex = -1;
-      if (
-        e.shiftKey &&
-        lastSampleIdClickedWithoutShiftRef.current &&
-        multipleSelection &&
-        multipleSelection.has(lastSampleIdClickedWithoutShiftRef.current) &&
-        (firstSampleIndex = sampleIds.indexOf(
-          lastSampleIdClickedWithoutShiftRef.current
-        )) !== -1
-      ) {
-        const lastSampleIndex = sampleIds.indexOf(sampleId);
-        const sampleIdsToSelect = sampleIds.slice(
-          Math.min(firstSampleIndex, lastSampleIndex),
-          Math.max(firstSampleIndex, lastSampleIndex) + 1
-        );
-        const previousLastSampleIndex = lastSampleIdClickedWithShiftRef.current
-          ? sampleIds.indexOf(lastSampleIdClickedWithShiftRef.current)
-          : -1;
-        /** @type {string[]} */
-        let sampleIdsToUnselect = [];
-        if (previousLastSampleIndex !== -1) {
-          sampleIdsToUnselect = sampleIds
-            .slice(
-              Math.min(previousLastSampleIndex, lastSampleIndex),
-              Math.max(previousLastSampleIndex, lastSampleIndex) + 1
-            )
-            .filter((id) => !sampleIdsToSelect.includes(id));
-          console.log({ sampleIdsToUnselect });
-        }
-        onSampleSelectRef.current(
-          ...sampleIdsToSelect.filter((id) => !multipleSelection.has(id)),
-          ...sampleIdsToUnselect.filter((id) => multipleSelection.has(id))
-        );
-        lastSampleIdClickedWithShiftRef.current = sampleId;
-      } else {
+      if (!handleShiftMultiSelect(sampleId, e)) {
         onSampleSelectRef.current(sampleId);
         lastSampleIdClickedWithoutShiftRef.current = sampleId;
-        lastSampleIdClickedWithShiftRef.current = null;
+        lastSampleIdSelectedWithShiftRef.current = null;
       }
     },
-    []
+    [handleShiftMultiSelect]
   );
 
   return (

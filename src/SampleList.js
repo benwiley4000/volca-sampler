@@ -246,8 +246,8 @@ function SampleList({
       if (
         e.shiftKey &&
         lastSampleIdClickedWithoutShiftRef.current &&
-        multipleSelection &&
-        multipleSelection.has(lastSampleIdClickedWithoutShiftRef.current) &&
+        (!multipleSelection ||
+          multipleSelection.has(lastSampleIdClickedWithoutShiftRef.current)) &&
         (firstSampleIndex = sampleIds.indexOf(
           lastSampleIdClickedWithoutShiftRef.current
         )) !== -1
@@ -269,11 +269,14 @@ function SampleList({
               Math.max(previousLastSampleIndex, lastSampleIndex) + 1
             )
             .filter((id) => !sampleIdsToSelect.includes(id));
-          console.log({ sampleIdsToUnselect });
         }
         onSampleSelectRef.current(
-          ...sampleIdsToSelect.filter((id) => !multipleSelection.has(id)),
-          ...sampleIdsToUnselect.filter((id) => multipleSelection.has(id))
+          ...sampleIdsToSelect.filter(
+            (id) => !multipleSelection || !multipleSelection.has(id)
+          ),
+          ...sampleIdsToUnselect.filter(
+            (id) => multipleSelection && multipleSelection.has(id)
+          )
         );
         lastSampleIdSelectedWithShiftRef.current = sampleId;
         return true;
@@ -383,6 +386,7 @@ function SampleList({
       className={[
         'list-group list-group-flush',
         multipleSelection ? classes.multiSelect : '',
+        classes.noSelect,
       ].join(' ')}
       onKeyDown={handleKeyDown}
       onKeyUp={handleKeyUp}

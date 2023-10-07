@@ -149,12 +149,11 @@ const SampleMenu = React.memo(
     const handleSampleSelect = useCallback(
       /** @param {...string} sampleIds */
       (...sampleIds) => {
-        if (hasMultiSelection) {
+        if (hasMultiSelection || sampleIds.length > 1) {
           setMultipleSelection((multipleSelection) => {
-            if (!multipleSelection) return multipleSelection;
             const newSelection = new Set(multipleSelection);
             for (const sampleId of sampleIds) {
-              if (multipleSelection.has(sampleId)) {
+              if (multipleSelection && multipleSelection.has(sampleId)) {
                 newSelection.delete(sampleId);
               } else {
                 newSelection.add(sampleId);

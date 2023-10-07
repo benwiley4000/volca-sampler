@@ -146,22 +146,24 @@ const SampleMenu = React.memo(
     );
 
     const hasMultiSelection = Boolean(multipleSelection);
-    /** @type {typeof onSampleSelect} */
     const handleSampleSelect = useCallback(
-      (sampleId) => {
+      /** @param {...string} sampleIds */
+      (...sampleIds) => {
         if (hasMultiSelection) {
           setMultipleSelection((multipleSelection) => {
-            if (!multipleSelection || !sampleId) return multipleSelection;
+            if (!multipleSelection) return multipleSelection;
             const newSelection = new Set(multipleSelection);
-            if (multipleSelection.has(sampleId)) {
-              newSelection.delete(sampleId);
-            } else {
-              newSelection.add(sampleId);
+            for (const sampleId of sampleIds) {
+              if (multipleSelection.has(sampleId)) {
+                newSelection.delete(sampleId);
+              } else {
+                newSelection.add(sampleId);
+              }
             }
             return newSelection;
           });
         } else {
-          onSampleSelect(sampleId);
+          onSampleSelect(sampleIds[0]);
         }
       },
       [hasMultiSelection, onSampleSelect]

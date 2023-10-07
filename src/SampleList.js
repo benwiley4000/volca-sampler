@@ -27,10 +27,10 @@ const SampleListItem = React.memo(
    * @param {{
    *   sample: import('./store').SampleContainer;
    *   selected: boolean;
-   *   onSampleSelect: (id: string) => void;
+   *   onSampleSelectClick: (id: string, e: React.MouseEvent) => void;
    * }} props
    */
-  function SampleListItem({ sample, selected, onSampleSelect }) {
+  function SampleListItem({ sample, selected, onSampleSelectClick }) {
     /**
      * @type {React.RefObject<HTMLDivElement>}
      */
@@ -126,7 +126,7 @@ const SampleListItem = React.memo(
             // ignore play button which should't change sample selection
             return;
           }
-          onSampleSelect(sample.id);
+          onSampleSelectClick(sample.id, e);
         }}
         ref={listItemRef}
       >
@@ -183,7 +183,7 @@ const SampleListItem = React.memo(
  *   samples: import('./store').SampleContainer[];
  *   selectedSampleId: string | null;
  *   multipleSelection: Set<string> | null;
- *   onSampleSelect: (id: string) => void;
+ *   onSampleSelect: (...ids: string[]) => void;
  * }} props
  */
 function SampleList({
@@ -199,8 +199,20 @@ function SampleList({
   samplesRef.current = samples;
   const onSampleSelectRef = useRef(onSampleSelect);
   onSampleSelectRef.current = onSampleSelect;
-  const hasMultiSelectionRef = useRef(Boolean(multipleSelection));
-  hasMultiSelectionRef.current = Boolean(multipleSelection);
+  const multipleSelectionRef = useRef(multipleSelection);
+  multipleSelectionRef.current = multipleSelection;
+
+  const lastSampleIdClickedWithoutShiftRef = useRef(
+    /** @type {string | null} */ (null)
+  );
+  const lastSampleIdClickedWithShiftRef = useRef(
+    /** @type {string | null} */ (null)
+  );
+
+  useEffect(() => {
+    lastSampleIdClickedWithoutShiftRef.current = null;
+    lastSampleIdClickedWithShiftRef.current = null;
+  }, [samples.length]);
 
   /** @type {React.KeyboardEventHandler} */
   const handleKeyDown = useCallback((e) => {
@@ -210,7 +222,7 @@ function SampleList({
     if (
       e.key !== 'ArrowUp' &&
       e.key !== 'ArrowDown' &&
-      !(hasMultiSelectionRef.current && e.key === ' ')
+      !(multipleSelectionRef.current && e.key === ' ')
     ) {
       return;
     }
@@ -252,7 +264,7 @@ function SampleList({
       return;
     }
     if (
-      hasMultiSelectionRef.current
+      multipleSelectionRef.current
         ? e.key !== 'Enter'
         : e.key !== 'ArrowUp' && e.key !== 'ArrowDown'
     ) {
@@ -271,6 +283,59 @@ function SampleList({
       onSampleSelectRef.current(sampleToSelect.id);
     }
   }, []);
+
+  // support shift+click
+  const handleSampleSelectClick = useCallback(
+    /**
+     * @param {string} sampleId
+     * @param {React.MouseEvent} e
+     */
+    (sampleId, e) => {
+      const sampleIds = samplesRef.current.map((s) => s.id);
+      const multipleSelection = multipleSelectionRef.current;
+      let firstSampleIndex = -1;
+      if (
+        e.shiftKey &&
+        lastSampleIdClickedWithoutShiftRef.current &&
+        multipleSelection &&
+        multipleSelection.has(lastSampleIdClickedWithoutShiftRef.current) &&
+        (firstSampleIndex = sampleIds.indexOf(
+          lastSampleIdClickedWithoutShiftRef.current
+        )) !== -1
+      ) {
+        const lastSampleIndex = sampleIds.indexOf(sampleId);
+        const sampleIdsToSelect = sampleIds.slice(
+          Math.min(firstSampleIndex, lastSampleIndex),
+          Math.max(firstSampleIndex, lastSampleIndex) + 1
+        );
+        const previousLastSampleIndex = lastSampleIdClickedWithShiftRef.current
+          ? sampleIds.indexOf(lastSampleIdClickedWithShiftRef.current)
+          : -1;
+        /** @type {string[]} */
+        let sampleIdsToUnselect = [];
+        if (previousLastSampleIndex !== -1) {
+          sampleIdsToUnselect = sampleIds
+            .slice(
+              Math.min(previousLastSampleIndex, lastSampleIndex),
+              Math.max(previousLastSampleIndex, lastSampleIndex) + 1
+            )
+            .filter((id) => !sampleIdsToSelect.includes(id));
+          console.log({ sampleIdsToUnselect });
+        }
+        onSampleSelectRef.current(
+          ...sampleIdsToSelect.filter((id) => !multipleSelection.has(id)),
+          ...sampleIdsToUnselect.filter((id) => multipleSelection.has(id))
+        );
+        lastSampleIdClickedWithShiftRef.current = sampleId;
+      } else {
+        onSampleSelectRef.current(sampleId);
+        lastSampleIdClickedWithoutShiftRef.current = sampleId;
+        lastSampleIdClickedWithShiftRef.current = null;
+      }
+    },
+    []
+  );
+
   return (
     <ul
       ref={listRef}
@@ -291,7 +356,7 @@ function SampleList({
                 ? multipleSelection.has(sample.id)
                 : sample.id === selectedSampleId
             }
-            onSampleSelect={onSampleSelect}
+            onSampleSelectClick={handleSampleSelectClick}
           />
         ))
       ) : (

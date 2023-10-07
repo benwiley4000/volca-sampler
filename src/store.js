@@ -323,7 +323,7 @@ export class SampleContainer {
     return copy;
   }
 
-  static Mutable = class extends SampleContainer {
+  static Mutable = class MutableSampleContainer extends SampleContainer {
     /**
      * @param {SampleContainerParams} sampleContainerParams
      */
@@ -530,23 +530,27 @@ export class SampleContainer {
   }
 
   /**
-   * @param {string} sampleId
-   * @return {Promise<SampleContainer>}
+   * @param {string[]} sampleIds
+   * @return {Promise<SampleContainer[]>}
    */
-  static async getOneFromStorage(sampleId) {
-    const metadata = await sampleMetadataStore.getItem(sampleId);
-    const upgradedMetadata = await upgradeMetadata(metadata);
-    const sampleContainer = new SampleContainer.Mutable({
-      id: sampleId,
-      ...upgradedMetadata,
-    });
-    const { sourceFileId } = sampleContainer.metadata;
-    this.recentlyCachedSourceFileIds.filter((id) => id !== sourceFileId);
-    this.sourceFileData.delete(sourceFileId);
-    if (isReloadedToUpgrade) {
-      clearReloadToUpgrade();
-    }
-    return sampleContainer;
+  static async getByIdsFromStorage(sampleIds) {
+    return Promise.all(
+      sampleIds.map(async (sampleId) => {
+        const metadata = await sampleMetadataStore.getItem(sampleId);
+        const upgradedMetadata = await upgradeMetadata(metadata);
+        const sampleContainer = new SampleContainer.Mutable({
+          id: sampleId,
+          ...upgradedMetadata,
+        });
+        const { sourceFileId } = sampleContainer.metadata;
+        this.recentlyCachedSourceFileIds.filter((id) => id !== sourceFileId);
+        this.sourceFileData.delete(sourceFileId);
+        if (isReloadedToUpgrade) {
+          clearReloadToUpgrade();
+        }
+        return sampleContainer;
+      })
+    );
   }
 }
 

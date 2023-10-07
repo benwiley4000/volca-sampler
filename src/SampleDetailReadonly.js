@@ -67,7 +67,7 @@ function SampleDetailReadonly({ sample: readonlySample, onSampleDuplicate }) {
       <WaveformReadonly sample={sample} />
       <h4>Transfer</h4>
       <VolcaTransferControl
-        sample={sample}
+        samples={sample}
         onSlotNumberUpdate={setSlotNumber}
       />
     </Container>

@@ -26,7 +26,7 @@ const SampleDetail = React.memo(
    *   sample: import('./store').SampleContainer;
    *   onSampleUpdate: (id: string, update: import('./store').SampleMetadataUpdateArg) => void;
    *   onSampleDuplicate: (id: string) => void;
-   *   onSampleDelete: (id: string) => void;
+   *   onSampleDelete: (id: string | string[]) => void;
    * }} props
    */
   function SampleDetail({
@@ -83,7 +83,7 @@ const SampleDetail = React.memo(
         <WaveformEdit sample={sample} onSampleUpdate={onSampleUpdate} />
         <h4>Transfer</h4>
         <VolcaTransferControl
-          sample={sample}
+          samples={sample}
           onSlotNumberUpdate={handleSlotNumberUpdate}
         />
       </Container>
@@ -100,7 +100,7 @@ const SampleDetailActions = React.memo(
    *   userFileInfo: { type: string; ext: string } | null;
    *   onSampleUpdate: (id: string, update: import('./store').SampleMetadataUpdateArg) => void;
    *   onSampleDuplicate: (id: string) => void;
-   *   onSampleDelete: (id: string) => void;
+   *   onSampleDelete: (id: string | string[]) => void;
    * }} props
    */
   ({

@@ -132,7 +132,7 @@ function App() {
     await sample.persist();
     setUserSamples((samples) => new Map([[sample.id, sample], ...samples]));
     setFocusedSampleId(sample.id);
-    Promise.resolve().then(() => sendSampleUpdateEvent(sample.id, 'create'));
+    Promise.resolve().then(() => sendSampleUpdateEvent([sample.id], 'create'));
     return 'saved';
   }, []);
 
@@ -144,7 +144,7 @@ function App() {
       const sample = samples.get(id);
       if (sample && sample instanceof SampleContainer.Mutable) {
         const updated = sample.update(updater, () => {
-          sendSampleUpdateEvent(sample.id, 'edit');
+          sendSampleUpdateEvent([sample.id], 'edit');
         });
         if (updated !== sample) {
           return new Map(samples).set(sample.id, updated);
@@ -164,7 +164,7 @@ function App() {
       const sample = allSamplesRef.current.get(id);
       if (sample) {
         const newSample = sample.duplicate((id) => {
-          sendSampleUpdateEvent(id, 'create');
+          sendSampleUpdateEvent([id], 'create');
         });
         setUserSamples(
           (samples) => new Map([[newSample.id, newSample], ...samples])
@@ -178,44 +178,61 @@ function App() {
 
   const userSamplesRef = useRef(userSamples);
   userSamplesRef.current = userSamples;
+  const focusedSampleIdRef = useRef(focusedSampleId);
+  focusedSampleIdRef.current = focusedSampleId;
   const handleSampleDelete = useCallback(
     /**
-     * @param {string} id
+     * @param {string | string[]} id
      * @param {boolean} [noPersist]
      */
     (id, noPersist) => {
+      const ids = id instanceof Array ? id : [id];
       const userSamples = userSamplesRef.current;
-      const sample = userSamples.get(id);
-      if (sample && sample instanceof SampleContainer.Mutable) {
-        if (!noPersist) {
-          sample.remove().then(() => {
-            sendSampleUpdateEvent(sample.id, 'delete');
-          });
+      // if we are focused on the sample we are deleting, try to move the
+      // focus to the next newer sample, or else the next sample after.
+      if (
+        focusedSampleIdRef.current &&
+        ids.includes(focusedSampleIdRef.current)
+      ) {
+        const sortedUserSamples = [...userSamples]
+          .map(([, s]) => s)
+          .sort((a, b) =>
+            a.metadata.dateModified > b.metadata.dateModified ? -1 : 1
+          );
+        const focusedSampleIndex = sortedUserSamples.findIndex(
+          (s) => s.id === focusedSampleIdRef.current
+        );
+        const nextNewerAvailableSample = sortedUserSamples
+          .slice(0, focusedSampleIndex)
+          .reverse()
+          .find((s) => !ids.includes(s.id));
+        const nextFocusedSample = nextNewerAvailableSample
+          ? nextNewerAvailableSample
+          : // if there is no newer sample left then try to find the next after
+            sortedUserSamples
+              .slice(focusedSampleIndex + 1)
+              .find((s) => !ids.includes(s.id));
+        if (nextFocusedSample) {
+          setFocusedSampleId(nextFocusedSample.id);
         }
-        /** @type {string | null} */
-        let nextFocusedSampleId = null;
-        let awaitingNextBeforeBreak = false;
-        for (const [, sample] of userSamples) {
-          if (awaitingNextBeforeBreak) {
-            nextFocusedSampleId = sample.id;
-            break;
-          }
-          if (sample.id === id) {
-            if (!nextFocusedSampleId) {
-              awaitingNextBeforeBreak = true;
-              continue;
-            }
-            break;
-          }
-          nextFocusedSampleId = sample.id;
-        }
-        setFocusedSampleId(nextFocusedSampleId);
-        setUserSamples((samples) => {
-          const newSamples = new Map(samples);
-          newSamples.delete(sample.id);
-          return newSamples;
-        });
       }
+      if (!noPersist) {
+        Promise.all(
+          ids.map(async (idToDelete) => {
+            const sample = userSamples.get(idToDelete);
+            if (sample && sample instanceof SampleContainer.Mutable) {
+              await sample.remove();
+            }
+          })
+        ).then(() => sendSampleUpdateEvent(ids, 'delete'));
+      }
+      setUserSamples((samples) => {
+        const newSamples = new Map(samples);
+        for (const id of ids) {
+          newSamples.delete(id);
+        }
+        return newSamples;
+      });
     },
     []
   );
@@ -223,14 +240,18 @@ function App() {
   useEffect(() => {
     return onSampleUpdateEvent(async (event) => {
       if (event.action === 'delete') {
-        handleSampleDelete(event.sampleId, true);
+        handleSampleDelete(event.sampleIds, true);
       } else {
-        const syncedSample = await SampleContainer.getOneFromStorage(
-          event.sampleId
+        const syncedSamples = await SampleContainer.getByIdsFromStorage(
+          event.sampleIds
         );
-        setUserSamples((samples) =>
-          new Map(samples).set(syncedSample.id, syncedSample)
-        );
+        setUserSamples((samples) => {
+          const newSamples = new Map(samples);
+          for (const syncedSample of syncedSamples) {
+            newSamples.set(syncedSample.id, syncedSample);
+          }
+          return newSamples;
+        });
       }
     });
   }, [handleSampleDelete]);
@@ -270,6 +291,7 @@ function App() {
             userSamples={userSamples}
             factorySamples={factorySamples}
             onSampleSelect={handleSampleSelect}
+            onSampleDelete={handleSampleDelete}
           />
         </div>
         <div className={classes.mainLayout}>

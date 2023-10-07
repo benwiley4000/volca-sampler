@@ -38,6 +38,7 @@ const NormalizeSwitch = React.memo(
               'selection',
             ]).map((normalizeOption) => (
               <OverlayTrigger
+                key={normalizeOption}
                 delay={{ show: 400, hide: 0 }}
                 overlay={
                   <Tooltip>
@@ -51,7 +52,6 @@ const NormalizeSwitch = React.memo(
               >
                 <ToggleButton
                   id="normalizeType"
-                  key={normalizeOption}
                   type="radio"
                   size="sm"
                   variant="outline-secondary"

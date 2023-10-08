@@ -92,7 +92,6 @@ const METADATA_VERSION = '0.6.0';
  * @typedef {{
  *   name: string;
  *   sourceFileId: string;
- *   id: string;
  *   metadataVersion: string;
  * }} OldMetadata
  */
@@ -260,7 +259,6 @@ async function upgradeMetadata(oldMetadata) {
       prevMetadata = {
         name: prevMetadata.name,
         sourceFileId: prevMetadata.sourceFileId,
-        id: prevMetadata.id,
         metadataVersion: METADATA_VERSION,
       };
       break;

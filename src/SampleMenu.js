@@ -280,7 +280,7 @@ const SampleMenu = React.memo(
             disabled={
               !multiSelectedUserSamples || !multiSelectedUserSamples.length
             }
-            variant="outline-secondary"
+            variant={exportProgress === null ? 'outline-secondary' : 'primary'}
             onClick={async () => {
               if (!multiSelectedUserSamples) return;
               if (exportProgress !== null) {
@@ -311,7 +311,7 @@ const SampleMenu = React.memo(
                 className={classes.progress}
                 striped
                 animated
-                variant="secondary"
+                variant="primary"
                 now={100 * exportProgress}
               />
             )}

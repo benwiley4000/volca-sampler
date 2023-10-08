@@ -79,11 +79,12 @@ const SampleListItem = React.memo(
         return;
       }
       const isPartiallyOutOfView =
-        accordionCollapse.scrollTop > listItem.offsetTop ||
+        accordionCollapse.offsetTop + accordionCollapse.scrollTop >
+          listItem.offsetTop ||
         accordionCollapse.scrollTop + accordionCollapse.offsetHeight <
           listItem.offsetTop - listItem.offsetHeight;
       if (isPartiallyOutOfView) {
-        listItem.scrollIntoView({ block: 'center' });
+        listItem.scrollIntoView({ block: 'nearest' });
       }
     }, [selected]);
 

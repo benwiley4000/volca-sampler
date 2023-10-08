@@ -65,28 +65,6 @@ const SampleListItem = React.memo(
       observer.observe(waveformContainer);
       return () => observer.disconnect();
     }, []);
-    /** @type {React.RefObject<HTMLDivElement>} */
-    const listItemRef = useRef(null);
-    useEffect(() => {
-      if (!selected || !listItemRef.current) {
-        return;
-      }
-      const listItem = listItemRef.current;
-      const accordionCollapse = /** @type {HTMLElement | null} */ (
-        listItem.closest('.accordion-collapse')
-      );
-      if (!accordionCollapse) {
-        return;
-      }
-      const isPartiallyOutOfView =
-        accordionCollapse.offsetTop + accordionCollapse.scrollTop >
-          listItem.offsetTop ||
-        accordionCollapse.scrollTop + accordionCollapse.offsetHeight <
-          listItem.offsetTop - listItem.offsetHeight;
-      if (isPartiallyOutOfView) {
-        listItem.scrollIntoView({ block: 'nearest' });
-      }
-    }, [selected]);
 
     const [audioRequested, setAudioRequested] = useState(false);
 
@@ -129,7 +107,6 @@ const SampleListItem = React.memo(
           }
           onSampleSelectClick(sample.id, e);
         }}
-        ref={listItemRef}
       >
         <span className={classes.sampleTitle}>
           <div className={classes.multiSelector}>
@@ -198,6 +175,36 @@ function SampleList({
 
   const samplesRef = useRef(samples);
   samplesRef.current = samples;
+
+  const scrollSampleIntoView = useCallback(
+    /** @param {string} sampleId */
+    (sampleId) => {
+      const index = samplesRef.current.findIndex((s) => s.id === sampleId);
+      const list = listRef.current;
+      if (!list || index === -1) return;
+      const listItem = /** @type {HTMLElement} */ (list.children[index]);
+      const accordionCollapse = /** @type {HTMLElement | null} */ (
+        listItem.closest('.accordion-collapse')
+      );
+      if (!accordionCollapse) {
+        return;
+      }
+      const isPartiallyOutOfView =
+        accordionCollapse.offsetTop + accordionCollapse.scrollTop >
+          listItem.offsetTop ||
+        accordionCollapse.scrollTop + accordionCollapse.offsetHeight <
+          listItem.offsetTop - listItem.offsetHeight;
+      if (isPartiallyOutOfView) {
+        listItem.scrollIntoView({ block: 'nearest' });
+      }
+    },
+    []
+  );
+
+  useEffect(() => {
+    if (selectedSampleId) scrollSampleIntoView(selectedSampleId);
+  }, [selectedSampleId, scrollSampleIntoView]);
+
   const onSampleSelectRef = useRef(onSampleSelect);
   onSampleSelectRef.current = onSampleSelect;
   const multipleSelectionRef = useRef(multipleSelection);
@@ -280,11 +287,12 @@ function SampleList({
           )
         );
         lastSampleIdSelectedWithShiftRef.current = sampleId;
+        scrollSampleIntoView(sampleId);
         return true;
       }
       return false;
     },
-    []
+    [scrollSampleIntoView]
   );
 
   /** @type {React.KeyboardEventHandler} */
@@ -360,9 +368,10 @@ function SampleList({
         } else {
           onSampleSelectRef.current(sampleToSelect.id);
         }
+        scrollSampleIntoView(sampleToSelect.id);
       }
     },
-    [handleShiftMultiSelect]
+    [handleShiftMultiSelect, scrollSampleIntoView]
   );
 
   // support shift+click
@@ -376,9 +385,10 @@ function SampleList({
         onSampleSelectRef.current(sampleId);
         lastSampleIdClickedWithoutShiftRef.current = sampleId;
         lastSampleIdSelectedWithShiftRef.current = null;
+        scrollSampleIntoView(sampleId);
       }
     },
-    [handleShiftMultiSelect]
+    [handleShiftMultiSelect, scrollSampleIntoView]
   );
 
   return (

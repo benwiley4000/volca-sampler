@@ -13,6 +13,25 @@
   }
 }
 
+button.exporting {
+  position: relative;
+
+  span {
+    position: relative;
+    z-index: 2;
+  }
+
+  .progress {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: unset;
+    opacity: 0.5;
+  }
+}
+
 .search {
   margin-bottom: 1rem;
 }

@@ -19,6 +19,7 @@ import {
   ToggleButton,
 } from 'react-bootstrap';
 
+import ImportFromZip from './ImportFromZip.js';
 import {
   findSamplePeak,
   getAudioBufferForAudioFileData,
@@ -378,9 +379,13 @@ function drawRecordingPeaks({ canvas, peaks, drawUntil, scaleCoefficient }) {
 }
 
 /**
- * @param {{ onRecordFinish: RecordingCallback }} props
+ * @param {{
+ *   userSamples: Map<string, import('./store.js').SampleContainer>;
+ *   onBulkImport: (samples: import('./store.js').SampleContainer[]) => void;
+ *   onRecordFinish: RecordingCallback;
+ * }} props
  */
-function SampleRecord({ onRecordFinish }) {
+function SampleRecord({ userSamples, onBulkImport, onRecordFinish }) {
   /**
    * @type {React.RefObject<HTMLCanvasElement>}
    */
@@ -721,25 +726,28 @@ function SampleRecord({ onRecordFinish }) {
         </>
       )}
       {!['capturing', 'finalizing'].includes(captureState) && (
-        <Button
-          className={classes.importFileButton}
-          type="button"
-          variant="secondary"
-          onClick={(e) => {
-            const input = e.currentTarget.querySelector('input');
-            if (input && e.target !== input) {
-              input.click();
-            }
-          }}
-        >
-          Or import an audio file
-          <input
-            hidden
-            type="file"
-            accept="audio/*,video/*,.wav,.mp3,.ogg"
-            onChange={importFile}
-          />
-        </Button>
+        <>
+          <Button
+            className={classes.importFileButton}
+            type="button"
+            variant="secondary"
+            onClick={(e) => {
+              const input = e.currentTarget.querySelector('input');
+              if (input && e.target !== input) {
+                input.click();
+              }
+            }}
+          >
+            Import an audio file
+            <input
+              hidden
+              type="file"
+              accept="audio/*,video/*,.wav,.mp3,.ogg"
+              onChange={importFile}
+            />
+          </Button>
+          <ImportFromZip userSamples={userSamples} onImport={onBulkImport} />
+        </>
       )}
       <Modal
         show={showingSystemRecordDialog}

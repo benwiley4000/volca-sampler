@@ -5,6 +5,7 @@ import { decode as decodeBase64 } from 'base64-arraybuffer';
 import { SAMPLE_RATE } from './utils/constants.js';
 import {
   findSamplePeak,
+  getAudioBufferForAudioFileData,
   getMonoSamplesFromAudioBuffer,
   getSourceAudioBuffer,
 } from './utils/audioData.js';
@@ -280,6 +281,28 @@ async function upgradeMetadata(oldMetadata, noReload) {
   }
   return /** @type {SampleMetadata} */ (/** @type {unknown} */ (prevMetadata));
 }
+
+/**
+ * We need waveformPeaks to be cached for fast rendering but it's not a really
+ * useful part of the data to export - plus, it doesn't serialize well because
+ * it's a Float32Array. So we will export without it and recompute it on
+ * import.
+ *
+ * TODO: figure out some versioning scheme for the export if we ever change
+ * the structure of the trim property.
+ *
+ * NOTE: For now, try to leave the trim property alone.
+ *
+ * NOTE: We are also going to assume the existence of a few extra properties,
+ * since the export is a new feature that won't process older metadata.
+ *
+ * @typedef {OldMetadata & {
+ *   trim?: Omit<TrimInfo, 'waveformPeaks'>;
+ *   slotNumber: SampleMetadata['slotNumber'];
+ *   dateSampled: SampleMetadata['dateSampled'];
+ *   dateModified: SampleMetadata['dateModified'];
+ * }} SampleMetadataExport
+ */
 
 export class SampleContainer {
   /**
@@ -568,11 +591,39 @@ export class SampleContainer {
 
   /**
    * @param {string} sampleId
-   * @param {OldMetadata} metadata
+   * @param {SampleMetadataExport} exportMetadata
    * @return {Promise<SampleContainer>}
    */
-  static async importToStorage(sampleId, metadata) {
-    const upgradedMetadata = await upgradeMetadata(metadata, true);
+  static async importToStorage(sampleId, exportMetadata) {
+    /** @type {OldMetadata} */
+    let preUpgradeMetadata = exportMetadata;
+    if (exportMetadata.trim) {
+      // For now we aren't going to detect a specific version before recreating
+      // the waveformPeaks, we will just assume that if the trim property exists
+      // it must match the structure of the type we have currently. if we ever
+      // change the trim property in the future we will have to get more advanced,
+      // so we should try not to do that. NOTE: this works because there was
+      // no export feature when the old trim structure existed.
+      const sourceFileData = await this.getSourceFileData(
+        exportMetadata.sourceFileId
+      );
+      const audioBuffer = await getAudioBufferForAudioFileData(sourceFileData);
+      /** @type {TrimInfo} */
+      const newTrim = {
+        frames: exportMetadata.trim.frames,
+        waveformPeaks: await getSamplePeaksForAudioBuffer(
+          audioBuffer,
+          exportMetadata.trim.frames
+        ),
+      };
+      /** @type {OldMetadata & { trim: SampleMetadata['trim'] }} */
+      const recreatedMetadata = {
+        ...exportMetadata,
+        trim: newTrim,
+      };
+      preUpgradeMetadata = recreatedMetadata;
+    }
+    const upgradedMetadata = await upgradeMetadata(preUpgradeMetadata, true);
     const sampleContainer = new SampleContainer.Mutable({
       id: sampleId,
       ...upgradedMetadata,

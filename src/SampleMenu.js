@@ -305,7 +305,7 @@ const SampleMenu = React.memo(
               setExportProgress(null);
             }}
           >
-            <span>{exportProgress === null ? 'Export' : 'Cancel'}</span>
+            <span>{exportProgress === null ? 'Backup' : 'Cancel'}</span>
             {exportProgress !== null && (
               <ProgressBar
                 className={classes.progress}

@@ -1,0 +1,31 @@
+.samplesTable {
+  table-layout: fixed;
+
+  &:not(:last-child) {
+    margin-bottom: 2rem;
+  }
+
+  td {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .check {
+    width: 2rem;
+  }
+
+  .slotNumber {
+    width: 3rem;
+  }
+
+  .updated {
+    width: 7rem;
+  }
+}
+
+.importModal > * {
+  // We don't always have enough text content to fill up the modal space
+  // but it's weird for the modal to be changing size all the time.
+  width: var(--bs-modal-width);
+}

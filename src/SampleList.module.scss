@@ -75,10 +75,6 @@ div.listItem {
     .multiSelect & {
       display: unset;
     }
-
-    input:checked {
-      accent-color: var(--bs-primary);
-    }
   }
 
   .playbackButton {

@@ -28,6 +28,10 @@ $form-switch-width: 2.5em;
   overflow-y: auto;
 }
 
+input:checked {
+  accent-color: var(--bs-primary);
+}
+
 :root {
   --bs-primary-darkened: #{darken($primary, 20%)};
 }

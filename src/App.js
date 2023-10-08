@@ -159,6 +159,27 @@ function App() {
       return samples;
     });
   }, []);
+  /**
+   * @type {(bulkAddSamples: SampleContainer[]) => void}
+   */
+  const handleSampleBulkAdd = useCallback((bulkAddSamples) => {
+    setUserSamples((samples) => {
+      const newSamples = new Map([
+        ...samples,
+        ...bulkAddSamples.map(
+          (s) => /** @type {[string, SampleContainer]} */ ([s.id, s])
+        ),
+      ]);
+      return new Map(
+        [...newSamples].sort(([, a], [, b]) => sampleContainerDateCompare(a, b))
+      );
+    });
+    sendSampleUpdateEvent(
+      bulkAddSamples.map((s) => s.id),
+      'create'
+    );
+    setSelectedMobilePage('sampleList');
+  }, []);
 
   const allSamplesRef = useRef(allSamples);
   allSamplesRef.current = allSamples;
@@ -315,7 +336,11 @@ function App() {
             />
           )}
           {!focusedSampleId && (
-            <SampleRecord onRecordFinish={handleRecordFinish} />
+            <SampleRecord
+              userSamples={userSamples}
+              onBulkImport={handleSampleBulkAdd}
+              onRecordFinish={handleRecordFinish}
+            />
           )}
           {(!focusedSampleId || sample) && (
             <div className={classes.normalFooterContainer}>

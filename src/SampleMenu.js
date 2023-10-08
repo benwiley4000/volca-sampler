@@ -6,13 +6,22 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Accordion, Button, Form, ListGroup, Modal } from 'react-bootstrap';
+import {
+  Accordion,
+  Button,
+  Form,
+  ListGroup,
+  Modal,
+  ProgressBar,
+} from 'react-bootstrap';
 import { ReactComponent as WarningIcon } from '@material-design-icons/svg/filled/warning.svg';
 
 import SampleList from './SampleList.js';
 
 import classes from './SampleMenu.module.scss';
 import VolcaTransferControl from './VolcaTransferControl.js';
+import { exportSampleContainersToZip } from './utils/zipExport.js';
+import { downloadBlob } from './utils/download.js';
 
 /** @typedef {import('./store').SampleContainer} SampleContainer */
 
@@ -179,12 +188,18 @@ const SampleMenu = React.memo(
       );
     }, [userSamples, factorySamples, multipleSelection]);
 
-    const multiSelectDeleteCandidates = useMemo(() => {
+    const multiSelectedUserSamples = useMemo(() => {
       return (
         multiSelectedSampleList &&
         multiSelectedSampleList.filter((sample) => userSamples.has(sample.id))
       );
     }, [multiSelectedSampleList, userSamples]);
+
+    const cancelExportRef = useRef(() => {});
+
+    const [exportProgress, setExportProgress] = useState(
+      /** @type {number | null} */ (null)
+    );
 
     const [deleting, setDeleting] = useState(false);
 
@@ -253,7 +268,7 @@ const SampleMenu = React.memo(
                   disabled={!multipleSelection || !multipleSelection.size}
                   variant="outline-secondary"
                 >
-                  Volca transfer
+                  Transfer
                 </Button>
               }
             />
@@ -261,14 +276,55 @@ const SampleMenu = React.memo(
             null}
           <Button
             type="button"
+            className={exportProgress === null ? undefined : classes.exporting}
             disabled={
-              !multiSelectDeleteCandidates ||
-              !multiSelectDeleteCandidates.length
+              !multiSelectedUserSamples || !multiSelectedUserSamples.length
+            }
+            variant="outline-secondary"
+            onClick={async () => {
+              if (!multiSelectedUserSamples) return;
+              if (exportProgress !== null) {
+                cancelExportRef.current();
+                return;
+              }
+              let cancelled = false;
+              cancelExportRef.current = () => {
+                cancelled = true;
+                setExportProgress(null);
+                // TODO: find a way to actually abort the stream. for now
+                // we let it silently finish in the background.
+              };
+              const zipFile = await exportSampleContainersToZip(
+                multiSelectedUserSamples,
+                (progress) => {
+                  if (!cancelled) setExportProgress(progress);
+                }
+              );
+              if (cancelled) return;
+              downloadBlob(zipFile, 'volcasampler.zip');
+              setExportProgress(null);
+            }}
+          >
+            <span>{exportProgress === null ? 'Export' : 'Cancel'}</span>
+            {exportProgress !== null && (
+              <ProgressBar
+                className={classes.progress}
+                striped
+                animated
+                variant="secondary"
+                now={100 * exportProgress}
+              />
+            )}
+          </Button>
+          <Button
+            type="button"
+            disabled={
+              !multiSelectedUserSamples || !multiSelectedUserSamples.length
             }
             variant="outline-primary"
             onClick={() => setDeleting(true)}
           >
-            Delete samples
+            Delete
           </Button>
         </div>
         <Form.Control
@@ -374,8 +430,8 @@ const SampleMenu = React.memo(
             className={classes.deleteModalForm}
             onSubmit={async (e) => {
               e.preventDefault();
-              if (multiSelectDeleteCandidates) {
-                onSampleDelete(multiSelectDeleteCandidates.map((s) => s.id));
+              if (multiSelectedUserSamples) {
+                onSampleDelete(multiSelectedUserSamples.map((s) => s.id));
               }
               setMultipleSelection(null);
               setDeleting(false);
@@ -391,7 +447,7 @@ const SampleMenu = React.memo(
                 undone.
               </p>
               <ul>
-                {(multiSelectDeleteCandidates || []).map((sample) => (
+                {(multiSelectedUserSamples || []).map((sample) => (
                   <li key={sample.id}>
                     <strong>{sample.metadata.name}</strong> (slot{' '}
                     {sample.metadata.slotNumber})

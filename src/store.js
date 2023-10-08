@@ -75,12 +75,21 @@ const sampleMetadataStore = localforage.createInstance({
   driver: localforage.INDEXEDDB,
 });
 
+/** @param {string} id */
+export async function isAudioSourceFileInStore(id) {
+  return Boolean(await audioFileDataStore.getItem(id));
+}
+
 /**
  * @param {Uint8Array} audioFileData
+ * @param {string} [externalId]
  * @returns {Promise<string>} id
  */
-export async function storeAudioSourceFile(audioFileData) {
-  const id = uuidv4();
+export async function storeAudioSourceFile(audioFileData, externalId) {
+  if (externalId && (await isAudioSourceFileInStore(externalId))) {
+    throw new Error('Cannot store audio source file at already used id');
+  }
+  const id = externalId || uuidv4();
   await audioFileDataStore.setItem(id, audioFileData);
   return id;
 }
@@ -240,9 +249,10 @@ function clearReloadToUpgrade() {
 
 /**
  * @param {OldMetadata} oldMetadata
+ * @param {boolean} [noReload]
  * @returns {Promise<SampleMetadata>}
  */
-async function upgradeMetadata(oldMetadata) {
+async function upgradeMetadata(oldMetadata, noReload) {
   let prevMetadata = oldMetadata;
   while (prevMetadata.metadataVersion !== METADATA_VERSION) {
     /**
@@ -250,6 +260,9 @@ async function upgradeMetadata(oldMetadata) {
      */
     const matchedUpgrade = metadataUpgrades[prevMetadata.metadataVersion];
     if (!matchedUpgrade) {
+      if (noReload) {
+        throw new Error('Could not upgrade');
+      }
       if (!isReloadedToUpgrade) {
         reloadToUpgrade();
       }
@@ -428,26 +441,29 @@ export class SampleContainer {
 
   /**
    * @param {string} sourceFileId
+   * @param {boolean} [noCache]
    * @returns {Promise<Uint8Array>}
    */
-  static async getSourceFileData(sourceFileId) {
-    {
+  static async getSourceFileData(sourceFileId, noCache) {
+    if (!noCache) {
       const data = this.sourceFileData.get(sourceFileId);
       if (data) {
         return data;
       }
     }
     if (sourceFileId.includes('.')) {
+      // assume it's a URL pointing to a an audio file
       const res = await fetch(sourceFileId);
       if (res.status >= 400) {
         return Promise.reject(
           new Error(`Failed to fetch source file "${sourceFileId}"`)
         );
       }
-      // assume it's a URL pointing to a an audio file
       const buffer = await res.arrayBuffer();
       const data = new Uint8Array(buffer);
-      this.cacheSourceFileData(sourceFileId, data);
+      if (!noCache) {
+        this.cacheSourceFileData(sourceFileId, data);
+      }
       return data;
     }
     /**
@@ -456,7 +472,9 @@ export class SampleContainer {
     const data = await audioFileDataStore.getItem(sourceFileId);
     if (data) {
       if (data instanceof Uint8Array) {
-        this.cacheSourceFileData(sourceFileId, data);
+        if (!noCache) {
+          this.cacheSourceFileData(sourceFileId, data);
+        }
         return data;
       }
       return Promise.reject('Source data is of unexpected type');
@@ -546,6 +564,21 @@ export class SampleContainer {
         return sampleContainer;
       })
     );
+  }
+
+  /**
+   * @param {string} sampleId
+   * @param {OldMetadata} metadata
+   * @return {Promise<SampleContainer>}
+   */
+  static async importToStorage(sampleId, metadata) {
+    const upgradedMetadata = await upgradeMetadata(metadata, true);
+    const sampleContainer = new SampleContainer.Mutable({
+      id: sampleId,
+      ...upgradedMetadata,
+    });
+    await sampleContainer.persist();
+    return sampleContainer;
   }
 }
 

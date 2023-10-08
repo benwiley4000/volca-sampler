@@ -188,7 +188,7 @@ function App() {
   focusedSampleIdRef.current = focusedSampleId;
   const handleSampleDelete = useCallback(
     /**
-     * @param {string | string[]} id
+     * @param {string | string[]} id
      * @param {boolean} [noPersist]
      */
     (id, noPersist) => {
@@ -214,9 +214,7 @@ function App() {
             userSamplesList
               .slice(focusedSampleIndex + 1)
               .find((s) => !ids.includes(s.id));
-        if (nextFocusedSample) {
-          setFocusedSampleId(nextFocusedSample.id);
-        }
+        setFocusedSampleId(nextFocusedSample ? nextFocusedSample.id : null);
       }
       if (!noPersist) {
         Promise.all(

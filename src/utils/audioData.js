@@ -10,8 +10,11 @@ import {
 } from 'react';
 import getWavFileHeaders from 'wav-headers';
 
+import unmuteAudioContext from '../vendor/unmute.js';
+
 import { SampleContainer } from '../store.js';
 import { SAMPLE_RATE } from './constants.js';
+import { userOS } from './os.js';
 
 /**
  * @param {Float32Array} array
@@ -166,7 +169,15 @@ let targetAudioContext;
 function getTargetAudioContext() {
   const AudioContext = getAudioContextConstructor();
   return (targetAudioContext =
-    targetAudioContext || new AudioContext({ sampleRate: SAMPLE_RATE }));
+    targetAudioContext ||
+    (() => {
+      const audioContext = new AudioContext({ sampleRate: SAMPLE_RATE });
+      // This is needed to play audio on iOS even when mute switch is activated.
+      if (userOS === 'ios') {
+        unmuteAudioContext(audioContext);
+      }
+      return audioContext;
+    })());
 }
 
 /**

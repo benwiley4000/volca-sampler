@@ -25,32 +25,9 @@ import {
   getAudioBufferForAudioFileData,
 } from './utils/audioData.js';
 import { captureAudio, getAudioInputDevices } from './utils/recording.js';
+import { userOS } from './utils/os.js';
 
 import classes from './SampleRecord.module.scss';
-
-/**
- * @type {'windows' | 'mac' | 'linux' | 'ios' | 'android'}
- */
-const userOS = (() => {
-  const userAgentString = navigator.userAgent.toLowerCase();
-  if (
-    userAgentString.includes('iphone') ||
-    userAgentString.includes('ipad') ||
-    (userAgentString.includes('mac') && navigator.maxTouchPoints > 1)
-  ) {
-    return 'ios';
-  }
-  if (userAgentString.includes('android')) {
-    return 'android';
-  }
-  if (userAgentString.includes('mac')) {
-    return 'mac';
-  }
-  if (userAgentString.includes('linux')) {
-    return 'linux';
-  }
-  return 'windows';
-})();
 
 const captureDevicePreferenceKey = 'capture_device_preference';
 

@@ -1,6 +1,5 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import unmuteAudio from 'unmute-ios-audio';
 import './index.css';
 import './bootstrap.scss';
 import App from './App.js';
@@ -22,9 +21,6 @@ if (typeof TouchEvent === 'undefined') {
     class TouchEvent extends Event {}
   );
 }
-
-// allow WebAudio if iOS device is in do not disturb mode
-unmuteAudio();
 
 ReactDOM.render(
   <React.StrictMode>

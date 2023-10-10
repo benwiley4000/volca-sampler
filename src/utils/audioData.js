@@ -10,8 +10,6 @@ import {
 } from 'react';
 import getWavFileHeaders from 'wav-headers';
 
-import unmuteAudioContext from '../vendor/unmute.js';
-
 import { SampleContainer } from '../store.js';
 import { SAMPLE_RATE } from './constants.js';
 import { userOS } from './os.js';
@@ -169,15 +167,7 @@ let targetAudioContext;
 function getTargetAudioContext() {
   const AudioContext = getAudioContextConstructor();
   return (targetAudioContext =
-    targetAudioContext ||
-    (() => {
-      const audioContext = new AudioContext({ sampleRate: SAMPLE_RATE });
-      // This is needed to play audio on iOS even when mute switch is activated.
-      if (userOS === 'ios') {
-        unmuteAudioContext(audioContext);
-      }
-      return audioContext;
-    })());
+    targetAudioContext || new AudioContext({ sampleRate: SAMPLE_RATE }));
 }
 
 /**
@@ -320,6 +310,74 @@ export function useTargetAudioForSample(sampleContainer, neededYet = true) {
   };
 }
 
+/**
+ * Silent audio to play during Web Audio playback to make iOS force Web Audio to
+ * even if the mute (do not disturb) setting is on.
+ * Adapted from https://github.com/swevans/unmute
+ */
+function createSilentAudioElement() {
+  if (userOS !== 'ios') {
+    // we won't use this if not on iOS so don't bother
+    return document.createElement('audio');
+  }
+
+  /**
+   * A utility function for decompressing the base64 silence string. A poor-mans implementation of huffman decoding.
+   * @param {number} count
+   * @param {string} repeatStr
+   * @returns
+   */
+  function huffman(count, repeatStr) {
+    let e = repeatStr;
+    for (; count > 1; count--) e += repeatStr;
+    return e;
+  }
+
+  /**
+   * A very short bit of silence to be played with <audio>, which forces
+   * AudioContext onto the ringer channel.
+   * NOTE: The silence MP3 must be high quality, when web audio sounds are
+   * played in parallel the web audio sound is mixed to match the bitrate of the
+   * html sound.
+   * This file is 0.01 seconds of silence VBR220-260 Joint Stereo 859B
+   * The str below is a "compressed" version using poor mans huffman encoding,
+   * saves about 0.5kb
+   */
+  const silence =
+    'data:audio/mpeg;base64,//uQx' +
+    huffman(23, 'A') +
+    'WGluZwAAAA8AAAACAAACcQCA' +
+    huffman(16, 'gICA') +
+    huffman(66, '/') +
+    '8AAABhTEFNRTMuMTAwA8MAAAAAAAAAABQgJAUHQQAB9AAAAnGMHkkI' +
+    huffman(320, 'A') +
+    '//sQxAADgnABGiAAQBCqgCRMAAgEAH' +
+    huffman(15, '/') +
+    '7+n/9FTuQsQH//////2NG0jWUGlio5gLQTOtIoeR2WX////X4s9Atb/JRVCbBUpeRUq' +
+    huffman(18, '/') +
+    '9RUi0f2jn/+xDECgPCjAEQAABN4AAANIAAAAQVTEFNRTMuMTAw' +
+    huffman(97, 'V') +
+    'Q==';
+
+  const tempElement = document.createElement('div');
+  // Airplay like controls on other devices, prevents casting of the tag,
+  // doesn't work on modern iOS
+  tempElement.innerHTML = "<audio x-webkit-airplay='deny'></audio>";
+  const audioElement = /** @type {HTMLAudioElement} */ (
+    tempElement.children.item(0)
+  );
+  audioElement.controls = false;
+  // Airplay like controls on other devices, prevents casting of the tag,
+  // doesn't work on modern iOS
+  audioElement.disableRemotePlayback = true;
+  audioElement.preload = 'auto';
+  audioElement.src = silence;
+  audioElement.loop = true;
+  audioElement.load();
+
+  return audioElement;
+}
+
 const audioPlaybackContextDefaultValue = {
   /**
    * @param {AudioBuffer} audioBuffer buffer to play
@@ -332,6 +390,12 @@ const audioPlaybackContextDefaultValue = {
   playAudioBuffer(audioBuffer, opts) {
     throw new Error('Must render AudioPlaybackContextProvider');
   },
+  /**
+   * @returns {void}
+   */
+  iOSPrepareForAudio() {
+    throw new Error('Must render AudioPlaybackContextProvider');
+  },
 };
 
 const AudioPlaybackContext = createContext(audioPlaybackContextDefaultValue);
@@ -341,53 +405,79 @@ const AudioPlaybackContext = createContext(audioPlaybackContextDefaultValue);
  * @returns
  */
 export function AudioPlaybackContextProvider({ children }) {
-  const stopCurrent = useRef(() => {});
+  const [silentAudioElement] = useState(createSilentAudioElement);
+
+  const stopCurrent = useRef(
+    /** @param {boolean} [stoppedForNewAudio] */ (stoppedForNewAudio) => {}
+  );
 
   const playAudioBuffer = useCallback(
     /**
      * @type {(typeof audioPlaybackContextDefaultValue.playAudioBuffer)}
+     * @return {() => void}
      */
     (audioBuffer, { onTimeUpdate = () => null, onEnded = () => null } = {}) => {
-      stopCurrent.current();
+      stopCurrent.current(true);
       const audioContext = getTargetAudioContext();
       const source = audioContext.createBufferSource();
       source.buffer = audioBuffer;
       source.connect(audioContext.destination);
-      source.start();
-      const startTime = audioContext.currentTime;
-      onTimeUpdate(0);
-      let frame = requestAnimationFrame(updateCurrentTime);
-      function updateCurrentTime() {
-        onTimeUpdate(audioContext.currentTime - startTime);
+      let frame = 0;
+      function startPlayback() {
+        source.start();
+        const startTime = audioContext.currentTime;
+        onTimeUpdate(0);
         frame = requestAnimationFrame(updateCurrentTime);
+        function updateCurrentTime() {
+          onTimeUpdate(audioContext.currentTime - startTime);
+          frame = requestAnimationFrame(updateCurrentTime);
+        }
+      }
+      if (userOS === 'ios') {
+        silentAudioElement.play().then(startPlayback);
+      } else {
+        startPlayback();
       }
       let stopped = false;
+      /** @type {typeof stopCurrent.current} */
+      function handleEnded(stoppedForNewAudio) {
+        onEnded();
+        if (!stoppedForNewAudio && userOS === 'ios') {
+          silentAudioElement.pause();
+        }
+      }
       source.addEventListener('ended', () => {
         if (!stopped) {
           onTimeUpdate(audioBuffer.duration);
-          onEnded();
+          handleEnded();
         }
         cancelAnimationFrame(frame);
       });
-      function stop() {
+      /** @type {typeof stopCurrent.current} */
+      function stop(stoppedForNewAudio) {
         if (!stopped) {
           source.stop();
           cancelAnimationFrame(frame);
-          onEnded();
+          handleEnded(stoppedForNewAudio);
           stopped = true;
         }
       }
       stopCurrent.current = stop;
       return stop;
     },
-    []
+    [silentAudioElement]
   );
+
+  const iOSPrepareForAudio = useCallback(() => {
+    silentAudioElement.play();
+  }, [silentAudioElement]);
 
   const contextValue = useMemo(
     () => ({
       playAudioBuffer,
+      iOSPrepareForAudio,
     }),
-    [playAudioBuffer]
+    [playAudioBuffer, iOSPrepareForAudio]
   );
 
   return createElement(

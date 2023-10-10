@@ -7,6 +7,7 @@ import {
   useAudioPlaybackContext,
 } from './audioData.js';
 import { formatShortTime } from './datetime.js';
+import { userOS } from './os.js';
 
 export const GROUP_PIXEL_WIDTH = 6;
 
@@ -173,7 +174,7 @@ export function useWaveformInfo(sourceAudioBuffer) {
  * @param {boolean} [shouldHandleSpace]
  */
 export function useWaveformPlayback(audioBuffer, shouldHandleSpace = false) {
-  const { playAudioBuffer } = useAudioPlaybackContext();
+  const { playAudioBuffer, iOSPrepareForAudio } = useAudioPlaybackContext();
   // to be set when playback is started
   const stopPreviewPlayback = useRef(() => {});
   const [callbackOnPreviewWav, setCallbackOnPreviewWav] = useState(
@@ -217,6 +218,12 @@ export function useWaveformPlayback(audioBuffer, shouldHandleSpace = false) {
         setPlaybackProgress(0);
         setIsPlaybackActive(true);
       } else {
+        if (userOS === 'ios') {
+          // we need to start playing the silent audio element right away
+          // so that iOS doesn't interpret our post-load play of the audio
+          // buffer as undesired audio playback.
+          iOSPrepareForAudio();
+        }
         const target = /** @type {EventTarget} */ (e.target);
         // wait until the audio buffer is ready then simulate an event
         // to retry this handler. it's important that we simulate
@@ -227,7 +234,7 @@ export function useWaveformPlayback(audioBuffer, shouldHandleSpace = false) {
         });
       }
     },
-    [isPlaybackActive, playAudioBuffer, audioBuffer]
+    [isPlaybackActive, playAudioBuffer, audioBuffer, iOSPrepareForAudio]
   );
 
   useEffect(() => {
@@ -245,8 +252,8 @@ export function useWaveformPlayback(audioBuffer, shouldHandleSpace = false) {
         togglePlayback(e);
       }
     }
-    document.addEventListener('keydown', handleSpace);
-    return () => document.removeEventListener('keydown', handleSpace);
+    document.addEventListener('keydown', handleSpace, true);
+    return () => document.removeEventListener('keydown', handleSpace, true);
   }, [shouldHandleSpace, togglePlayback]);
 
   const stopPlayback = useCallback(() => stopPreviewPlayback.current(), []);

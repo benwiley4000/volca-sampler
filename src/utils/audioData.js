@@ -165,6 +165,7 @@ export function getAudioContextConstructor() {
  * @type {AudioContext | undefined}
  */
 let targetAudioContext;
+let safeToPlayAudioPromise = Promise.resolve(); // for ios
 
 function getTargetAudioContext() {
   const AudioContext = getAudioContextConstructor();
@@ -174,7 +175,8 @@ function getTargetAudioContext() {
       const audioContext = new AudioContext({ sampleRate: SAMPLE_RATE });
       // This is needed to play audio on iOS even when mute switch is activated.
       if (userOS === 'ios') {
-        unmuteAudioContext(audioContext);
+        const { safeToPlayPromise } = unmuteAudioContext(audioContext);
+        safeToPlayAudioPromise = safeToPlayPromise;
       }
       return audioContext;
     })());
@@ -347,12 +349,13 @@ export function AudioPlaybackContextProvider({ children }) {
     /**
      * @type {(typeof audioPlaybackContextDefaultValue.playAudioBuffer)}
      */
-    (audioBuffer, { onTimeUpdate = () => null, onEnded = () => null } = {}) => {
+    async (audioBuffer, { onTimeUpdate = () => null, onEnded = () => null } = {}) => {
       stopCurrent.current();
       const audioContext = getTargetAudioContext();
       const source = audioContext.createBufferSource();
       source.buffer = audioBuffer;
       source.connect(audioContext.destination);
+      await safeToPlayAudioPromise;
       source.start();
       const startTime = audioContext.currentTime;
       onTimeUpdate(0);

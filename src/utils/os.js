@@ -1,7 +1,10 @@
 /**
- * @type {'windows' | 'mac' | 'linux' | 'ios' | 'android'}
+ * @type {'windows' | 'mac' | 'linux' | 'ios' | 'android'}
  */
 export const userOS = (() => {
+  if (typeof window === 'undefined') {
+    return 'windows'; // just so it can loade in nodejs
+  }
   const userAgentString = navigator.userAgent.toLowerCase();
   if (
     userAgentString.includes('iphone') ||

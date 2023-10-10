@@ -72,6 +72,8 @@ const SlotNumberInput = React.memo(
       focusedDigitRef.current = focusedDigit;
       const slotNumberLocalRef = useRef(slotNumberLocal);
       slotNumberLocalRef.current = slotNumberLocal;
+      const onSlotNumberUpdateRef = useRef(onSlotNumberUpdate);
+      onSlotNumberUpdateRef.current = onSlotNumberUpdate;
       useEffect(() => {
         if (!digitElementsRef.current) {
           throw new Error('Expected elements to exist');
@@ -134,6 +136,7 @@ const SlotNumberInput = React.memo(
           e.stopPropagation();
           e.preventDefault();
           const slotNumber = slotNumberLocalRef.current;
+          const onSlotNumberUpdate = onSlotNumberUpdateRef.current;
           if (!isNaN(Number(e.key))) {
             // numberPressed is a digit 0-9
             const chars = String(slotNumber).padStart(3, '0').split('');
@@ -199,6 +202,7 @@ const SlotNumberInput = React.memo(
           document.body.style.userSelect = 'unset';
           mousedown = false;
           if (slotNumberDragged) {
+            const onSlotNumberUpdate = onSlotNumberUpdateRef.current;
             onSlotNumberUpdate(slotNumberLocalRef.current);
           }
         }
@@ -248,7 +252,7 @@ const SlotNumberInput = React.memo(
           window.removeEventListener('mousemove', handleMouseMove);
           window.removeEventListener('mouseup', handleMouseUp);
         };
-      }, [onSlotNumberUpdate]);
+      }, []);
     }
     useEffect(() => {
       if (!digitElementsRef.current) {

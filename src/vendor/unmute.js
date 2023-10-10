@@ -172,7 +172,6 @@ export default function unmute(context, allowBackgroundPlayback, forceIOSBehavio
      * The str below is a "compressed" version using poor mans huffman encoding, saves about 0.5kb
      */
     var silence = "data:audio/mpeg;base64,//uQx" + huffman(23, "A") + "WGluZwAAAA8AAAACAAACcQCA" + huffman(16, "gICA") + huffman(66, "/") + "8AAABhTEFNRTMuMTAwA8MAAAAAAAAAABQgJAUHQQAB9AAAAnGMHkkI" + huffman(320, "A") + "//sQxAADgnABGiAAQBCqgCRMAAgEAH" + huffman(15, "/") + "7+n/9FTuQsQH//////2NG0jWUGlio5gLQTOtIoeR2WX////X4s9Atb/JRVCbBUpeRUq" + huffman(18, "/") + "9RUi0f2jn/+xDECgPCjAEQAABN4AAANIAAAAQVTEFNRTMuMTAw" + huffman(97, "V") + "Q==";
-    var onSilentPlaybackStarted = () => {};
     /**
      * Updates the html audio channel control.
      * @param isMediaPlaybackEvent Indicates if being called from within a media playback event handler.
@@ -199,7 +198,7 @@ export default function unmute(context, allowBackgroundPlayback, forceIOSBehavio
                     if (channelTag.paused) {
                         var p = channelTag.play();
                         if (p)
-                            p.then(onSilentPlaybackStarted, destroyChannelTag).catch(destroyChannelTag); // If playback fails the tag is pretty much trash and needs to be recreated on next media playback event
+                            p.then(noop, destroyChannelTag).catch(destroyChannelTag); // If playback fails the tag is pretty much trash and needs to be recreated on next media playback event
                     }
                 }
             }
@@ -254,9 +253,6 @@ export default function unmute(context, allowBackgroundPlayback, forceIOSBehavio
             removeEventListeners(context, ["statechange"], context_statechange, true, true);
             if (context.onstatechange === context_statechange)
                 context.onstatechange = null;
-        },
-        safeToPlayPromise: new Promise(resolve => {
-            onSilentPlaybackStarted = resolve;
-        })
+        }
     };
 }

@@ -39,6 +39,10 @@ export const useEffect = () => {};
 export const encode = () => {};
 export const decode = () => {};
   `,
+  'wave-resampler': `
+export default { resample: () => new Float64Array() };
+export const resample = () => new Float64Array();
+  `,
 };
 function getTestServer() {
   const testServer = express();
@@ -449,6 +453,7 @@ test('getSyroBuffer', async (t) => {
                     },
                   },
                   normalize: null,
+                  pitchAdjustment: 1,
                 })
             );
           },

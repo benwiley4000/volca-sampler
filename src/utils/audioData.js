@@ -252,7 +252,10 @@ export async function getTargetWavForSample(sampleContainer, forPreview) {
   }
   // for now we don't support pitch adjustments out of these bounds
   const hasValidPitchAdjustment =
-    !isNaN(pitchAdjustment) && pitchAdjustment >= 0.5 && pitchAdjustment <= 2;
+    !isNaN(pitchAdjustment) &&
+    pitchAdjustment !== 1 &&
+    pitchAdjustment >= 0.5 &&
+    pitchAdjustment <= 2;
   const pitchAdjustedSamples = hasValidPitchAdjustment
     ? new Float32Array(
         resample(

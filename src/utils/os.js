@@ -3,7 +3,7 @@
  */
 export const userOS = (() => {
   if (typeof window === 'undefined') {
-    return 'windows'; // just so it can loade in nodejs
+    return 'windows'; // just so it can load in nodejs
   }
   const userAgentString = navigator.userAgent.toLowerCase();
   if (

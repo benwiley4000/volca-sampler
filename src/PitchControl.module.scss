@@ -2,9 +2,9 @@
 @import '~bootstrap/scss/functions';
 @import '~bootstrap/scss/variables';
 
-.qualityBitDepthWrapper {
+.pitchAdjustmentWrapper {
   max-width: 400px;
-  margin-bottom: 1rem;
+  margin-bottom: 2rem;
 
   .label {
     margin-bottom: 2rem;
@@ -35,5 +35,9 @@
     display: flex;
     justify-content: space-between;
     color: $text-muted;
+
+    > .warn {
+      color: var(--bs-primary);
+    }
   }
 }

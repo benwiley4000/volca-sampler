@@ -9,6 +9,7 @@ import {
   useState,
 } from 'react';
 import getWavFileHeaders from 'wav-headers';
+import { resample } from 'wave-resampler';
 
 import { SampleContainer } from '../store.js';
 import { SAMPLE_RATE } from './constants.js';
@@ -216,6 +217,7 @@ export async function getTargetWavForSample(sampleContainer, forPreview) {
     userFileInfo,
     normalize,
     trim: { frames: trimFrames },
+    pitchAdjustment,
   } = sampleContainer.metadata;
   if (
     qualityBitDepth < 8 ||
@@ -248,10 +250,22 @@ export async function getTargetWavForSample(sampleContainer, forPreview) {
   if (normalize === 'selection') {
     normalizeSamples(samples);
   }
+  // for now we don't support pitch adjustments out of these bounds
+  const hasValidPitchAdjustment =
+    !isNaN(pitchAdjustment) && pitchAdjustment >= 0.5 && pitchAdjustment <= 2;
+  const pitchAdjustedSamples = hasValidPitchAdjustment
+    ? new Float32Array(
+        resample(
+          samples,
+          SAMPLE_RATE,
+          Math.round(SAMPLE_RATE / pitchAdjustment)
+        )
+      )
+    : samples;
   if (forPreview && qualityBitDepth < 16) {
-    applyQualityBitDepthToSamples(samples, qualityBitDepth);
+    applyQualityBitDepthToSamples(pitchAdjustedSamples, qualityBitDepth);
   }
-  const samples16 = convertSamplesTo16Bit(samples);
+  const samples16 = convertSamplesTo16Bit(pitchAdjustedSamples);
   const samplesByteLength = samples16.length * 2;
   /**
    * @type {Uint8Array}

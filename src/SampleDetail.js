@@ -15,6 +15,7 @@ import WaveformEdit from './WaveformEdit.js';
 import VolcaTransferControl from './VolcaTransferControl.js';
 import { SampleContainer } from './store.js';
 import QualityBitDepthControl from './QualityBitDepthControl.js';
+import PitchControl from './PitchControl.js';
 import { downloadBlob } from './utils/download.js';
 import { formatDate } from './utils/datetime.js';
 
@@ -78,6 +79,11 @@ const SampleDetail = React.memo(
         <QualityBitDepthControl
           sampleId={sample.id}
           qualityBitDepth={sample.metadata.qualityBitDepth}
+          onSampleUpdate={onSampleUpdate}
+        />
+        <PitchControl
+          sampleId={sample.id}
+          pitchAdjustment={sample.metadata.pitchAdjustment}
           onSampleUpdate={onSampleUpdate}
         />
         <WaveformEdit sample={sample} onSampleUpdate={onSampleUpdate} />

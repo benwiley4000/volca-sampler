@@ -35,6 +35,7 @@ import { getSamplePeaksForAudioBuffer } from './utils/waveform.js';
  * @property {boolean} [useCompression]
  * @property {number} [qualityBitDepth]
  * @property {NormalizeSetting} [normalize]
+ * @property {number} [pitchAdjustment]
  */
 
 /**
@@ -50,6 +51,7 @@ import { getSamplePeaksForAudioBuffer } from './utils/waveform.js';
  * @property {number} qualityBitDepth
  * @property {NormalizeSetting} normalize
  * @property {string} metadataVersion
+ * @property {number} pitchAdjustment
  */
 
 /**
@@ -60,6 +62,7 @@ import { getSamplePeaksForAudioBuffer } from './utils/waveform.js';
  * @property {boolean} [useCompression]
  * @property {number} [qualityBitDepth]
  * @property {NormalizeSetting} [normalize]
+ * @property {number} [pitchAdjustment]
  */
 
 /**
@@ -95,7 +98,7 @@ export async function storeAudioSourceFile(audioFileData, externalId) {
   return id;
 }
 
-const METADATA_VERSION = '0.6.0';
+const METADATA_VERSION = '0.7.0';
 
 // These properties are considered fundamental and should never break
 /**
@@ -207,7 +210,7 @@ const metadataUpgrades = {
     };
     return newMetadata;
   },
-  '0.5.0': async (oldMetadata) => {
+  '0.5.0': (oldMetadata) => {
     /**
      * @typedef {OldMetadata & {
      *   normalize: boolean;
@@ -222,6 +225,14 @@ const metadataUpgrades = {
       ...prevMetadata,
       normalize: newNormalize,
       metadataVersion: '0.6.0',
+    };
+    return newMetadata;
+  },
+  '0.6.0': (oldMetadata) => {
+    const newMetadata = {
+      ...oldMetadata,
+      pitchAdjustment: 1,
+      metadataVersion: '0.7.0',
     };
     return newMetadata;
   },
@@ -320,6 +331,7 @@ export class SampleContainer {
     useCompression = true,
     qualityBitDepth = 16,
     normalize = 'selection',
+    pitchAdjustment = 1,
   }) {
     /** @readonly */
     this.id = id;
@@ -338,6 +350,7 @@ export class SampleContainer {
       useCompression,
       qualityBitDepth,
       normalize,
+      pitchAdjustment,
       metadataVersion: METADATA_VERSION,
     };
   }

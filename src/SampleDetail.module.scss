@@ -7,15 +7,19 @@
   display: flex;
   justify-content: space-between;
 
+  @include media-breakpoint-up(lg) {
+    flex-wrap: wrap;
+  }
+
   span {
     align-self: center;
     text-overflow: ellipsis;
     overflow: hidden;
     white-space: nowrap;
-  }
 
-  @include media-breakpoint-up(lg) {
-    flex-direction: column;
+    @include media-breakpoint-up(lg) {
+      width: 100%;
+    }
   }
 }
 

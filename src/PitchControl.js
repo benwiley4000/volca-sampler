@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react';
-import { Form, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { Form, OverlayTrigger, Tooltip, Collapse } from 'react-bootstrap';
 import RangeSlider from 'react-bootstrap-range-slider';
 
 import classes from './PitchControl.module.scss';
@@ -66,8 +66,14 @@ const PitchControl = React.memo(
         };
       }
     }, [sampleId, onSampleUpdate]);
+    const [expanded, setExpanded] = useState(false);
     return (
-      <Form.Group className={classes.pitchAdjustmentWrapper}>
+      <Form.Group
+        className={[
+          classes.pitchAdjustmentWrapper,
+          expanded ? classes.expanded : '',
+        ].join(' ')}
+      >
         <OverlayTrigger
           delay={{ show: 400, hide: 0 }}
           overlay={
@@ -78,66 +84,78 @@ const PitchControl = React.memo(
             </Tooltip>
           }
         >
-          <Form.Label className={classes.label}>Adjust sample pitch</Form.Label>
-        </OverlayTrigger>
-        <div className={classes.ticks}>
-          {[0.5, 1, 2].map((value, i, { length }) => {
-            const left = `calc(${(i * 100) / (length - 1)}% + ${
-              12 - 12 * i
-            }px)`;
-            const hidden = localPitchAdjustment === value;
-            return (
-              <React.Fragment key={value}>
-                <label
-                  className={['small', classes.tickLabel].join(' ')}
-                  style={{
-                    left,
-                    visibility: hidden ? 'hidden' : undefined,
-                  }}
-                  onClick={() =>
-                    onSampleUpdate(sampleId, { pitchAdjustment: value })
-                  }
-                >
-                  {value}x
-                </label>
-                <span
-                  className={classes.tickMark}
-                  style={{
-                    left,
-                    visibility: hidden ? 'hidden' : undefined,
-                  }}
-                />
-              </React.Fragment>
-            );
-          })}
-        </div>
-        <RangeSlider
-          value={pitchAdjustmentToInputValue(localPitchAdjustment)}
-          min={0}
-          max={1}
-          step={0.01}
-          size="lg"
-          tooltip="on"
-          tooltipLabel={(value) =>
-            `${Number(inputValueToPitchAdjustment(value).toFixed(2))}x`
-          }
-          tooltipPlacement="top"
-          // fixes a z-fighting issue with other parts of the UI
-          tooltipStyle={{ zIndex: 1020 }}
-          onChange={handleChange}
-          ref={rangeInputRef}
-        />
-        <div className={classes.annotations}>
-          <label
-            className={[
-              'small',
-              localPitchAdjustment < 1 ? classes.warn : '',
-            ].join(' ')}
+          <Form.Label
+            className={classes.label}
+            onClick={() => setExpanded((e) => !e)}
+            aria-controls="expand-sample-pitch"
+            aria-expanded={expanded}
           >
-            Larger footprint
-          </label>
-          <label className="small">Smaller footprint</label>
-        </div>
+            Adjust sample pitch&nbsp;
+            <span className={classes.previewValue}>{pitchAdjustment}x</span>
+          </Form.Label>
+        </OverlayTrigger>
+        <Collapse in={expanded}>
+          <div id="expand-sample-pitch">
+            <div className={classes.ticks}>
+              {[0.5, 1, 2].map((value, i, { length }) => {
+                const left = `calc(${(i * 100) / (length - 1)}% + ${
+                  12 - 12 * i
+                }px)`;
+                const hidden = localPitchAdjustment === value;
+                return (
+                  <React.Fragment key={value}>
+                    <label
+                      className={['small', classes.tickLabel].join(' ')}
+                      style={{
+                        left,
+                        visibility: hidden ? 'hidden' : undefined,
+                      }}
+                      onClick={() =>
+                        onSampleUpdate(sampleId, { pitchAdjustment: value })
+                      }
+                    >
+                      {value}x
+                    </label>
+                    <span
+                      className={classes.tickMark}
+                      style={{
+                        left,
+                        visibility: hidden ? 'hidden' : undefined,
+                      }}
+                    />
+                  </React.Fragment>
+                );
+              })}
+            </div>
+            <RangeSlider
+              value={pitchAdjustmentToInputValue(localPitchAdjustment)}
+              min={0}
+              max={1}
+              step={0.01}
+              size="lg"
+              tooltip="on"
+              tooltipLabel={(value) =>
+                `${Number(inputValueToPitchAdjustment(value).toFixed(2))}x`
+              }
+              tooltipPlacement="top"
+              // fixes a z-fighting issue with other parts of the UI
+              tooltipStyle={{ zIndex: 1020 }}
+              onChange={handleChange}
+              ref={rangeInputRef}
+            />
+            <div className={classes.annotations}>
+              <label
+                className={[
+                  'small',
+                  localPitchAdjustment < 1 ? classes.warn : '',
+                ].join(' ')}
+              >
+                Larger footprint
+              </label>
+              <label className="small">Smaller footprint</label>
+            </div>
+          </div>
+        </Collapse>
       </Form.Group>
     );
   }

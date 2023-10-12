@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react';
-import { Form, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { Form, OverlayTrigger, Tooltip, Collapse } from 'react-bootstrap';
 import RangeSlider from 'react-bootstrap-range-slider';
 
 import classes from './QualityBitDepthControl.module.scss';
@@ -42,8 +42,14 @@ const QualityBitDepthControl = React.memo(
         };
       }
     }, [sampleId, onSampleUpdate]);
+    const [expanded, setExpanded] = useState(false);
     return (
-      <Form.Group className={classes.qualityBitDepthWrapper}>
+      <Form.Group
+        className={[
+          classes.qualityBitDepthWrapper,
+          expanded ? classes.expanded : '',
+        ].join(' ')}
+      >
         <OverlayTrigger
           delay={{ show: 400, hide: 0 }}
           overlay={
@@ -53,54 +59,72 @@ const QualityBitDepthControl = React.memo(
             </Tooltip>
           }
         >
-          <Form.Label className={classes.label}>Quality bit depth</Form.Label>
+          <Form.Label
+            className={classes.label}
+            onClick={() => setExpanded((e) => !e)}
+            aria-controls="expand-quality-bit-depth"
+            aria-expanded={expanded}
+          >
+            Quality bit depth
+            <span className={classes.previewValue}>
+              &nbsp;{qualityBitDepth}
+            </span>
+          </Form.Label>
         </OverlayTrigger>
-        <div className={classes.ticks}>
-          {[8, 9, 10, 11, 12, 13, 14, 15, 16].map((value, i, { length }) => {
-            const left = `calc(${(i * 100) / (length - 1)}% + ${12 - 3 * i}px)`;
-            const hidden = localQualityBitDepth === value;
-            return (
-              <React.Fragment key={value}>
-                <label
-                  className={['small', classes.tickLabel].join(' ')}
-                  style={{
-                    left,
-                    visibility: hidden ? 'hidden' : undefined,
-                  }}
-                  onClick={() =>
-                    onSampleUpdate(sampleId, { qualityBitDepth: value })
-                  }
-                >
-                  {value}
-                </label>
-                <span
-                  className={classes.tickMark}
-                  style={{
-                    left,
-                    visibility: hidden ? 'hidden' : undefined,
-                  }}
-                />
-              </React.Fragment>
-            );
-          })}
-        </div>
-        <RangeSlider
-          value={localQualityBitDepth}
-          step={1}
-          min={8}
-          max={16}
-          size="lg"
-          tooltip="on"
-          tooltipPlacement="top"
-          // fixes a z-fighting issue with other parts of the UI
-          tooltipStyle={{ zIndex: 1020 }}
-          onChange={handleChange}
-          ref={rangeInputRef}
-        />
-        <div className={classes.annotations}>
-          <label className="small">Faster transfer</label>
-          <label className="small">Higher quality</label>
-        </div>
+        <Collapse in={expanded}>
+          <div id="expand-quality-bit-depth">
+            <div className={classes.ticks}>
+              {[8, 9, 10, 11, 12, 13, 14, 15, 16].map(
+                (value, i, { length }) => {
+                  const left = `calc(${(i * 100) / (length - 1)}% + ${
+                    12 - 3 * i
+                  }px)`;
+                  const hidden = localQualityBitDepth === value;
+                  return (
+                    <React.Fragment key={value}>
+                      <label
+                        className={['small', classes.tickLabel].join(' ')}
+                        style={{
+                          left,
+                          visibility: hidden ? 'hidden' : undefined,
+                        }}
+                        onClick={() =>
+                          onSampleUpdate(sampleId, { qualityBitDepth: value })
+                        }
+                      >
+                        {value}
+                      </label>
+                      <span
+                        className={classes.tickMark}
+                        style={{
+                          left,
+                          visibility: hidden ? 'hidden' : undefined,
+                        }}
+                      />
+                    </React.Fragment>
+                  );
+                }
+              )}
+            </div>
+            <RangeSlider
+              value={localQualityBitDepth}
+              step={1}
+              min={8}
+              max={16}
+              size="lg"
+              tooltip="on"
+              tooltipPlacement="top"
+              // fixes a z-fighting issue with other parts of the UI
+              tooltipStyle={{ zIndex: 1020 }}
+              onChange={handleChange}
+              ref={rangeInputRef}
+            />
+            <div className={classes.annotations}>
+              <label className="small">Faster transfer</label>
+              <label className="small">Higher quality</label>
+            </div>
+          </div>
+        </Collapse>
       </Form.Group>
     );
   }

@@ -1,16 +1,71 @@
 @import 'bootstrap_custom_variables';
 @import '~bootstrap/scss/functions';
 @import '~bootstrap/scss/variables';
+@import '~bootstrap/scss/mixins';
 
 .pitchAdjustmentWrapper {
-  max-width: 400px;
+  --collapse-buffer-x: 1rem;
+  max-width: calc(400px + var(--collapse-buffer-x) * 2);
   margin-bottom: 2rem;
 
   .label {
-    margin-bottom: 2rem;
+    margin-bottom: 0;
+
+    .previewValue {
+      font-weight: bold;
+      position: relative;
+      left: 2px;
+      width: 0;
+      display: inline-flex;
+
+      @include media-breakpoint-up(md) {
+        display: none;
+      }
+    }
+
+    &::before {
+      content: '';
+      border-top: 0.3em solid;
+      border-right: 0.3em solid transparent;
+      border-bottom: 0;
+      border-left: 0.3rem solid transparent;
+      margin-right: 0.3em;
+      display: inline-block;
+      vertical-align: 0.2em;
+      transform: rotate(-90deg);
+      transition: transform 0.35s ease;
+
+      @include media-breakpoint-up(md) {
+        display: none;
+      }
+    }
+  }
+
+  &.expanded .label {
+    .previewValue {
+      display: none;
+    }
+
+    &::before {
+      transform: rotate(0deg);
+    }
+  }
+
+  .label + * {
+    padding-left: var(--collapse-buffer-x);
+    padding-right: var(--collapse-buffer-x);
+    margin-left: calc(0px - var(--collapse-buffer-x));
+    margin-right: calc(0px - var(--collapse-buffer-x));
+
+    @include media-breakpoint-up(md) {
+      display: block;
+      height: auto !important;
+      visibility: visible;
+    }
   }
 
   .ticks {
+    margin-top: 2rem;
     position: relative;
   }
 

@@ -91,7 +91,9 @@ const PitchControl = React.memo(
             aria-expanded={expanded}
           >
             Adjust sample pitch&nbsp;
-            <span className={classes.previewValue}>{pitchAdjustment}x</span>
+            <span className={classes.previewValue}>
+              {Number(pitchAdjustment.toFixed(2))}x
+            </span>
           </Form.Label>
         </OverlayTrigger>
         <Collapse in={expanded}>

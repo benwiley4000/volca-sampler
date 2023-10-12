@@ -13,7 +13,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "b417989e-413e-4fce-a5dc-7988c0d5756a",
+    "id": "4685581d-3b74-448f-9d42-5ea9610bea3b",
     "slotNumber": 0,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -31,7 +31,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "475248c3-391e-4b3f-a9c2-87a3a532345a",
+    "id": "7df9becb-d95a-471a-95ee-5a6caea03194",
     "slotNumber": 1,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -49,7 +49,7 @@
         "normalizationCoefficient": 1.00149760078242
       }
     },
-    "id": "f883e87a-1a3c-4b0e-ae11-5674c91acce6",
+    "id": "2b08aee5-6a5b-439f-b0d6-550692cf8520",
     "slotNumber": 2,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -67,7 +67,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "323cadf7-1038-4cbe-adca-15707d8addf9",
+    "id": "0cc72e61-8203-4f05-b8e3-005c01466377",
     "slotNumber": 3,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -85,7 +85,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "1c9628bd-9c7e-4203-b39c-499bec9371e5",
+    "id": "9002dc84-d485-4d0b-98d2-ae60ede1b5a7",
     "slotNumber": 4,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -103,7 +103,7 @@
         "normalizationCoefficient": 1.0239683759766696
       }
     },
-    "id": "e66fbe60-8ca3-4380-9f11-0ecd19855dd3",
+    "id": "753633a3-e430-474c-b68d-eb14bb739a5f",
     "slotNumber": 5,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -121,7 +121,7 @@
         "normalizationCoefficient": 1.0000610388817677
       }
     },
-    "id": "9cdfe758-d7ce-4ff2-9a20-196bdd2db158",
+    "id": "8a1aa5af-f922-4fc8-8c91-3b8e3d4046ae",
     "slotNumber": 6,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -139,7 +139,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "3b4b0163-58da-4574-91f8-533a1732fc58",
+    "id": "b01935dd-c78b-45eb-901c-f0a8af5e8917",
     "slotNumber": 7,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -157,7 +157,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "15c0d08f-9ca3-4a37-b116-69061b3b643e",
+    "id": "95e3cb4c-e05c-409e-81bd-c72ebb4ab97b",
     "slotNumber": 8,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -175,7 +175,7 @@
         "normalizationCoefficient": 1.0005496183206106
       }
     },
-    "id": "ee0b146a-05d9-4014-af4d-1801793f1486",
+    "id": "af07b989-6d7f-498b-a670-3f3c3d863160",
     "slotNumber": 9,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -193,7 +193,7 @@
         "normalizationCoefficient": 1.0044755674657084
       }
     },
-    "id": "0655998c-0d53-41f6-9b58-42710ce0d8f4",
+    "id": "fd8a0d7e-9787-4d08-9d95-762b8e1bfbbc",
     "slotNumber": 10,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -211,7 +211,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "4037b084-6b1d-4bad-bdc7-406267793cff",
+    "id": "cf9db33b-8478-4dd5-9190-ba3202197cf8",
     "slotNumber": 11,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -229,7 +229,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "59ef4ebb-b5a0-43bd-b6ec-a787325aa1e4",
+    "id": "35fce2f6-3e1d-4283-8f9a-04e5ece22cd8",
     "slotNumber": 12,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -247,7 +247,7 @@
         "normalizationCoefficient": 1.0018650441801449
       }
     },
-    "id": "1d46c393-99e0-40f2-a184-de37de4b3aa3",
+    "id": "4642ac15-343d-4062-9357-c5023a9adb5e",
     "slotNumber": 13,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -265,7 +265,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "41c1183e-2054-44d1-9fd7-4770bb461fc2",
+    "id": "04450a32-2563-4120-b188-cd6cb1961c14",
     "slotNumber": 14,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -283,7 +283,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "cf6adf5b-5dbd-4ee7-9f77-7d73a49e8f4e",
+    "id": "73dbd18a-e1a4-4fd7-b99d-bbec147b5389",
     "slotNumber": 15,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -301,7 +301,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "511095a0-ff79-4597-9c71-5eaf69131e61",
+    "id": "c4382ec8-a27f-4abe-9f3d-ab4026e5836f",
     "slotNumber": 16,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -319,7 +319,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "e1d83b1a-3806-4d69-a198-aef4f6b2d08b",
+    "id": "1a0bcb5c-d07a-4a28-b1b6-986fe22196e4",
     "slotNumber": 17,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -337,7 +337,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "050b0f5b-2518-4f2b-ae19-5c7347bbd8fb",
+    "id": "594d0be7-84d1-40d2-ad24-58514184c7a2",
     "slotNumber": 18,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -355,7 +355,7 @@
         "normalizationCoefficient": 1.0239683759766696
       }
     },
-    "id": "be702439-7edf-405a-a771-f1797e2d72fb",
+    "id": "4dba5a47-8151-46c2-8f1c-9acdf27e5868",
     "slotNumber": 19,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -373,7 +373,7 @@
         "normalizationCoefficient": 1.0239683759766696
       }
     },
-    "id": "ce4a1897-7108-428a-af42-e964e1a38c0f",
+    "id": "7082511d-fca8-4678-b324-79976af6a93c",
     "slotNumber": 20,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -391,7 +391,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "5afa1864-e5e5-45e1-ad66-fe6cdbe7c172",
+    "id": "6f8922ae-e34b-4529-b655-3e45bbc39b34",
     "slotNumber": 21,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -409,7 +409,7 @@
         "normalizationCoefficient": 1.001222195062332
       }
     },
-    "id": "5a3a009b-5ec1-406a-88c5-2de0efc8d337",
+    "id": "5cfbc88f-9185-4ae3-addd-4d33784fcecf",
     "slotNumber": 22,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -427,7 +427,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "c66b44df-3e57-47eb-a352-09152137f166",
+    "id": "4e032cd2-0f30-4d7a-a6e4-47b29b8eb35f",
     "slotNumber": 23,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -445,7 +445,7 @@
         "normalizationCoefficient": 1.0019263109616268
       }
     },
-    "id": "0f89f2f9-a8ab-451d-9f5f-8b31756e4b2d",
+    "id": "54860dc3-879e-4d1a-b805-43aeaef2750d",
     "slotNumber": 24,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -463,7 +463,7 @@
         "normalizationCoefficient": 1.016692768939257
       }
     },
-    "id": "0dec8e15-2da0-454d-8c64-942e0abf97dd",
+    "id": "f85db22d-fbe4-483f-9659-abbe2934934c",
     "slotNumber": 25,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -481,7 +481,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "e71f6d23-8c53-401c-9700-6dea3b3d911c",
+    "id": "7ca82cff-29b1-4860-b229-be8906cb3b50",
     "slotNumber": 26,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -499,7 +499,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "d80d2f17-0aa0-48f6-b35e-69d01f45bc41",
+    "id": "3d6d0245-fccf-461c-bfd0-b8e33d5c6b0e",
     "slotNumber": 27,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -517,7 +517,7 @@
         "normalizationCoefficient": 1.0051842683287993
       }
     },
-    "id": "cd6f17ac-bf49-4b48-92f5-2b3ecf95b0f3",
+    "id": "5630f38d-6be7-42e8-8422-6b2563ff0dc5",
     "slotNumber": 28,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -535,7 +535,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "30d3b1c9-7898-4591-9146-c9e483c5b71a",
+    "id": "c81d247e-06b5-448a-8fef-92e78153de72",
     "slotNumber": 29,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -553,7 +553,7 @@
         "normalizationCoefficient": 1.0239683759766696
       }
     },
-    "id": "a3490409-0268-4419-aabe-e9d203dbcd2b",
+    "id": "cfed7970-a833-417c-a4f6-0941c21e3714",
     "slotNumber": 30,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -571,7 +571,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "0c2fd42b-4f2f-41b0-959e-d017112ffc3f",
+    "id": "0bcba68a-4229-49f3-bc9e-88e07f09d020",
     "slotNumber": 31,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -589,7 +589,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "eaff8524-5d34-49b7-8dde-50d8a0ae3f1b",
+    "id": "4f021dad-0e4b-4847-9b08-1aa3f82db841",
     "slotNumber": 32,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -602,12 +602,12 @@
         0
       ],
       "waveformPeaks": {
-        "positive": "8+lyP/ZBdj/6QXo/+kF6P/oVej/6QXo/+hV6P/pBej8A+n8/8+lyP/ZBdj/6QXo/+kF6P/oVej/5+Xg/+kF6P/pBej/2QXY/+gF6P/cXdz+xATE/iQ8JP67yrT6GEoY+yIRHPvLo8T2KrAk+0IjPPd7wXT2JEAk9g3ADPbXgtDyTIJM81EBUPKZAJjygQCA89oD1O+vHaj8A+n8/APp/PwD6fz8A+n8/APp/P/+Tfj8=",
-        "negative": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA2XFZv/gLeL/NOU2/puElv4h7CL+ZOpm+9Hx0vqtUK776SPq9u2i7vb0Yvb3l0GS9r7AuvZHQEL2PYI+8sGCwvMdAR7y5wDi8lUAVvJIAkrq6Lzq/uG84v+pPar/2/XW/9q91v+ltab8=",
-        "normalizationCoefficient": 1.0000915611170456
+        "positive": "8+lyP/ZBdj/6QXo/+kF6P/oVej/6QXo/+hV6P/pBej8A/n8/8+lyP/ZBdj/6QXo/+kF6P/oVej/5+Xg/+kF6P/pBej/2QXY/+gF6P/cXdz+xATE/iQ8JP67yrT6GEoY+yIRHPvLo8T2KrAk+0IjPPd7wXT2JEAk9g3ADPbXgtDyTIJM81EBUPKZAJjygQCA89oD1O+vHaj8A/n8/AP5/PwD+fz8A/n8/AP5/P6thKz8=",
+        "negative": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA2XFZv/gLeL/NOU2/puElv4h7CL+ZOpm+9Hx0vqtUK776SPq9u2i7vb0Yvb3l0GS9r7AuvZHQEL2PYI+8sGCwvMdAR7y5wDi8lUAVvJIAkrq9/Ty/vf08v739PL+9/Ty/vf08v6FPIb8=",
+        "normalizationCoefficient": 1.000030518509476
       }
     },
-    "id": "7fc98f84-3ea7-4d70-ba26-40b8501e0de6",
+    "id": "2db23258-b513-4f56-ba55-d71495cd5ded",
     "slotNumber": 33,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -625,7 +625,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "c0a9adef-101e-4338-ac6a-79e5db997156",
+    "id": "e850e311-75b3-4a80-a909-6bb8c89f4cd6",
     "slotNumber": 34,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -643,7 +643,7 @@
         "normalizationCoefficient": 1.0239683759766696
       }
     },
-    "id": "fb8f7fe2-0ee3-4146-a8d2-692ffa93139a",
+    "id": "69328329-396a-4faa-b99a-27dac6ee5ab5",
     "slotNumber": 35,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -661,7 +661,7 @@
         "normalizationCoefficient": 1.0026008003611875
       }
     },
-    "id": "35cc3340-cb45-4456-9f85-93c0b58f9a33",
+    "id": "e0ec72e2-c103-4043-be93-0b1ff0cb58f4",
     "slotNumber": 36,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -679,7 +679,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "e7690e6c-97cf-4f94-897b-4eacae4216f1",
+    "id": "704c49de-89be-47b6-bea7-df91178bd37c",
     "slotNumber": 37,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -697,7 +697,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "4d9246ac-7b02-4a29-998d-db8606ad6a40",
+    "id": "c0a6ecf6-bf96-4d58-8ca7-a2898bf5734a",
     "slotNumber": 38,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -715,7 +715,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "64cdec0d-e358-43de-890a-d7af43da42e5",
+    "id": "c24b73d3-2418-4fc7-9d90-c435e712ce27",
     "slotNumber": 39,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -733,7 +733,7 @@
         "normalizationCoefficient": 1.009799813390771
       }
     },
-    "id": "a4923629-0bbc-41a9-b2c0-81c111fe44d7",
+    "id": "513c8776-89dc-451b-810c-4f7618bffd9c",
     "slotNumber": 40,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -751,7 +751,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "1d96d2c3-9b66-4669-bc0e-72741e46167b",
+    "id": "32698e73-ac49-4b7a-ad72-303223b80c03",
     "slotNumber": 41,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -769,7 +769,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "8fff993c-7ab7-4c5a-9aba-45057f8dd85d",
+    "id": "21b6fd2c-f76e-4d06-a651-0f16063fe8cf",
     "slotNumber": 42,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -787,7 +787,7 @@
         "normalizationCoefficient": 1.0239683759766696
       }
     },
-    "id": "e9933149-9690-4b54-a3d9-87d53415e981",
+    "id": "e5bcce09-e52d-4515-9fb3-bdcbbc9fb99d",
     "slotNumber": 43,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -805,7 +805,7 @@
         "normalizationCoefficient": 1.000030518509476
       }
     },
-    "id": "3df16764-1c60-4d91-9d2a-b760412dfe1d",
+    "id": "36c013b6-5e4a-4ac6-8616-d1184727a84d",
     "slotNumber": 44,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -823,7 +823,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "325287dd-15c8-4c85-b546-a46bfa725037",
+    "id": "8b314df4-469f-4d70-9b98-788cd1bc733d",
     "slotNumber": 45,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -841,7 +841,7 @@
         "normalizationCoefficient": 1.0239683759766696
       }
     },
-    "id": "fbfc0333-a925-45aa-9ca5-43fe233de7a9",
+    "id": "53a0ee19-cd8b-43c1-b006-b7c6fbe3f57b",
     "slotNumber": 46,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -859,7 +859,7 @@
         "normalizationCoefficient": 1.0239683759766696
       }
     },
-    "id": "85184ea4-4be8-4086-b69e-4303b3afb14b",
+    "id": "630887d1-491c-4f05-9515-5e31c0b6c36c",
     "slotNumber": 47,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -877,7 +877,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "3c2384b0-7750-4e92-847c-d981fa7e5b84",
+    "id": "c4ea7f15-5738-42f1-9171-8d8cfe82b192",
     "slotNumber": 48,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -895,7 +895,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "4d0c589b-67f7-4c79-b77e-4e05c9b26a28",
+    "id": "b4dba685-b6ae-4a0d-83e0-db22330ce580",
     "slotNumber": 49,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -913,7 +913,7 @@
         "normalizationCoefficient": 1.0027235214799834
       }
     },
-    "id": "e37bc961-7458-4c0e-824a-290f4e7cc485",
+    "id": "5f2b58cd-5b86-42f1-81a4-3ef5361e0753",
     "slotNumber": 50,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -931,7 +931,7 @@
         "normalizationCoefficient": 1.0039831472793854
       }
     },
-    "id": "a796de9b-d30c-40b4-8941-9bddefb3c61f",
+    "id": "1e1a5f7c-dfc2-4925-9e41-cde932e3bb79",
     "slotNumber": 51,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -949,7 +949,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "9a5c894d-7335-4d43-8675-4c9ec74f8ddd",
+    "id": "f29bab38-d3d3-438d-9bde-58cbeb608e8f",
     "slotNumber": 52,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -967,7 +967,7 @@
         "normalizationCoefficient": 1.0239683759766696
       }
     },
-    "id": "d19bb0f9-f6dc-409b-aa10-9c35b790e282",
+    "id": "f0f0de6d-f01e-47de-8eb5-69efe91954b7",
     "slotNumber": 53,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -985,7 +985,7 @@
         "normalizationCoefficient": 1.0239683759766696
       }
     },
-    "id": "0df4d889-71ee-4c0a-97a5-7b4eb86792d7",
+    "id": "5343cb2f-1936-44c7-8f34-aa8ad0338c82",
     "slotNumber": 54,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -1003,7 +1003,7 @@
         "normalizationCoefficient": 1.0001526111772425
       }
     },
-    "id": "17c9fdd2-e173-4b67-a29a-19646ca620ad",
+    "id": "22c729ed-fd9f-4096-8c54-b0be686e0a0d",
     "slotNumber": 55,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -1021,7 +1021,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "6aac4422-036e-49f2-8842-6b96327e8f7c",
+    "id": "24d1a7bc-a170-411d-80d3-c4d94383a9bd",
     "slotNumber": 56,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -1039,7 +1039,7 @@
         "normalizationCoefficient": 1.0002747336609787
       }
     },
-    "id": "9562aeab-49f5-4710-a1b7-b195a8390a03",
+    "id": "b03f721e-7f52-477f-9b90-ffd0a5a73427",
     "slotNumber": 57,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -1057,7 +1057,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "f8eeed0c-ea0b-481a-8889-698354b2e13f",
+    "id": "26062f5e-2cc7-471a-9111-0d10a8e45102",
     "slotNumber": 58,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -1075,7 +1075,7 @@
         "normalizationCoefficient": 2.3741983981831964
       }
     },
-    "id": "29b5658c-8c3d-44cd-bdb8-890e283cf850",
+    "id": "30fbbd1b-aec2-4690-82b0-61c88f8d834d",
     "slotNumber": 59,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -1093,7 +1093,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "134d6d89-54f8-4357-bbdb-546d395e320e",
+    "id": "0e8554ed-a1c7-4842-9d4c-d72b0a5e9896",
     "slotNumber": 60,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -1111,7 +1111,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "f606d644-05ca-44cc-bfe7-b659cfdb18e4",
+    "id": "21b1db02-9190-41b3-bbc7-1bf9f1dd032e",
     "slotNumber": 61,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -1129,7 +1129,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "04af34b7-b093-45cc-bce2-b0e13390e8e9",
+    "id": "606a9b5e-34c9-44ed-9fd5-4e269fd1636e",
     "slotNumber": 62,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -1147,7 +1147,7 @@
         "normalizationCoefficient": 1.0239683759766696
       }
     },
-    "id": "8f3d5bbc-d764-4748-a5f7-8b2b1bfcee85",
+    "id": "4cc84f31-5133-47ad-b861-f1e170e7c31b",
     "slotNumber": 63,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -1165,7 +1165,7 @@
         "normalizationCoefficient": 1.0107342974173743
       }
     },
-    "id": "47c93c6c-91fc-4f67-9fab-fa3e13631287",
+    "id": "ce2e8f0c-3124-411e-a854-54a14d7883de",
     "slotNumber": 64,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -1183,7 +1183,7 @@
         "normalizationCoefficient": 1.0239683759766696
       }
     },
-    "id": "103df449-23c6-416e-979c-dd2a70a9ee5f",
+    "id": "c553b86a-1961-4965-b25d-0bde58c42dc4",
     "slotNumber": 65,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -1201,7 +1201,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "aff8ba60-f233-48cb-9589-d400a19e3c2e",
+    "id": "f5bb6ebd-bd41-4023-b3eb-0dc261bced48",
     "slotNumber": 66,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -1219,7 +1219,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "7558c2f1-ae37-4ba5-b525-baaa8f407e0a",
+    "id": "5a0e86cd-19ce-4349-a878-4ef2ab0d123f",
     "slotNumber": 67,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -1237,7 +1237,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "eb0c6664-557f-4c01-8204-8a6af29bfe65",
+    "id": "bb6645a4-100a-4873-bf3a-84b549937c1d",
     "slotNumber": 68,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -1255,7 +1255,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "facc164d-916f-44e5-9d16-c93ae12b44f6",
+    "id": "c2e4e7f4-fdd9-4c54-b09d-65d8d536ddbd",
     "slotNumber": 69,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -1273,7 +1273,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "6265e322-0589-481b-b9f0-a02940ed83a0",
+    "id": "7295f631-5e84-47a0-9a04-e6ba04911f53",
     "slotNumber": 70,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -1291,7 +1291,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "27c48a48-a6db-4dba-9af9-aab30102fa24",
+    "id": "2fa39da6-a089-41a6-8296-b32b30bc1e00",
     "slotNumber": 71,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -1309,7 +1309,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "60178c90-3d89-4293-8930-6a76362a76ee",
+    "id": "64781de4-9968-4692-b882-9a144de5b07a",
     "slotNumber": 72,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -1327,7 +1327,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "36443273-5e3f-4806-98f1-e41b92a3a581",
+    "id": "acd770a4-a908-4763-95a0-52f148dcb1f6",
     "slotNumber": 73,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -1345,7 +1345,7 @@
         "normalizationCoefficient": 1.0018344135991195
       }
     },
-    "id": "12c38787-1547-4e53-9a23-64ef092c3c2d",
+    "id": "4fb816a9-37aa-432a-a5d9-a42272091e4c",
     "slotNumber": 74,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -1363,7 +1363,7 @@
         "normalizationCoefficient": 1.0002136686914318
       }
     },
-    "id": "fed2e74a-fb14-45c4-9a13-d502f4cc1c16",
+    "id": "5ce6d52f-e6b0-4225-97d8-a5e7934f2bba",
     "slotNumber": 75,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -1381,7 +1381,7 @@
         "normalizationCoefficient": 1.0049068315354714
       }
     },
-    "id": "6c43a91c-8655-4f5d-82b2-472503dde202",
+    "id": "9f0d3568-a442-4f1f-ac69-2a9044be62d5",
     "slotNumber": 76,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -1399,7 +1399,7 @@
         "normalizationCoefficient": 1.0063883271254424
       }
     },
-    "id": "fcce54bf-d644-4eea-89bb-9103b0999951",
+    "id": "1cb20161-7024-4aea-866e-8462955fc752",
     "slotNumber": 77,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -1417,7 +1417,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "1bc9134e-4134-493b-8949-034da4dec2f5",
+    "id": "45365292-c329-49af-b8c7-e1483df30deb",
     "slotNumber": 78,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -1435,7 +1435,7 @@
         "normalizationCoefficient": 1.0804906550708249
       }
     },
-    "id": "e9a724e0-26e2-4129-8326-0eb4cc687629",
+    "id": "26fc4e11-1538-40e4-bb77-70aede9a550a",
     "slotNumber": 79,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -1453,7 +1453,7 @@
         "normalizationCoefficient": 1.0133599065331427
       }
     },
-    "id": "6a8c145b-a807-4ac2-825b-3197070346f2",
+    "id": "a6426969-7a10-497d-a625-6aa1e4dde4e7",
     "slotNumber": 80,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -1471,7 +1471,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "bd79213c-91e2-4240-a9a3-ad7dedcd2687",
+    "id": "0dd2f2ac-0415-47de-b1e0-a14062f54f6b",
     "slotNumber": 81,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -1489,7 +1489,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "ddfd9893-f728-429f-b0c5-a28c7b59ba74",
+    "id": "8d3a3708-b4cf-4775-b444-ec90fd899c05",
     "slotNumber": 82,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -1507,7 +1507,7 @@
         "normalizationCoefficient": 1.0013445789023347
       }
     },
-    "id": "d3049eed-5f37-4c6e-a798-5443c614a51d",
+    "id": "444d2e4a-13ce-4287-a805-eb5265b444b6",
     "slotNumber": 83,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -1525,7 +1525,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "fa1bfc66-91bc-4977-8385-c7de2a581674",
+    "id": "01456566-4fe0-4bfe-a6fe-c5c949e92ce6",
     "slotNumber": 84,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -1543,7 +1543,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "7ee8d225-504b-4b65-a8cf-7b7676b2d4f2",
+    "id": "8175d894-0fbc-4c7f-a38c-6fe1256e657b",
     "slotNumber": 85,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -1561,7 +1561,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "10533605-2213-4cf8-a546-e6f40890269b",
+    "id": "48820218-8cd8-4840-87da-ec0a20acc3d9",
     "slotNumber": 86,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -1579,7 +1579,7 @@
         "normalizationCoefficient": 1.0012527882176796
       }
     },
-    "id": "51daff88-8bb3-4de7-a04b-a3cdcc12923b",
+    "id": "13d75c29-c136-49b5-89d9-34b181a1c471",
     "slotNumber": 87,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -1597,7 +1597,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "b3779397-696f-4fab-bf65-442dd8caa7f0",
+    "id": "747c2230-4481-454a-9870-42e1b6dbe0dc",
     "slotNumber": 88,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -1615,7 +1615,7 @@
         "normalizationCoefficient": 1.0239683759766696
       }
     },
-    "id": "afd102d7-9ffb-403d-8677-7e577da4239b",
+    "id": "d25560c3-85d9-4a82-b296-abd67af23fae",
     "slotNumber": 89,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -1633,7 +1633,7 @@
         "normalizationCoefficient": 1.0239683759766696
       }
     },
-    "id": "413e992c-877f-457e-bf52-540f6c2715d6",
+    "id": "5c68320b-b173-45e1-b6f6-71f4d30af365",
     "slotNumber": 90,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -1651,7 +1651,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "d20a8350-5505-4156-ab55-5a55de6f27c4",
+    "id": "e1e8ef0b-7ba7-40cb-8fd4-2d4e7d8c9217",
     "slotNumber": 91,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -1669,7 +1669,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "1efdeaa4-be03-4d0c-82c4-74d7fbd29889",
+    "id": "e8e518d3-caf8-4a0e-912d-dd08e65d9ab2",
     "slotNumber": 92,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -1687,7 +1687,7 @@
         "normalizationCoefficient": 1
       }
     },
-    "id": "8f987880-3236-4aa6-bc98-9f64390b3a85",
+    "id": "4e8882ba-24ad-450d-88ff-0084e36449a2",
     "slotNumber": 93,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -1705,7 +1705,7 @@
         "normalizationCoefficient": 1.0239683759766696
       }
     },
-    "id": "087a7195-bda0-463b-bf34-0d324630228b",
+    "id": "980b2691-a78b-4d1d-bd52-f6fa2c163f89",
     "slotNumber": 94,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -1723,7 +1723,7 @@
         "normalizationCoefficient": 1.0239683759766696
       }
     },
-    "id": "ba0eb58b-8ed1-4345-9c76-5ef624e3ce05",
+    "id": "e6852c6f-ee17-40f8-98bf-07e592e2e211",
     "slotNumber": 95,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -1741,7 +1741,7 @@
         "normalizationCoefficient": 1.0239683759766696
       }
     },
-    "id": "8a65a298-91bd-4215-a7a3-f281ef6da054",
+    "id": "33815b03-ebac-4c95-99c0-01336fdc79cc",
     "slotNumber": 96,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -1759,7 +1759,7 @@
         "normalizationCoefficient": 1.0239683759766696
       }
     },
-    "id": "eeff2cf7-bfb2-4aee-b851-7258a1088e9a",
+    "id": "b37dfa11-cd04-47f8-9e73-2dfe18dae6d8",
     "slotNumber": 97,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -1777,7 +1777,7 @@
         "normalizationCoefficient": 1.0239683759766696
       }
     },
-    "id": "8733e35e-6f4e-4327-943e-d964d1b7b7a7",
+    "id": "bb7f9240-2a21-480c-8fc7-e5ace42657f3",
     "slotNumber": 98,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   },
@@ -1795,7 +1795,7 @@
         "normalizationCoefficient": 1.0239683759766696
       }
     },
-    "id": "c5e07d73-a1b9-4b0b-a1c8-ba9248c2efbe",
+    "id": "1c3b7f39-76c5-4504-bcc8-ec8af77cfbc7",
     "slotNumber": 99,
     "dateSampled": "2014-10-01T00:00:00.000Z"
   }

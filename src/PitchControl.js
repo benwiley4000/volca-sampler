@@ -4,26 +4,6 @@ import RangeSlider from 'react-bootstrap-range-slider';
 
 import classes from './PitchControl.module.scss';
 
-/** @param {number} pitchAdjustment */
-function pitchAdjustmentToInputValue(pitchAdjustment) {
-  // Maybe there is some more pure mathematical formula that produces
-  // a linear scale between 0.5x and 2x but I can't think of it!
-  return pitchAdjustment > 1
-    ? pitchAdjustment / 2
-    : pitchAdjustment < 1
-    ? pitchAdjustment - 0.5
-    : 0.5;
-}
-
-/** @param {number} inputValue */
-function inputValueToPitchAdjustment(inputValue) {
-  return inputValue > 0.5
-    ? inputValue * 2
-    : inputValue < 0.5
-    ? inputValue + 0.5
-    : 1;
-}
-
 const PitchControl = React.memo(
   /**
    * @param {{
@@ -44,10 +24,7 @@ const PitchControl = React.memo(
     }, [pitchAdjustment]);
     /** @type {React.ChangeEventHandler<HTMLInputElement>} */
     const handleChange = useCallback((e) => {
-      const pitchAdjustment = inputValueToPitchAdjustment(
-        Number(e.target.value)
-      );
-      setLocalPitchAdjustment(pitchAdjustment);
+      setLocalPitchAdjustment(Number(e.target.value));
     }, []);
     /** @type {React.RefObject<HTMLInputElement>} */
     const rangeInputRef = useRef(null);
@@ -55,10 +32,7 @@ const PitchControl = React.memo(
       const input = rangeInputRef.current;
       if (input) {
         const onChangeEnd = () => {
-          const pitchAdjustment = inputValueToPitchAdjustment(
-            Number(input.value)
-          );
-          onSampleUpdate(sampleId, { pitchAdjustment });
+          onSampleUpdate(sampleId, { pitchAdjustment: Number(input.value) });
         };
         input.addEventListener('change', onChangeEnd);
         return () => {
@@ -99,9 +73,9 @@ const PitchControl = React.memo(
         <Collapse in={expanded}>
           <div id="expand-sample-pitch">
             <div className={classes.ticks}>
-              {[0.5, 1, 2].map((value, i, { length }) => {
+              {[0.5, 1, 1.5, 2].map((value, i, { length }) => {
                 const left = `calc(${(i * 100) / (length - 1)}% + ${
-                  12 - 12 * i
+                  12 - 8 * i
                 }px)`;
                 const hidden = localPitchAdjustment === value;
                 return (
@@ -130,15 +104,13 @@ const PitchControl = React.memo(
               })}
             </div>
             <RangeSlider
-              value={pitchAdjustmentToInputValue(localPitchAdjustment)}
-              min={0}
-              max={1}
+              value={localPitchAdjustment}
+              min={0.5}
+              max={2}
               step={0.01}
               size="lg"
               tooltip="on"
-              tooltipLabel={(value) =>
-                `${Number(inputValueToPitchAdjustment(value).toFixed(2))}x`
-              }
+              tooltipLabel={(value) => `${Number(value.toFixed(2))}x`}
               tooltipPlacement="top"
               // fixes a z-fighting issue with other parts of the UI
               tooltipStyle={{ zIndex: 1020 }}

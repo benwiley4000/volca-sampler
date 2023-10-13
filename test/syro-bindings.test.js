@@ -342,9 +342,14 @@ test('syroBindings load correctly', async (t) => {
       );
       t.equal(
         await page.evaluate(
-          (bindings) => typeof bindings.freeDeleteBuffer,
+          (bindings) => typeof bindings.getSampleBufferDataStartPointsPointer,
           b
         ),
+        'function',
+        'getSampleBufferDataStartPointsPointer is defined'
+      );
+      t.equal(
+        await page.evaluate((bindings) => typeof bindings.freeDeleteBuffer, b),
         'function',
         'freeDeleteBuffer is defined'
       );

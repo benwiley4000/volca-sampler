@@ -59,6 +59,9 @@ function VolcaTransferControl({
   const [targetWavDataSize, setTargetWavDataSize] = useState(
     /** @type {number | null} */ (null)
   );
+  const [dataStartPoints, setDataStartPoints] = useState(
+    /** @type {number[]} */ ([])
+  );
   const [syroAudioBuffer, setSyroAudioBuffer] = useState(
     /** @type {AudioBuffer | Error | null} */ (null)
   );
@@ -98,19 +101,22 @@ function VolcaTransferControl({
         cancelled = true;
         setSyroProgress(1);
       };
-      syroBufferPromise.then(async ({ syroBuffer, dataSizes }) => {
-        if (cancelled) {
-          return;
+      syroBufferPromise.then(
+        async ({ syroBuffer, dataSizes, dataStartPoints }) => {
+          if (cancelled) {
+            return;
+          }
+          setTargetWavDataSize(dataSizes[0]);
+          stop.current = () => {
+            cancelled = true;
+          };
+          setDataStartPoints(dataStartPoints.map((p) => p / syroBuffer.length));
+          const audioBuffer = await getAudioBufferForAudioFileData(syroBuffer);
+          if (!cancelled) {
+            setSyroAudioBuffer(audioBuffer);
+          }
         }
-        setTargetWavDataSize(dataSizes[0]);
-        stop.current = () => {
-          cancelled = true;
-        };
-        const audioBuffer = await getAudioBufferForAudioFileData(syroBuffer);
-        if (!cancelled) {
-          setSyroAudioBuffer(audioBuffer);
-        }
-      });
+      );
     } catch (err) {
       console.error(err);
       setSyroAudioBuffer(new Error(String(err)));
@@ -181,6 +187,46 @@ function VolcaTransferControl({
       .filter(([_, count]) => count > 1)
       .map(([slotNumber]) => slotNumber);
   }, [samples]);
+
+  const {
+    currentlyTransferringSample,
+    currentSampleProgress,
+    timeLeftUntilNextSample,
+  } = useMemo(() => {
+    if (
+      syroTransferState !== 'transferring' ||
+      !(syroAudioBuffer instanceof AudioBuffer)
+    ) {
+      return {
+        currentlyTransferringSample: samples[0],
+        currentSampleProgress: 0,
+        timeLeftUntilNextSample: 0,
+      };
+    }
+    const foundIndex = dataStartPoints.findIndex((p) => p > syroProgress) - 1;
+    const currentlyTransferringSampleIndex =
+      foundIndex >= 0 ? foundIndex : samples.length - 1;
+    const currentlyTransferringSample =
+      samples[currentlyTransferringSampleIndex];
+    const currentStartPoint = dataStartPoints[currentlyTransferringSampleIndex];
+    const nextStartPoint =
+      dataStartPoints[currentlyTransferringSampleIndex + 1] || 1;
+    const currentSampleProgress =
+      (syroProgress - currentStartPoint) / (nextStartPoint - currentStartPoint);
+    const timeLeftUntilNextSample =
+      (nextStartPoint - syroProgress) * syroAudioBuffer.duration;
+    return {
+      currentlyTransferringSample,
+      currentSampleProgress,
+      timeLeftUntilNextSample,
+    };
+  }, [
+    samples,
+    dataStartPoints,
+    syroTransferState,
+    syroProgress,
+    syroAudioBuffer,
+  ]);
 
   return (
     <>
@@ -351,8 +397,8 @@ function VolcaTransferControl({
         <Modal.Body>
           {samples.length > 1 ? (
             <p>
-              Transferring samples to your volca sample. Don't disconnect
-              anything.
+              Transferring <strong>{samples.length} samples</strong> to your
+              volca sample. Don't disconnect anything.
             </p>
           ) : samples[0] ? (
             <p>
@@ -374,6 +420,29 @@ function VolcaTransferControl({
               )}{' '}
             remaining
           </div>
+          {samples.length > 1 && (
+            <div className={classes.subtask}>
+              <p>
+                ({samples.indexOf(currentlyTransferringSample) + 1}/
+                {samples.length}){' '}
+                <strong className={classes.name}>
+                  {currentlyTransferringSample.metadata.name}
+                </strong>{' '}
+                to slot{' '}
+                <strong>
+                  {currentlyTransferringSample.metadata.slotNumber}
+                </strong>
+              </p>
+              <ProgressBar
+                className={classes.secondaryProgress}
+                variant="primary"
+                now={100 * currentSampleProgress}
+              />
+              <div className={classes.progressAnnotation}>
+                {formatLongTime(timeLeftUntilNextSample)} remaining
+              </div>
+            </div>
+          )}
         </Modal.Body>
         <Modal.Footer>
           <Button type="button" variant="primary" onClick={handleCancel}>

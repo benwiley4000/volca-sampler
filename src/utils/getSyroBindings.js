@@ -28,6 +28,7 @@
  *   getSampleBufferChunkSize(sampleBufferUpdate: number): number;
  *   getSampleBufferProgress(sampleBufferUpdate: number): number;
  *   getSampleBufferTotalSize(sampleBufferUpdate: number): number;
+ *   getSampleBufferDataStartPointsPointer(sampleBufferUpdate: number): number;
  *   freeDeleteBuffer(deleteBufferUpdate: number): void;
  *   cancelSampleBufferWork(workHandle: number): void;
  *   registerUpdateCallback(
@@ -96,6 +97,11 @@ export async function getSyroBindings() {
         ),
         getSampleBufferTotalSize: Module.cwrap(
           'getSampleBufferTotalSize',
+          'number',
+          ['number']
+        ),
+        getSampleBufferDataStartPointsPointer: Module.cwrap(
+          'getSampleBufferDataStartPointsPointer',
           'number',
           ['number']
         ),

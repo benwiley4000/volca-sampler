@@ -7,7 +7,8 @@ import { getTargetWavForSample } from './audioData.js';
  * @returns {{
  *   syroBufferPromise: Promise<{
  *     syroBuffer: Uint8Array;
- *     dataSizes: number[]
+ *     dataSizes: number[];
+ *     dataStartPoints: number[];
  *   }>;
  *   cancelWork: () => void;
  * }}
@@ -29,6 +30,7 @@ export function getSyroSampleBuffer(sampleContainers, onProgress) {
         getSampleBufferChunkSize,
         getSampleBufferProgress,
         getSampleBufferTotalSize,
+        getSampleBufferDataStartPointsPointer,
         cancelSampleBufferWork,
         registerUpdateCallback,
         unregisterUpdateCallback,
@@ -37,6 +39,7 @@ export function getSyroSampleBuffer(sampleContainers, onProgress) {
       const emptyResponse = {
         syroBuffer: new Uint8Array(),
         dataSizes: [],
+        dataStartPoints: [],
       };
       if (cancelled) {
         return emptyResponse;
@@ -50,11 +53,10 @@ export function getSyroSampleBuffer(sampleContainers, onProgress) {
         }
         targetWavs.push(data);
       }
-      /**
-       * @type {Uint8Array | undefined}
-       */
+      /** @type {Uint8Array | undefined} */
       let syroBuffer;
       let progress = 0;
+      const dataStartPoints = new Uint32Array(sampleContainers.length);
       const onUpdate = registerUpdateCallback((sampleBufferUpdatePointer) => {
         if (cancelled) {
           return;
@@ -76,6 +78,17 @@ export function getSyroSampleBuffer(sampleContainers, onProgress) {
           bytesProgress - chunkSize
         );
         progress = bytesProgress / totalSize;
+        const dataStartPointsPointer = getSampleBufferDataStartPointsPointer(
+          sampleBufferUpdatePointer
+        );
+        dataStartPoints.set(
+          new Uint32Array(
+            heap8Buffer(),
+            dataStartPointsPointer,
+            sampleContainers.length
+          ),
+          0
+        );
       });
       const syroDataHandle = allocateSyroData(sampleContainers.length);
       sampleContainers.forEach((sampleContainer, i) => {
@@ -136,6 +149,7 @@ export function getSyroSampleBuffer(sampleContainers, onProgress) {
       return {
         syroBuffer,
         dataSizes: targetWavs.map((wav) => wav.length),
+        dataStartPoints: [...dataStartPoints],
       };
     })(),
   };
@@ -143,7 +157,7 @@ export function getSyroSampleBuffer(sampleContainers, onProgress) {
 
 /**
  * @param {number[]} slotNumbers
- * @returns {Promise<{ syroBuffer: Uint8Array }>}
+ * @returns {Promise<{ syroBuffer: Uint8Array; dataStartPoints: number[] }>}
  */
 export async function getSyroDeleteBuffer(slotNumbers) {
   const {
@@ -152,6 +166,7 @@ export async function getSyroDeleteBuffer(slotNumbers) {
     getDeleteBufferFromSyroData,
     getSampleBufferChunkPointer,
     getSampleBufferChunkSize,
+    getSampleBufferDataStartPointsPointer,
     freeDeleteBuffer,
     heap8Buffer,
   } = await getSyroBindings();
@@ -165,9 +180,20 @@ export async function getSyroDeleteBuffer(slotNumbers) {
   );
   const chunkPointer = getSampleBufferChunkPointer(deleteBufferUpdatePointer);
   const chunkSize = getSampleBufferChunkSize(deleteBufferUpdatePointer);
+  // save a new copy of the data so it doesn't disappear
   const syroBuffer = new Uint8Array(
     new Uint8Array(heap8Buffer(), chunkPointer, chunkSize)
   );
+  const dataStartPointsPointer = getSampleBufferDataStartPointsPointer(
+    deleteBufferUpdatePointer
+  );
+  const dataStartPoints = [
+    ...new Uint32Array(
+      heap8Buffer(),
+      dataStartPointsPointer,
+      slotNumbers.length
+    ),
+  ];
   freeDeleteBuffer(deleteBufferUpdatePointer);
-  return { syroBuffer };
+  return { syroBuffer, dataStartPoints };
 }

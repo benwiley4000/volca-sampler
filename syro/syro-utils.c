@@ -4,6 +4,7 @@ typedef struct SampleBufferContainer {
   uint8_t *buffer;
   uint32_t size;
   uint32_t progress;
+  uint32_t dataStartPoints[110];
   // internal
   SyroData *syro_data;
   SyroHandle syro_handle;
@@ -22,6 +23,7 @@ SampleBufferContainer *startSampleBuffer(SyroData *syro_data,
   uint32_t frame;
   SampleBufferContainer *sampleBuffer = malloc(sizeof(SampleBufferContainer));
   sampleBuffer->syro_data = syro_data;
+  sampleBuffer->dataStartPoints[0] = 0;
 
   //----- Start ------
   SyroStatus status =
@@ -59,8 +61,14 @@ void iterateSampleBuffer(SampleBufferContainer *sampleBuffer,
   const int num_of_data = 1;
   int16_t left, right;
   int32_t frame = iterations;
+  uint32_t CurData = SyroVolcaSample_GetCurData(sampleBuffer->syro_handle);
   while (sampleBuffer->progress < sampleBuffer->size && frame) {
     SyroVolcaSample_GetSample(sampleBuffer->syro_handle, &left, &right);
+    uint32_t NewCurData = SyroVolcaSample_GetCurData(sampleBuffer->syro_handle);
+    if (NewCurData != CurData) {
+      sampleBuffer->dataStartPoints[NewCurData] = sampleBuffer->progress;
+      CurData = NewCurData;
+    }
     sampleBuffer->buffer[sampleBuffer->progress++] = (uint8_t)left;
     sampleBuffer->buffer[sampleBuffer->progress++] = (uint8_t)(left >> 8);
     sampleBuffer->buffer[sampleBuffer->progress++] = (uint8_t)right;

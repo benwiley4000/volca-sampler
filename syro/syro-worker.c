@@ -26,6 +26,8 @@ void iterateSyroBufferWork(char *data, int size) {
   sampleBufferUpdate->chunkSize = sampleBuffer->progress - chunkStartIndex;
   sampleBufferUpdate->progress = sampleBuffer->progress;
   sampleBufferUpdate->totalSize = sampleBuffer->size;
+  memcpy(sampleBufferUpdate->dataStartPoints, sampleBuffer->dataStartPoints,
+         sizeof(sampleBuffer->dataStartPoints));
   uint8_t *chunk = messageBuffer + sizeof(SampleBufferUpdate);
   memcpy(chunk, sampleBuffer->buffer + chunkStartIndex, chunkSize);
   emscripten_worker_respond((char *)messageBuffer, messageBufferSize);

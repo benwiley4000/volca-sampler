@@ -29,6 +29,12 @@ uint32_t getSampleBufferTotalSize(SampleBufferUpdate *sampleBufferUpdate) {
   return sampleBufferUpdate->totalSize;
 }
 
+EMSCRIPTEN_KEEPALIVE
+uint32_t *
+getSampleBufferDataStartPointsPointer(SampleBufferUpdate *sampleBufferUpdate) {
+  return sampleBufferUpdate->dataStartPoints;
+}
+
 // only used for the delete buffer which makes a specific allocation for the
 // sample buffer update.
 EMSCRIPTEN_KEEPALIVE
@@ -132,15 +138,16 @@ EMSCRIPTEN_KEEPALIVE
 SampleBufferUpdate *getDeleteBufferFromSyroData(SyroData *syro_data,
                                                 uint32_t NumOfData) {
   SampleBufferContainer *sampleBuffer = startSampleBuffer(syro_data, NumOfData);
-  iterateSampleBuffer(sampleBuffer,
-                      (sampleBuffer->size - sampleBuffer->progress) / 4);
+  iterateSampleBuffer(sampleBuffer, INT32_MAX);
   SampleBufferUpdate *sampleBufferUpdate = malloc(sizeof(SampleBufferUpdate));
   sampleBufferUpdate->sampleBufferPointer = (void *)sampleBuffer;
   sampleBufferUpdate->chunk = sampleBuffer->buffer;
   sampleBufferUpdate->chunkSize = sampleBuffer->size;
   sampleBufferUpdate->progress = sampleBuffer->progress;
   sampleBufferUpdate->totalSize = sampleBuffer->size;
-  free(syro_data); // don't need free_syrodata because pData is NULL
+  memcpy(sampleBufferUpdate->dataStartPoints, sampleBuffer->dataStartPoints,
+         sizeof(sampleBuffer->dataStartPoints));
+  free(syro_data);
   return sampleBufferUpdate;
 }
 

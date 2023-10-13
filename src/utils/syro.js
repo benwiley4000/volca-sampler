@@ -12,7 +12,7 @@ import { getTargetWavForSample } from './audioData.js';
  *   cancelWork: () => void;
  * }}
  */
-export function getSyroBuffer(sampleContainers, onProgress) {
+export function getSyroSampleBuffer(sampleContainers, onProgress) {
   let cancelled = false;
   let onCancel = () => {};
   return {

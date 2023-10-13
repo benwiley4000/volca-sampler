@@ -13,7 +13,7 @@ import {
   getAudioBufferForAudioFileData,
   useAudioPlaybackContext,
 } from './utils/audioData.js';
-import { getSyroBuffer } from './utils/syro.js';
+import { getSyroSampleBuffer } from './utils/syro.js';
 import { formatLongTime } from './utils/datetime';
 
 import classes from './VolcaTransferControl.module.scss';
@@ -85,7 +85,7 @@ function VolcaTransferControl({
       cancelled = true;
     };
     try {
-      const { syroBufferPromise, cancelWork } = getSyroBuffer(
+      const { syroBufferPromise, cancelWork } = getSyroSampleBuffer(
         samples,
         (progress) => {
           if (!cancelled) {

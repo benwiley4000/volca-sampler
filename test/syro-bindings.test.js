@@ -399,7 +399,7 @@ test('syro-utils.c', async (t) => {
   }
 });
 
-test('getSyroBuffer', async (t) => {
+test('getSyroSampleBuffer', async (t) => {
   await forEachBrowser(
     {
       scripts: ['syro-bindings.js'],
@@ -417,7 +417,7 @@ test('getSyroBuffer', async (t) => {
     async (page) => {
       await page.evaluate(() => {
         window.SampleContainer = storeModule.SampleContainer;
-        window.getSyroBuffer = syroUtilsModule.getSyroBuffer;
+        window.getSyroSampleBuffer = syroUtilsModule.getSyroSampleBuffer;
       });
       for (const key of /** @type {('compressed' | 'uncompressed' | 'multi_compressed' | 'multi_uncompressed')[]} */ ([
         'compressed',
@@ -463,10 +463,10 @@ test('getSyroBuffer', async (t) => {
         const webSampleBufferContents = Buffer.from(
           await page.evaluate(async (sampleContainers) => {
             /**
-             * @type {typeof import('../src/utils/syro').getSyroBuffer}
+             * @type {typeof import('../src/utils/syro').getSyroSampleBuffer}
              */
-            const getSyroBuffer = window.getSyroBuffer;
-            const { syroBuffer } = await getSyroBuffer(
+            const getSyroSampleBuffer = window.getSyroSampleBuffer;
+            const { syroBuffer } = await getSyroSampleBuffer(
               sampleContainers,
               () => null
             ).syroBufferPromise;

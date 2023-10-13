@@ -41,6 +41,7 @@ function VolcaTransferControl({
     [_samples]
   );
   const [syroProgress, setSyroProgress] = useState(1);
+  const [transferProgress, setTransferProgress] = useState(0);
   const [infoBeforeTransferModalOpen, setInfoBeforeTransferModalOpen] =
     useState(false);
   const [preTransferModalOpen, setPreTransferModalOpen] = useState(false);
@@ -52,7 +53,7 @@ function VolcaTransferControl({
       setPreTransferModalOpen(false);
       return () => {
         // reset progress for next time modal is open
-        setTimeout(() => setSyroProgress(1), 100);
+        setTimeout(() => setTransferProgress(0), 100);
       };
     }
   }, [syroTransferState]);
@@ -99,7 +100,6 @@ function VolcaTransferControl({
       stop.current = () => {
         cancelWork();
         cancelled = true;
-        setSyroProgress(1);
       };
       syroBufferPromise.then(
         async ({ syroBuffer, dataSizes, dataStartPoints }) => {
@@ -143,7 +143,7 @@ function VolcaTransferControl({
         setSyroTransferState('transferring');
         const stopPlayback = playAudioBuffer(syroAudioBuffer, {
           onTimeUpdate: (currentTime) =>
-            setSyroProgress(currentTime / syroAudioBuffer.duration),
+            setTransferProgress(currentTime / syroAudioBuffer.duration),
         });
         stop.current = () => {
           stopPlayback();
@@ -158,7 +158,7 @@ function VolcaTransferControl({
   );
   const handleCancel = useCallback(() => stop.current(), []);
   const transferInProgress =
-    syroTransferState === 'transferring' && syroProgress < 1;
+    syroTransferState === 'transferring' && transferProgress < 1;
 
   const transferInfo = (
     <div className={classes.transferInfo}>
@@ -203,7 +203,8 @@ function VolcaTransferControl({
         timeLeftUntilNextSample: 0,
       };
     }
-    const foundIndex = dataStartPoints.findIndex((p) => p > syroProgress) - 1;
+    const foundIndex =
+      dataStartPoints.findIndex((p) => p > transferProgress) - 1;
     const currentlyTransferringSampleIndex =
       foundIndex >= 0 ? foundIndex : samples.length - 1;
     const currentlyTransferringSample =
@@ -212,9 +213,10 @@ function VolcaTransferControl({
     const nextStartPoint =
       dataStartPoints[currentlyTransferringSampleIndex + 1] || 1;
     const currentSampleProgress =
-      (syroProgress - currentStartPoint) / (nextStartPoint - currentStartPoint);
+      (transferProgress - currentStartPoint) /
+      (nextStartPoint - currentStartPoint);
     const timeLeftUntilNextSample =
-      (nextStartPoint - syroProgress) * syroAudioBuffer.duration;
+      (nextStartPoint - transferProgress) * syroAudioBuffer.duration;
     return {
       currentlyTransferringSample,
       currentSampleProgress,
@@ -224,7 +226,7 @@ function VolcaTransferControl({
     samples,
     dataStartPoints,
     syroTransferState,
-    syroProgress,
+    transferProgress,
     syroAudioBuffer,
   ]);
 
@@ -411,12 +413,12 @@ function VolcaTransferControl({
             striped
             animated
             variant="primary"
-            now={100 * syroProgress}
+            now={100 * transferProgress}
           />
           <div className={classes.progressAnnotation}>
             {syroAudioBuffer instanceof AudioBuffer &&
               formatLongTime(
-                syroAudioBuffer.duration * (1 - syroProgress)
+                syroAudioBuffer.duration * (1 - transferProgress)
               )}{' '}
             remaining
           </div>

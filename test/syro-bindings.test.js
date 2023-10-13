@@ -342,11 +342,11 @@ test('syroBindings load correctly', async (t) => {
       );
       t.equal(
         await page.evaluate(
-          (bindings) => typeof bindings.freeDeleteBufferUpdate,
+          (bindings) => typeof bindings.freeDeleteBuffer,
           b
         ),
         'function',
-        'freeDeleteBufferUpdate is defined'
+        'freeDeleteBuffer is defined'
       );
       t.equal(
         await page.evaluate(

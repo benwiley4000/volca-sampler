@@ -152,7 +152,7 @@ export async function getSyroDeleteBuffer(slotNumbers) {
     getDeleteBufferFromSyroData,
     getSampleBufferChunkPointer,
     getSampleBufferChunkSize,
-    freeDeleteBufferUpdate,
+    freeDeleteBuffer,
     heap8Buffer,
   } = await getSyroBindings();
   const syroDataHandle = allocateSyroData(slotNumbers.length);
@@ -168,6 +168,6 @@ export async function getSyroDeleteBuffer(slotNumbers) {
   const syroBuffer = new Uint8Array(
     new Uint8Array(heap8Buffer(), chunkPointer, chunkSize)
   );
-  freeDeleteBufferUpdate(deleteBufferUpdatePointer);
+  freeDeleteBuffer(deleteBufferUpdatePointer);
   return { syroBuffer };
 }

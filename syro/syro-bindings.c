@@ -32,8 +32,9 @@ uint32_t getSampleBufferTotalSize(SampleBufferUpdate *sampleBufferUpdate) {
 // only used for the delete buffer which makes a specific allocation for the
 // sample buffer update.
 EMSCRIPTEN_KEEPALIVE
-void freeDeleteBufferUpdate(SampleBufferUpdate *deleteBufferUpdate) {
+void freeDeleteBuffer(SampleBufferUpdate *deleteBufferUpdate) {
   free(deleteBufferUpdate->chunk);
+  free((SampleBufferContainer *)deleteBufferUpdate->sampleBufferPointer);
   free(deleteBufferUpdate);
 }
 
@@ -139,7 +140,6 @@ SampleBufferUpdate *getDeleteBufferFromSyroData(SyroData *syro_data,
   sampleBufferUpdate->chunkSize = sampleBuffer->size;
   sampleBufferUpdate->progress = sampleBuffer->progress;
   sampleBufferUpdate->totalSize = sampleBuffer->size;
-  free(sampleBuffer);
   free(syro_data); // don't need free_syrodata because pData is NULL
   return sampleBufferUpdate;
 }

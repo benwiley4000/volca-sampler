@@ -28,7 +28,7 @@
  *   getSampleBufferChunkSize(sampleBufferUpdate: number): number;
  *   getSampleBufferProgress(sampleBufferUpdate: number): number;
  *   getSampleBufferTotalSize(sampleBufferUpdate: number): number;
- *   freeDeleteBufferUpdate(deleteBufferUpdate: number): void;
+ *   freeDeleteBuffer(deleteBufferUpdate: number): void;
  *   cancelSampleBufferWork(workHandle: number): void;
  *   registerUpdateCallback(
  *     cb: (sampleBufferContainer: number) => void
@@ -99,7 +99,7 @@ export async function getSyroBindings() {
           'number',
           ['number']
         ),
-        freeDeleteBufferUpdate: Module.cwrap('freeDeleteBufferUpdate', null, [
+        freeDeleteBuffer: Module.cwrap('freeDeleteBuffer', null, [
           'number',
         ]),
         cancelSampleBufferWork: Module.cwrap('cancelSampleBufferWork', null, [

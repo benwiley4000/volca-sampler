@@ -1,12 +1,7 @@
-import React, {
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
-import { Button, Modal, ProgressBar, Table } from 'react-bootstrap';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Button, Modal, ProgressBar } from 'react-bootstrap';
 
+import SampleSelectionTable from './SampleSelectionTable.js';
 import {
   readSampleMetadataFromZip,
   importSampleContainersFromZip,
@@ -16,99 +11,6 @@ import classes from './ImportFromZip.module.scss';
 
 /** @typedef {import('./store.js').SampleContainer} SampleContainer */
 /** @typedef {import('./store.js').SampleMetadataExport} SampleMetadataExport */
-
-/**
- * @param {{
- *   samples: Map<string, SampleMetadataExport>;
- *   sampleIdsToImport: Set<string>;
- *   setSampleIdsToImport:
- *     (ids: Set<string> | ((prevIds: Set<string>) => Set<string>)) => void;
- * }} props
- */
-function ImportConfirmationTable({
-  samples,
-  sampleIdsToImport,
-  setSampleIdsToImport,
-}) {
-  const allChecked = [...samples.keys()].every((id) =>
-    sampleIdsToImport.has(id)
-  );
-  const noneChecked =
-    !allChecked &&
-    [...samples.keys()].every((id) => !sampleIdsToImport.has(id));
-  const indeterminate = !allChecked && !noneChecked;
-  /** @type {React.RefObject<HTMLInputElement>} */
-  const checkboxRef = useRef(null);
-  if (checkboxRef.current) {
-    checkboxRef.current.indeterminate = indeterminate;
-  }
-  useLayoutEffect(() => {
-    if (checkboxRef.current) {
-      checkboxRef.current.indeterminate = indeterminate;
-    }
-  }, [indeterminate]);
-  return (
-    <Table className={classes.samplesTable}>
-      <thead>
-        <tr>
-          <th className={classes.check}>
-            <input
-              ref={checkboxRef}
-              type="checkbox"
-              checked={!noneChecked}
-              onChange={(e) => {
-                setSampleIdsToImport((ids) => {
-                  const newIds = new Set(ids);
-                  if (e.target.checked) {
-                    for (const [id] of samples) {
-                      newIds.add(id);
-                    }
-                  } else {
-                    for (const [id] of samples) {
-                      newIds.delete(id);
-                    }
-                  }
-                  return newIds;
-                });
-              }}
-            />
-          </th>
-          <th className={classes.name}>Name</th>
-          <th className={classes.slotNumber}>Slot</th>
-          <th className={classes.updated}>Updated</th>
-        </tr>
-      </thead>
-      <tbody>
-        {[...samples].map(([id, metadata]) => (
-          <tr key={id}>
-            <td>
-              <input
-                type="checkbox"
-                checked={sampleIdsToImport.has(id)}
-                onChange={(e) => {
-                  setSampleIdsToImport((idsToImport) => {
-                    const newIdsToImport = new Set(idsToImport);
-                    if (e.target.checked) {
-                      newIdsToImport.add(id);
-                    } else {
-                      newIdsToImport.delete(id);
-                    }
-                    return newIdsToImport;
-                  });
-                }}
-              />
-            </td>
-            <td title={metadata.name}>{metadata.name}</td>
-            <td>{metadata.slotNumber}</td>
-            <td title={new Date(metadata.dateModified).toLocaleString()}>
-              {new Date(metadata.dateModified).toLocaleDateString()}
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </Table>
-  );
-}
 
 const ImportFromZip = React.memo(
   /**
@@ -290,10 +192,10 @@ const ImportFromZip = React.memo(
                       }{' '}
                       / {knownSamplesOld.size})
                     </h5>
-                    <ImportConfirmationTable
+                    <SampleSelectionTable
                       samples={knownSamplesOld}
-                      sampleIdsToImport={sampleIdsToImport}
-                      setSampleIdsToImport={setSampleIdsToImport}
+                      selectedSampleIds={sampleIdsToImport}
+                      setSelectedSampleIds={setSampleIdsToImport}
                     />
                   </>
                 ) : null}
@@ -308,10 +210,10 @@ const ImportFromZip = React.memo(
                       }{' '}
                       / {knownSamplesNew.size})
                     </h5>
-                    <ImportConfirmationTable
+                    <SampleSelectionTable
                       samples={knownSamplesNew}
-                      sampleIdsToImport={sampleIdsToImport}
-                      setSampleIdsToImport={setSampleIdsToImport}
+                      selectedSampleIds={sampleIdsToImport}
+                      setSelectedSampleIds={setSampleIdsToImport}
                     />
                   </>
                 ) : null}
@@ -326,10 +228,10 @@ const ImportFromZip = React.memo(
                       }{' '}
                       / {unknownSamples.size})
                     </h5>
-                    <ImportConfirmationTable
+                    <SampleSelectionTable
                       samples={unknownSamples}
-                      sampleIdsToImport={sampleIdsToImport}
-                      setSampleIdsToImport={setSampleIdsToImport}
+                      selectedSampleIds={sampleIdsToImport}
+                      setSelectedSampleIds={setSampleIdsToImport}
                     />
                   </>
                 ) : null}

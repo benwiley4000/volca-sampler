@@ -1,0 +1,25 @@
+.samplesTable {
+  table-layout: fixed;
+
+  &:not(:last-child) {
+    margin-bottom: 2rem;
+  }
+
+  td {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .check {
+    width: 2rem;
+  }
+
+  .slotNumber {
+    width: 3rem;
+  }
+
+  .updated {
+    width: 7rem;
+  }
+}

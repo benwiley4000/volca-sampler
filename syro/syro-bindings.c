@@ -29,6 +29,14 @@ uint32_t getSampleBufferTotalSize(SampleBufferUpdate *sampleBufferUpdate) {
   return sampleBufferUpdate->totalSize;
 }
 
+// only used for the delete buffer which makes a specific allocation for the
+// sample buffer update.
+EMSCRIPTEN_KEEPALIVE
+void freeDeleteBufferUpdate(SampleBufferUpdate *deleteBufferUpdate) {
+  free(deleteBufferUpdate->chunk);
+  free(deleteBufferUpdate);
+}
+
 EMSCRIPTEN_KEEPALIVE
 void cancelSampleBufferWork(WorkerUpdateArg *updateArg) {
   updateArg->cancelled = true;
@@ -120,6 +128,23 @@ prepareSampleBufferFromSyroData(SyroData *syro_data, uint32_t NumOfData,
 }
 
 EMSCRIPTEN_KEEPALIVE
+SampleBufferUpdate *getDeleteBufferFromSyroData(SyroData *syro_data,
+                                                uint32_t NumOfData) {
+  SampleBufferContainer *sampleBuffer = startSampleBuffer(syro_data, NumOfData);
+  iterateSampleBuffer(sampleBuffer,
+                      (sampleBuffer->size - sampleBuffer->progress) / 4);
+  SampleBufferUpdate *sampleBufferUpdate = malloc(sizeof(SampleBufferUpdate));
+  sampleBufferUpdate->sampleBufferPointer = (void *)sampleBuffer;
+  sampleBufferUpdate->chunk = sampleBuffer->buffer;
+  sampleBufferUpdate->chunkSize = sampleBuffer->size;
+  sampleBufferUpdate->progress = sampleBuffer->progress;
+  sampleBufferUpdate->totalSize = sampleBuffer->size;
+  free(sampleBuffer);
+  free(syro_data); // don't need free_syrodata because pData is NULL
+  return sampleBufferUpdate;
+}
+
+EMSCRIPTEN_KEEPALIVE
 void createSyroDataFromWavData(SyroData *syro_data, uint32_t syro_data_index,
                                uint8_t *wavData, uint32_t bytes,
                                uint32_t slotNumber, uint32_t quality,
@@ -134,6 +159,19 @@ void createSyroDataFromWavData(SyroData *syro_data, uint32_t syro_data_index,
     printf("Oops!\n");
     exit(1);
   }
+}
+
+EMSCRIPTEN_KEEPALIVE
+void createEmptySyroData(SyroData *syro_data, uint32_t syro_data_index,
+                         uint32_t slotNumber) {
+  SyroData *current_syro_data = syro_data + syro_data_index;
+  current_syro_data->DataType = DataType_Sample_Compress;
+  current_syro_data->Number = slotNumber;
+  current_syro_data->Quality = 8;
+  current_syro_data->pData = NULL;
+  current_syro_data->Size = 0;
+  current_syro_data->Fs = 31250;
+  current_syro_data->SampleEndian = LittleEndian;
 }
 
 EMSCRIPTEN_KEEPALIVE

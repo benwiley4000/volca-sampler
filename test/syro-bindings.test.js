@@ -278,11 +278,27 @@ test('syroBindings load correctly', async (t) => {
       );
       t.equal(
         await page.evaluate(
+          (bindings) => typeof bindings.createEmptySyroData,
+          b
+        ),
+        'function',
+        'createEmptySyroData is defined'
+      );
+      t.equal(
+        await page.evaluate(
           (bindings) => typeof bindings.createSyroDataFromWavData,
           b
         ),
         'function',
         'createSyroDataFromWavData is defined'
+      );
+      t.equal(
+        await page.evaluate(
+          (bindings) => typeof bindings.getDeleteBufferFromSyroData,
+          b
+        ),
+        'function',
+        'getDeleteBufferFromSyroData is defined'
       );
       t.equal(
         await page.evaluate(
@@ -323,6 +339,14 @@ test('syroBindings load correctly', async (t) => {
         ),
         'function',
         'getSampleBufferTotalSize is defined'
+      );
+      t.equal(
+        await page.evaluate(
+          (bindings) => typeof bindings.freeDeleteBufferUpdate,
+          b
+        ),
+        'function',
+        'freeDeleteBufferUpdate is defined'
       );
       t.equal(
         await page.evaluate(

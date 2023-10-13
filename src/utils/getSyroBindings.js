@@ -1,6 +1,11 @@
 /**
  * @typedef {{
  *   allocateSyroData(numOfData: number): number;
+ *   createEmptySyroData(
+ *     syroDataHandle: number,
+ *     syroDataIndex: number,
+ *     slotNumber: number
+ *   ): void;
  *   createSyroDataFromWavData(
  *     syroDataHandle: number,
  *     syroDataIndex: number,
@@ -10,6 +15,10 @@
  *     quality: number,
  *     useCompression: 0 | 1
  *   ): void;
+ *   getDeleteBufferFromSyroData(
+ *     syroDataHandle: number,
+ *     numOfData: number
+ *   ): number;
  *   prepareSampleBufferFromSyroData(
  *     syroDataHandle: number,
  *     numOfData: number,
@@ -19,6 +28,7 @@
  *   getSampleBufferChunkSize(sampleBufferUpdate: number): number;
  *   getSampleBufferProgress(sampleBufferUpdate: number): number;
  *   getSampleBufferTotalSize(sampleBufferUpdate: number): number;
+ *   freeDeleteBufferUpdate(deleteBufferUpdate: number): void;
  *   cancelSampleBufferWork(workHandle: number): void;
  *   registerUpdateCallback(
  *     cb: (sampleBufferContainer: number) => void
@@ -46,15 +56,23 @@ export async function getSyroBindings() {
        * @type {SyroBindings}
        */
       const bindings = {
-        allocateSyroData: Module.cwrap(
-          'allocateSyroData',
+        allocateSyroData: Module.cwrap('allocateSyroData', 'number', [
           'number',
-          ['number']
-        ),
+        ]),
+        createEmptySyroData: Module.cwrap('createEmptySyroData', null, [
+          'number',
+          'number',
+          'number',
+        ]),
         createSyroDataFromWavData: Module.cwrap(
           'createSyroDataFromWavData',
           null,
           ['number', 'number', 'array', 'number', 'number', 'number']
+        ),
+        getDeleteBufferFromSyroData: Module.cwrap(
+          'getDeleteBufferFromSyroData',
+          'number',
+          ['number', 'number']
         ),
         prepareSampleBufferFromSyroData: Module.cwrap(
           'prepareSampleBufferFromSyroData',
@@ -81,6 +99,9 @@ export async function getSyroBindings() {
           'number',
           ['number']
         ),
+        freeDeleteBufferUpdate: Module.cwrap('freeDeleteBufferUpdate', null, [
+          'number',
+        ]),
         cancelSampleBufferWork: Module.cwrap('cancelSampleBufferWork', null, [
           'number',
         ]),

@@ -140,3 +140,34 @@ export function getSyroSampleBuffer(sampleContainers, onProgress) {
     })(),
   };
 }
+
+/**
+ * @param {number[]} slotNumbers
+ * @returns {Promise<{ syroBuffer: Uint8Array }>}
+ */
+export async function getSyroDeleteBuffer(slotNumbers) {
+  const {
+    allocateSyroData,
+    createEmptySyroData,
+    getDeleteBufferFromSyroData,
+    getSampleBufferChunkPointer,
+    getSampleBufferChunkSize,
+    freeDeleteBufferUpdate,
+    heap8Buffer,
+  } = await getSyroBindings();
+  const syroDataHandle = allocateSyroData(slotNumbers.length);
+  slotNumbers.forEach((slotNumber, i) => {
+    createEmptySyroData(syroDataHandle, i, slotNumber);
+  });
+  const deleteBufferUpdatePointer = getDeleteBufferFromSyroData(
+    syroDataHandle,
+    slotNumbers.length
+  );
+  const chunkPointer = getSampleBufferChunkPointer(deleteBufferUpdatePointer);
+  const chunkSize = getSampleBufferChunkSize(deleteBufferUpdatePointer);
+  const syroBuffer = new Uint8Array(
+    new Uint8Array(heap8Buffer(), chunkPointer, chunkSize)
+  );
+  freeDeleteBufferUpdate(deleteBufferUpdatePointer);
+  return { syroBuffer };
+}

@@ -105,9 +105,7 @@ export async function getSyroBindings() {
           'number',
           ['number']
         ),
-        freeDeleteBuffer: Module.cwrap('freeDeleteBuffer', null, [
-          'number',
-        ]),
+        freeDeleteBuffer: Module.cwrap('freeDeleteBuffer', null, ['number']),
         cancelSampleBufferWork: Module.cwrap('cancelSampleBufferWork', null, [
           'number',
         ]),

@@ -116,8 +116,9 @@ const importMap = {
 /**
  * @param {{ scripts?: string[]; modules?: { url: string; globalName: string }[] }} opts
  * @param {(page: puppeteer.Page) => void | Promise<void>} callback
+ * @param {test.Test} t
  */
-async function forEachBrowser({ scripts, modules }, callback) {
+async function forEachBrowser({ scripts, modules }, callback, t) {
   const testServer = getTestServer();
   // TODO: support firefox when named import maps can work
   for (const product of ['chrome' /*, 'firefox'*/]) {
@@ -147,13 +148,24 @@ async function forEachBrowser({ scripts, modules }, callback) {
         window[globalName] = await import(url);
       }, module);
     }
+    // forward console logs to node https://stackoverflow.com/a/73964712
+    await page.exposeFunction('logInNodeJs', (...args) => console.log(...args));
+    await page.evaluate(() => {
+      Object.defineProperty(console, 'log', {
+        get() {
+          return logInNodeJs;
+        },
+      });
+    });
+    let testRanWithoutErrors = true;
     try {
       await callback(page);
     } catch (err) {
       console.error(err);
       console.error(`Above error occurred for "${product}" browser`);
-      throw err;
+      testRanWithoutErrors = false;
     }
+    t.assert(testRanWithoutErrors, 'Test runs without errors.');
     await browser.close();
   }
   testServer.close();
@@ -382,7 +394,8 @@ test('syroBindings load correctly', async (t) => {
         'function',
         'heap8Buffer is defined'
       );
-    }
+    },
+    t
   );
 });
 
@@ -530,6 +543,7 @@ test('getSyroSampleBuffer', async (t) => {
           printDiffForWavBuffers(t, webSampleBufferContents, snapshots[key]);
         }
       }
-    }
+    },
+    t
   );
 });

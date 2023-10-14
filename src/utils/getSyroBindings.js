@@ -20,10 +20,13 @@
  *     numOfData: number
  *   ): number;
  *   prepareSampleBufferFromSyroData(
+ *     syroWorkerHandle: number,
  *     syroDataHandle: number,
  *     numOfData: number,
  *     onUpdate: number
  *   ): number;
+ *   createSyroWorker(): number;
+ *   destroySyroWorker(worker: number): void;
  *   getSampleBufferChunkPointer(sampleBufferUpdate: number): number;
  *   getSampleBufferChunkSize(sampleBufferUpdate: number): number;
  *   getSampleBufferProgress(sampleBufferUpdate: number): number;
@@ -78,7 +81,17 @@ export async function getSyroBindings() {
         prepareSampleBufferFromSyroData: Module.cwrap(
           'prepareSampleBufferFromSyroData',
           'number',
-          ['number', 'number', 'number']
+          ['number', 'number', 'number', 'number']
+        ),
+        createSyroWorker: Module.cwrap(
+          'createSyroWorker',
+          'number',
+          []
+        ),
+        destroySyroWorker: Module.cwrap(
+          'destroySyroWorker',
+          null,
+          ['number']
         ),
         getSampleBufferChunkPointer: Module.cwrap(
           'getSampleBufferChunkPointer',

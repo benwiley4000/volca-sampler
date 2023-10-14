@@ -13,7 +13,11 @@ import {
   getAudioBufferForAudioFileData,
   useAudioPlaybackContext,
 } from './utils/audioData.js';
-import { getSyroSampleBuffer } from './utils/syro.js';
+import {
+  getSyroSampleBuffer,
+  getSyroWorkerHandle,
+  releaseSyroWorker,
+} from './utils/syro.js';
 import { formatLongTime } from './utils/datetime';
 
 import classes from './VolcaTransferControl.module.scss';
@@ -40,6 +44,21 @@ function VolcaTransferControl({
     () => (_samples instanceof Array ? _samples : [_samples]),
     [_samples]
   );
+
+  const [syroWorkerHandle, setSyroWorkerHandle] = useState(/** @type {number | null} */ (null));
+  {
+    const syroWorkerHandleRef = useRef(syroWorkerHandle);
+    syroWorkerHandleRef.current = syroWorkerHandle;
+    useEffect(() => {
+      getSyroWorkerHandle().then(setSyroWorkerHandle);
+      return () => {
+        if (syroWorkerHandleRef.current) {
+          releaseSyroWorker(syroWorkerHandleRef.current);
+        }
+      };
+    }, []);
+  }
+
   const [syroProgress, setSyroProgress] = useState(1);
   const [transferProgress, setTransferProgress] = useState(0);
   const [infoBeforeTransferModalOpen, setInfoBeforeTransferModalOpen] =
@@ -78,7 +97,7 @@ function VolcaTransferControl({
   // to be set when transfer or playback is started
   const stop = useRef(() => {});
   useEffect(() => {
-    if (!samples.length) return;
+    if (!samples.length || syroWorkerHandle === null) return;
     let cancelled = false;
     setSyroProgress(0);
     setSyroTransferState('idle');
@@ -90,6 +109,7 @@ function VolcaTransferControl({
     };
     try {
       const { syroBufferPromise, cancelWork } = getSyroSampleBuffer(
+        syroWorkerHandle,
         samples,
         (progress) => {
           if (!cancelled) {
@@ -122,7 +142,7 @@ function VolcaTransferControl({
       setSyroAudioBuffer(new Error(String(err)));
     }
     return () => stop.current();
-  }, [samples]);
+  }, [samples, syroWorkerHandle]);
   const { playAudioBuffer } = useAudioPlaybackContext();
   /** @type {React.MouseEventHandler} */
   const handleTransfer = useCallback(

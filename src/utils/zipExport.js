@@ -149,8 +149,8 @@ export async function importSampleContainersFromZip(
   if (!samplesFolder) {
     throw new Error('Failed to create samples folder');
   }
-  /** @type {Set<string>} */
-  const processedSourceFileIds = new Set();
+  /** @type {Map<string, Promise<void>>} */
+  const sourceDataProcessingPromises = new Map();
   /** @type {FailedImports} */
   const failedImports = {};
   /** @type {SampleContainer[]} */
@@ -167,28 +167,33 @@ export async function importSampleContainersFromZip(
       if (!idsToImport.includes(id)) return;
       try {
         const { sourceFileId } = metadata;
-        if (!processedSourceFileIds.has(sourceFileId)) {
-          processedSourceFileIds.add(sourceFileId);
-          const needsToImportFile = !(await isAudioSourceFileInStore(
-            sourceFileId
-          ));
-          if (needsToImportFile) {
-            const [sourceFileHandle] = samplesFolder.file(
-              new RegExp(`${sourceFileId}\\.\\w+$`)
-            );
-            if (!sourceFileHandle) {
-              throw new Error('Cannot find source file');
-            }
-            const sourceFileData = await sourceFileHandle.async(
-              'uint8array',
-              ({ percent, currentFile }) => {
-                progresses[i] = percent / 100;
-                reportProgress();
+        if (!sourceDataProcessingPromises.has(sourceFileId)) {
+          sourceDataProcessingPromises.set(
+            sourceFileId,
+            (async () => {
+              const needsToImportFile = !(await isAudioSourceFileInStore(
+                sourceFileId
+              ));
+              if (needsToImportFile) {
+                const [sourceFileHandle] = samplesFolder.file(
+                  new RegExp(`${sourceFileId}\\.\\w+$`)
+                );
+                if (!sourceFileHandle) {
+                  throw new Error('Cannot find source file');
+                }
+                const sourceFileData = await sourceFileHandle.async(
+                  'uint8array',
+                  ({ percent, currentFile }) => {
+                    progresses[i] = percent / 100;
+                    reportProgress();
+                  }
+                );
+                await storeAudioSourceFile(sourceFileData, sourceFileId);
               }
-            );
-            await storeAudioSourceFile(sourceFileData, sourceFileId);
-          }
+            })()
+          );
         }
+        await sourceDataProcessingPromises.get(sourceFileId);
         sampleContainers.push(
           await SampleContainer.importToStorage(id, metadata)
         );

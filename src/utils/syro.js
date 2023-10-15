@@ -1,19 +1,7 @@
 import { getSyroBindings } from './getSyroBindings.js';
 import { getTargetWavForSample } from './audioData.js';
 
-export async function getSyroWorkerHandle() {
-  const { createSyroWorker } = await getSyroBindings();
-  return createSyroWorker();
-}
-
-/** @param {number} syroWorkerHandle */
-export async function releaseSyroWorker(syroWorkerHandle) {
-  const { destroySyroWorker } = await getSyroBindings();
-  destroySyroWorker(syroWorkerHandle);
-}
-
 /**
- * @param {number} syroWorkerHandle
  * @param {(import('../store').SampleContainer)[]} sampleContainers
  * @param {(progress: number) => void} onProgress
  * @returns {{
@@ -25,11 +13,7 @@ export async function releaseSyroWorker(syroWorkerHandle) {
  *   cancelWork: () => void;
  * }}
  */
-export function getSyroSampleBuffer(
-  syroWorkerHandle,
-  sampleContainers,
-  onProgress
-) {
+export function getSyroSampleBuffer(sampleContainers, onProgress) {
   let cancelled = false;
   let onCancel = () => {};
   return {
@@ -120,7 +104,6 @@ export function getSyroSampleBuffer(
         );
       });
       const workHandle = prepareSampleBufferFromSyroData(
-        syroWorkerHandle,
         syroDataHandle,
         sampleContainers.length,
         onUpdate

@@ -321,16 +321,6 @@ test('syroBindings load correctly', async (t) => {
         'prepareSampleBufferFromSyroData is defined'
       );
       t.equal(
-        await page.evaluate((bindings) => typeof bindings.createSyroWorker, b),
-        'function',
-        'createSyroWorker is defined'
-      );
-      t.equal(
-        await page.evaluate((bindings) => typeof bindings.destroySyroWorker, b),
-        'function',
-        'destroySyroWorker is defined'
-      );
-      t.equal(
         await page.evaluate(
           (bindings) => typeof bindings.getSampleBufferChunkPointer,
           b
@@ -470,7 +460,6 @@ test('getSyroSampleBuffer', async (t) => {
       await page.evaluate(() => {
         window.SampleContainer = storeModule.SampleContainer;
         window.getSyroSampleBuffer = syroUtilsModule.getSyroSampleBuffer;
-        window.syroWorker = syroUtilsModule.getSyroWorkerHandle();
       });
       for (const key of /** @type {('compressed' | 'uncompressed' | 'multi_compressed' | 'multi_uncompressed')[]} */ ([
         'compressed',
@@ -520,7 +509,6 @@ test('getSyroSampleBuffer', async (t) => {
              */
             const getSyroSampleBuffer = window.getSyroSampleBuffer;
             const { syroBuffer } = await getSyroSampleBuffer(
-              window.syroWorker,
               sampleContainers,
               () => null
             ).syroBufferPromise;

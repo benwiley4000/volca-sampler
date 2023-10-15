@@ -5,21 +5,9 @@
 typedef struct WorkerUpdateArg {
   worker_handle worker;
   void (*onUpdate)(SampleBufferUpdate *);
-  int activeJobs;
   bool secondJobStarted;
   bool cancelled;
 } WorkerUpdateArg;
-
-EMSCRIPTEN_KEEPALIVE
-worker_handle createSyroWorker() {
-  worker_handle worker = emscripten_create_worker("syro-worker.js");
-  return worker;
-}
-
-EMSCRIPTEN_KEEPALIVE
-void destroySyroWorker(worker_handle worker) {
-  emscripten_destroy_worker(worker);
-}
 
 EMSCRIPTEN_KEEPALIVE
 uint8_t *getSampleBufferChunkPointer(SampleBufferUpdate *sampleBufferUpdate) {
@@ -63,11 +51,9 @@ void cancelSampleBufferWork(WorkerUpdateArg *updateArg) {
 
 void onWorkerMessage(char *data, int size, void *updateArgPointer) {
   WorkerUpdateArg *updateArg = (WorkerUpdateArg *)updateArgPointer;
-  updateArg->activeJobs--;
   if (updateArg->cancelled) {
-    if (!updateArg->activeJobs) {
-      free(updateArg);
-    }
+    emscripten_destroy_worker(updateArg->worker);
+    free(updateArg);
     return;
   }
   SampleBufferUpdate *sampleBufferUpdate = (SampleBufferUpdate *)(data);
@@ -89,20 +75,17 @@ void onWorkerMessage(char *data, int size, void *updateArgPointer) {
                              (char *)&sampleBufferUpdate->sampleBufferPointer,
                              sizeof(SampleBufferContainer *), onWorkerMessage,
                              updateArgPointer);
-      updateArg->activeJobs++;
     }
     updateArg->secondJobStarted = true;
   } else {
-    if (!updateArg->activeJobs) {
-      free(updateArg);
-    }
+    emscripten_destroy_worker(updateArg->worker);
+    free(updateArg);
   }
 }
 
 EMSCRIPTEN_KEEPALIVE
 WorkerUpdateArg *
-prepareSampleBufferFromSyroData(worker_handle worker, SyroData *syro_data,
-                                uint32_t NumOfData,
+prepareSampleBufferFromSyroData(SyroData *syro_data, uint32_t NumOfData,
                                 void (*onUpdate)(SampleBufferUpdate *)) {
   // count buffer size
   // buffer contains: NumOfData:SyroDataList:WavDataList
@@ -138,16 +121,15 @@ prepareSampleBufferFromSyroData(worker_handle worker, SyroData *syro_data,
   free_syrodata(syro_data, NumOfData);
   free(syro_data);
 
+  worker_handle worker = emscripten_create_worker("syro-worker.js");
   WorkerUpdateArg *updateArg = malloc(sizeof(WorkerUpdateArg));
   updateArg->worker = worker;
   updateArg->onUpdate = onUpdate;
-  updateArg->activeJobs = 0;
   updateArg->secondJobStarted = false;
   updateArg->cancelled = false;
   emscripten_call_worker(worker, "startSyroBufferWork",
                          (char *)startMessageBuffer, startMessageBufferSize,
                          onWorkerMessage, (void *)updateArg);
-  updateArg->activeJobs++;
   free(startMessageBuffer);
   return updateArg;
 }
@@ -190,8 +172,11 @@ EMSCRIPTEN_KEEPALIVE
 void createEmptySyroData(SyroData *syro_data, uint32_t syro_data_index,
                          uint32_t slotNumber) {
   SyroData *current_syro_data = syro_data + syro_data_index;
-  current_syro_data->DataType = DataType_Sample_Erase;
+  current_syro_data->DataType = DataType_Sample_Compress;
   current_syro_data->Number = slotNumber;
+  current_syro_data->Quality = 8;
+  current_syro_data->pData = NULL;
+  current_syro_data->Size = 0;
   current_syro_data->Fs = 31250;
   current_syro_data->SampleEndian = LittleEndian;
 }

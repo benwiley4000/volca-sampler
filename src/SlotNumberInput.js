@@ -1,12 +1,27 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import SevenSegmentDisplay, { Digit } from 'seven-segment-display';
 import { Form, OverlayTrigger, Tooltip } from 'react-bootstrap';
-import { findDOMNode } from 'react-dom';
+import { findDOMNode as _findDOMNode } from 'react-dom';
 import { ReactComponent as KeyboardArrowUpIcon } from '@material-design-icons/svg/filled/keyboard_arrow_up.svg';
 import { ReactComponent as KeyboardArrowDownIcon } from '@material-design-icons/svg/filled/keyboard_arrow_down.svg';
 import { ReactComponent as WarningIcon } from '@material-design-icons/svg/filled/warning.svg';
 
 import classes from './SlotNumberInput.module.scss';
+
+/** @type {typeof _findDOMNode} */
+function findDOMNodeSuppressError(component) {
+  const { error } = console;
+  console.error = () => null;
+  const node = _findDOMNode(component);
+  console.error = error;
+  return node;
+}
+
+// get rid of pointless error message in local dev
+const findDOMNode =
+  process.env.NODE_ENV === 'development'
+    ? findDOMNodeSuppressError
+    : _findDOMNode;
 
 Digit.defaultProps.offOpacity = 0;
 
@@ -304,7 +319,7 @@ const SlotNumberInput = React.memo(
                 <SevenSegmentDisplay
                   ref={
                     /**
-                     * @param {React.Component} instance
+                     * @param {Parameters<typeof findDOMNode>[0]} instance
                      */
                     (instance) => {
                       const svg = /** @type {SVGElement} */ (

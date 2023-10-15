@@ -115,13 +115,13 @@ function VolcaTransferControl({
   }, [syroAudioBuffer, callbackOnSyroBuffer]);
   // to be set when transfer or playback is started
   const stop = useRef(() => {});
+  const canTransferSamples = Boolean(
+    selectedSamples.size &&
+      !duplicateSlots.length &&
+      selectedSamples.size <= 110
+  );
   useEffect(() => {
-    if (
-      !selectedSamples.size ||
-      duplicateSlots.length ||
-      selectedSamples.size > 110
-    )
-      return;
+    if (!canTransferSamples) return;
     let cancelled = false;
     const startTime = performance.now();
     setSyroProgress(0);
@@ -167,7 +167,7 @@ function VolcaTransferControl({
       setSyroAudioBuffer(new Error(String(err)));
     }
     return () => stop.current();
-  }, [selectedSamples, duplicateSlots]);
+  }, [selectedSamples, canTransferSamples]);
   const { playAudioBuffer } = useAudioPlaybackContext();
   /** @type {React.MouseEventHandler} */
   const handleTransfer = useCallback(
@@ -354,7 +354,9 @@ function VolcaTransferControl({
             }}
           >
             Continue{' '}
-            {syroProgress < 1 && `(${(syroProgress * 100).toFixed(0)}%)`}
+            {canTransferSamples &&
+              syroProgress < 1 &&
+              `(${(syroProgress * 100).toFixed(0)}%)`}
           </Button>
         </Modal.Footer>
       </Modal>

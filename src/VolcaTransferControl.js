@@ -215,8 +215,7 @@ function VolcaTransferControl({
   const transferInfo = (
     <>
       <div>
-        <strong>Sample length:</strong>{' '}
-        {formatLongTime(totalSourceDuration)}
+        <strong>Sample length:</strong> {formatLongTime(totalSourceDuration)}
       </div>
       <div>
         <strong>Memory footprint:</strong>{' '}
@@ -230,8 +229,10 @@ function VolcaTransferControl({
           'error'
         ) : (
           <i>
-            Computing...{' '}
-            {syroProgress ? `${(syroProgress * 100).toFixed(0)}%` : ''}
+            <small>
+              Checking..{' '}
+              {syroProgress ? `${(syroProgress * 100).toFixed(0)}%` : ''}
+            </small>
           </i>
         )}
       </div>

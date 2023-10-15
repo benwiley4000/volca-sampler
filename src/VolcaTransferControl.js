@@ -74,7 +74,6 @@ function VolcaTransferControl({
     }
     return duration;
   }, [selectedSamples]);
-  const durationIsTooLong = totalSourceDuration > 65;
 
   const duplicateSlots = useMemo(() => {
     /** @type {Map<number, number>}  */
@@ -132,7 +131,6 @@ function VolcaTransferControl({
   const canTransferSamples = Boolean(
     selectedSamples.size &&
       !duplicateSlots.length &&
-      !durationIsTooLong &&
       selectedSamples.size <= 110
   );
   useEffect(() => {
@@ -356,14 +354,6 @@ function VolcaTransferControl({
                 <p className={classes.invalidMessage}>
                   You cannot transfer more than <strong>110</strong> samples at
                   once.
-                </p>
-              )}
-              {durationIsTooLong && (
-                <p className={classes.invalidMessage}>
-                  The combined length of your samples is{' '}
-                  <strong>{totalSourceDuration.toFixed(1)} seconds</strong>. The
-                  maximum length you can transfer is <strong>65 seconds</strong>
-                  .
                 </p>
               )}
             </details>

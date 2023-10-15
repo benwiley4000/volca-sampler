@@ -123,7 +123,6 @@ function VolcaTransferControl({
   useEffect(() => {
     if (!canTransferSamples) return;
     let cancelled = false;
-    const startTime = performance.now();
     setSyroProgress(0);
     setSyroTransferState('idle');
     setTargetWavDataSize(null);
@@ -147,7 +146,6 @@ function VolcaTransferControl({
       };
       syroBufferPromise.then(
         async ({ syroBuffer, dataSizes, dataStartPoints }) => {
-          console.log('and got wav', performance.now() - startTime);
           if (cancelled) {
             return;
           }

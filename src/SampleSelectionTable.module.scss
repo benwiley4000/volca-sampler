@@ -1,3 +1,8 @@
+@import 'bootstrap_custom_variables';
+@import '~bootstrap/scss/functions';
+@import '~bootstrap/scss/mixins';
+@import '~bootstrap/scss/variables';
+
 .samplesTable {
   table-layout: fixed;
 
@@ -11,6 +16,10 @@
     text-overflow: ellipsis;
   }
 
+  tbody tr {
+    cursor: pointer;
+  }
+
   .check {
     width: 2rem;
   }
@@ -21,5 +30,10 @@
 
   .updated {
     width: 7rem;
+  }
+
+  .duplicateSlot {
+    color: var(--bs-primary);
+    font-weight: bold;
   }
 }

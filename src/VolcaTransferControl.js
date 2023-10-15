@@ -18,6 +18,7 @@ import { formatLongTime } from './utils/datetime';
 
 import classes from './VolcaTransferControl.module.scss';
 import SlotNumberInput from './SlotNumberInput.js';
+import SampleSelectionTable from './SampleSelectionTable.js';
 
 /**
  * @typedef {import('./store').SampleContainer} SampleContainer
@@ -40,6 +41,43 @@ function VolcaTransferControl({
     () => (_samples instanceof Array ? _samples : [_samples]),
     [_samples]
   );
+  const samplesMap = useMemo(() => {
+    return new Map(samples.map((s) => [s.id, s]));
+  }, [samples]);
+  const [selectedSamples, setSelectedSamples] = useState(samplesMap);
+  useEffect(() => {
+    setSelectedSamples(samplesMap);
+  }, [samplesMap]);
+  const selectedSampleIds = useMemo(() => {
+    return new Set(selectedSamples.keys());
+  }, [selectedSamples]);
+  const setSelectedSampleIds = useCallback(
+    /** @param {(prevIds: Set<string>) => Set<string>} updater */
+    (updater) => {
+      setSelectedSamples(
+        (selectedSamples) =>
+          new Map(
+            samples
+              .filter((s) => updater(new Set(selectedSamples.keys())).has(s.id))
+              .map((s) => [s.id, s])
+          )
+      );
+    },
+    [samples]
+  );
+
+  const duplicateSlots = useMemo(() => {
+    /** @type {Map<number, number>}  */
+    const slotCounts = new Map();
+    for (const [, sample] of selectedSamples) {
+      const { slotNumber } = sample.metadata;
+      slotCounts.set(slotNumber, (slotCounts.get(slotNumber) || 0) + 1);
+    }
+    return [...slotCounts]
+      .filter(([_, count]) => count > 1)
+      .map(([slotNumber]) => slotNumber);
+  }, [selectedSamples]);
+
   const [syroProgress, setSyroProgress] = useState(1);
   const [transferProgress, setTransferProgress] = useState(0);
   const [infoBeforeTransferModalOpen, setInfoBeforeTransferModalOpen] =
@@ -78,8 +116,14 @@ function VolcaTransferControl({
   // to be set when transfer or playback is started
   const stop = useRef(() => {});
   useEffect(() => {
-    if (!samples.length) return;
+    if (
+      !selectedSamples.size ||
+      duplicateSlots.length ||
+      selectedSamples.size > 110
+    )
+      return;
     let cancelled = false;
+    const startTime = performance.now();
     setSyroProgress(0);
     setSyroTransferState('idle');
     setTargetWavDataSize(null);
@@ -90,7 +134,7 @@ function VolcaTransferControl({
     };
     try {
       const { syroBufferPromise, cancelWork } = getSyroSampleBuffer(
-        samples,
+        [...selectedSamples.values()],
         (progress) => {
           if (!cancelled) {
             setSyroProgress(progress);
@@ -103,6 +147,7 @@ function VolcaTransferControl({
       };
       syroBufferPromise.then(
         async ({ syroBuffer, dataSizes, dataStartPoints }) => {
+          console.log('and got wav', performance.now() - startTime);
           if (cancelled) {
             return;
           }
@@ -122,7 +167,7 @@ function VolcaTransferControl({
       setSyroAudioBuffer(new Error(String(err)));
     }
     return () => stop.current();
-  }, [samples]);
+  }, [selectedSamples, duplicateSlots]);
   const { playAudioBuffer } = useAudioPlaybackContext();
   /** @type {React.MouseEventHandler} */
   const handleTransfer = useCallback(
@@ -176,29 +221,18 @@ function VolcaTransferControl({
     </div>
   );
 
-  const duplicateSlots = useMemo(() => {
-    /** @type {Map<number, number>}  */
-    const slotCounts = new Map();
-    for (const sample of samples) {
-      const { slotNumber } = sample.metadata;
-      slotCounts.set(slotNumber, (slotCounts.get(slotNumber) || 0) + 1);
-    }
-    return [...slotCounts]
-      .filter(([_, count]) => count > 1)
-      .map(([slotNumber]) => slotNumber);
-  }, [samples]);
-
   const {
     currentlyTransferringSample,
     currentSampleProgress,
     timeLeftUntilNextSample,
   } = useMemo(() => {
+    const selectedSampleList = [...selectedSamples.values()];
     if (
       syroTransferState !== 'transferring' ||
       !(syroAudioBuffer instanceof AudioBuffer)
     ) {
       return {
-        currentlyTransferringSample: samples[0],
+        currentlyTransferringSample: selectedSampleList[0],
         currentSampleProgress: 0,
         timeLeftUntilNextSample: 0,
       };
@@ -206,9 +240,9 @@ function VolcaTransferControl({
     const foundIndex =
       dataStartPoints.findIndex((p) => p > transferProgress) - 1;
     const currentlyTransferringSampleIndex =
-      foundIndex >= 0 ? foundIndex : samples.length - 1;
+      foundIndex >= 0 ? foundIndex : selectedSampleList.length - 1;
     const currentlyTransferringSample =
-      samples[currentlyTransferringSampleIndex];
+      selectedSampleList[currentlyTransferringSampleIndex];
     const currentStartPoint = dataStartPoints[currentlyTransferringSampleIndex];
     const nextStartPoint =
       dataStartPoints[currentlyTransferringSampleIndex + 1] || 1;
@@ -223,7 +257,7 @@ function VolcaTransferControl({
       timeLeftUntilNextSample,
     };
   }, [
-    samples,
+    selectedSamples,
     dataStartPoints,
     syroTransferState,
     transferProgress,
@@ -256,12 +290,6 @@ function VolcaTransferControl({
           </Button>
         ),
         {
-          ...(samples.length > 110
-            ? {
-                disabled: true,
-                children: 'Too many samples',
-              }
-            : {}),
           onClick() {
             if (showInfoBeforeTransfer) {
               setInfoBeforeTransferModalOpen(true);
@@ -291,29 +319,19 @@ function VolcaTransferControl({
               </strong>
             </p>
           )}
-          {samples.length > 110 && (
+          {selectedSamples.size > 110 && (
             <p className={classes.duplicate}>
               <strong>
                 You cannot transfer more than 110 samples at a time.
               </strong>
             </p>
           )}
-          <ul>
-            {samples.map((sample) => (
-              <li key={sample.id}>
-                <strong>{sample.metadata.name}</strong> to{' '}
-                <strong
-                  className={
-                    duplicateSlots.includes(sample.metadata.slotNumber)
-                      ? classes.duplicate
-                      : ''
-                  }
-                >
-                  slot {sample.metadata.slotNumber}
-                </strong>
-              </li>
-            ))}
-          </ul>
+          <SampleSelectionTable
+            samples={samplesMap}
+            selectedSampleIds={selectedSampleIds}
+            setSelectedSampleIds={setSelectedSampleIds}
+            highlightDuplicateSlots
+          />
         </Modal.Body>
         <Modal.Footer>
           <Button
@@ -397,16 +415,20 @@ function VolcaTransferControl({
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {samples.length > 1 ? (
+          {selectedSamples.size > 1 ? (
             <p>
-              Transferring <strong>{samples.length} samples</strong> to your
-              volca sample. Don't disconnect anything.
+              Transferring <strong>{selectedSamples.size} samples</strong> to
+              your volca sample. Don't disconnect anything.
             </p>
-          ) : samples[0] ? (
+          ) : [...selectedSamples.values()][0] ? (
             <p>
-              Transferring <strong>{samples[0].metadata.name}</strong> to slot{' '}
-              <strong>{samples[0].metadata.slotNumber}</strong> on your your
-              volca sample. Don't disconnect anything.
+              Transferring{' '}
+              <strong>{[...selectedSamples.values()][0].metadata.name}</strong>{' '}
+              to slot{' '}
+              <strong>
+                {[...selectedSamples.values()][0].metadata.slotNumber}
+              </strong>{' '}
+              on your volca sample. Don't disconnect anything.
             </p>
           ) : null}
           <ProgressBar
@@ -422,11 +444,14 @@ function VolcaTransferControl({
               )}{' '}
             remaining
           </div>
-          {samples.length > 1 && (
+          {selectedSamples.size > 1 && (
             <div className={classes.subtask}>
               <p>
-                ({samples.indexOf(currentlyTransferringSample) + 1}/
-                {samples.length}){' '}
+                (
+                {[...selectedSamples.values()].indexOf(
+                  currentlyTransferringSample
+                ) + 1}
+                /{selectedSamples.size}){' '}
                 <strong className={classes.name}>
                   {currentlyTransferringSample.metadata.name}
                 </strong>{' '}
@@ -471,13 +496,18 @@ function VolcaTransferControl({
             </p>
           ) : (
             <>
-              {samples.length > 1 ? (
+              {selectedSamples.size > 1 ? (
                 <p>Your samples were transferred to your volca sample.</p>
-              ) : samples[0] ? (
+              ) : [...selectedSamples.values()][0] ? (
                 <p>
-                  <strong>{samples[0].metadata.name}</strong> was transferred to
-                  slot <strong>{samples[0].metadata.slotNumber}</strong> on your
-                  volca sample.
+                  <strong>
+                    {[...selectedSamples.values()][0].metadata.name}
+                  </strong>{' '}
+                  was transferred to slot{' '}
+                  <strong>
+                    {[...selectedSamples.values()][0].metadata.slotNumber}
+                  </strong>{' '}
+                  on your volca sample.
                 </p>
               ) : null}
               <h5>

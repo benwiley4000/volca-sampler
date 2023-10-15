@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useRef } from 'react';
+import React, { useLayoutEffect, useMemo, useRef } from 'react';
 import { Table } from 'react-bootstrap';
 
 import { SampleContainer } from './store.js';
@@ -14,12 +14,14 @@ const SampleSelectionTable = React.memo(
    *   selectedSampleIds: Set<string>;
    *   setSelectedSampleIds:
    *     (updater: (prevIds: Set<string>) => Set<string>) => void;
+   *   highlightDuplicateSlots?: boolean;
    * }} props
    */
   function SampleSelectionTable({
     samples,
     selectedSampleIds,
     setSelectedSampleIds,
+    highlightDuplicateSlots,
   }) {
     const allChecked = [...samples.keys()].every((id) =>
       selectedSampleIds.has(id)
@@ -38,6 +40,23 @@ const SampleSelectionTable = React.memo(
         checkboxRef.current.indeterminate = indeterminate;
       }
     }, [indeterminate]);
+    const duplicateSlots = useMemo(() => {
+      if (!highlightDuplicateSlots)
+        return /** @type {Set<number>} */ (new Set());
+      /** @type {Map<number, number>}  */
+      const slotCounts = new Map();
+      for (const [id, sample] of samples) {
+        if (!selectedSampleIds.has(id)) continue;
+        const { slotNumber } =
+          sample instanceof SampleContainer ? sample.metadata : sample;
+        slotCounts.set(slotNumber, (slotCounts.get(slotNumber) || 0) + 1);
+      }
+      return new Set(
+        [...slotCounts]
+          .filter(([_, count]) => count > 1)
+          .map(([slotNumber]) => slotNumber)
+      );
+    }, [samples, selectedSampleIds, highlightDuplicateSlots]);
     return (
       <Table className={classes.samplesTable}>
         <thead>
@@ -73,7 +92,20 @@ const SampleSelectionTable = React.memo(
           {[...samples].map(([id, s]) => {
             const metadata = s instanceof SampleContainer ? s.metadata : s;
             return (
-              <tr key={id}>
+              <tr
+                key={id}
+                onClick={(e) => {
+                  const input = /** @type {HTMLElement} */ (
+                    e.currentTarget
+                  ).querySelector('input');
+                  if (
+                    input &&
+                    input !== e.target &&
+                    !input.contains(/** @type {Node} */ (e.target))
+                  )
+                    input.click();
+                }}
+              >
                 <td>
                   <input
                     type="checkbox"
@@ -92,7 +124,15 @@ const SampleSelectionTable = React.memo(
                   />
                 </td>
                 <td title={metadata.name}>{metadata.name}</td>
-                <td>{metadata.slotNumber}</td>
+                <td
+                  className={
+                    duplicateSlots.has(metadata.slotNumber)
+                      ? classes.duplicateSlot
+                      : undefined
+                  }
+                >
+                  {metadata.slotNumber}
+                </td>
                 <td title={new Date(metadata.dateModified).toLocaleString()}>
                   {new Date(metadata.dateModified).toLocaleDateString()}
                 </td>

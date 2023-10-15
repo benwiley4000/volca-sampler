@@ -7,7 +7,6 @@ import { getTargetWavForSample } from './audioData.js';
  * @returns {{
  *   syroBufferPromise: Promise<{
  *     syroBuffer: Uint8Array;
- *     dataSizes: number[];
  *     dataStartPoints: number[];
  *   }>;
  *   cancelWork: () => void;
@@ -38,7 +37,6 @@ export function getSyroSampleBuffer(sampleContainers, onProgress) {
       } = await getSyroBindings();
       const emptyResponse = {
         syroBuffer: new Uint8Array(),
-        dataSizes: [],
         dataStartPoints: [],
       };
       if (cancelled) {
@@ -148,7 +146,6 @@ export function getSyroSampleBuffer(sampleContainers, onProgress) {
       }
       return {
         syroBuffer,
-        dataSizes: targetWavs.map((wav) => wav.length),
         dataStartPoints: [...dataStartPoints],
       };
     })(),

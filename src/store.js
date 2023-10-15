@@ -5,7 +5,6 @@ import { decode as decodeBase64 } from 'base64-arraybuffer';
 import { SAMPLE_RATE } from './utils/constants.js';
 import {
   findSamplePeak,
-  getAudioBufferForAudioFileData,
   getMonoSamplesFromAudioBuffer,
   getSourceAudioBuffer,
 } from './utils/audioData.js';
@@ -14,8 +13,15 @@ import { getSamplePeaksForAudioBuffer } from './utils/waveform.js';
 /**
  * @typedef {{
  *   frames: [number, number];
- *   waveformPeaks: import('./utils/waveform').SamplePeaks;
  * }} TrimInfo
+ */
+
+/**
+ * @typedef {{
+ *   waveformPeaks: import('./utils/waveform').SamplePeaks;
+ *   duration: number;
+ *   srcDuration: number;
+ * }} CachedInfo
  */
 
 /**
@@ -27,6 +33,7 @@ import { getSamplePeaksForAudioBuffer } from './utils/waveform.js';
  * @property {string} name
  * @property {string} sourceFileId
  * @property {TrimInfo} trim
+ * @property {CachedInfo} cachedInfo
  * @property {string} [id]
  * @property {{ type: string; ext: string } | null} [userFileInfo]
  * @property {number} [slotNumber]
@@ -52,6 +59,7 @@ import { getSamplePeaksForAudioBuffer } from './utils/waveform.js';
  * @property {NormalizeSetting} normalize
  * @property {string} metadataVersion
  * @property {number} pitchAdjustment
+ * @property {CachedInfo} cachedInfo
  */
 
 /**
@@ -98,7 +106,18 @@ export async function storeAudioSourceFile(audioFileData, externalId) {
   return id;
 }
 
-const METADATA_VERSION = '0.7.0';
+const METADATA_VERSION = '0.8.0';
+
+const ALL_METADATA_VERSIONS = [
+  '0.1.0',
+  '0.2.0',
+  '0.3.0',
+  '0.4.0',
+  '0.5.0',
+  '0.6.0',
+  '0.7.0',
+  METADATA_VERSION,
+];
 
 // These properties are considered fundamental and should never break
 /**
@@ -143,7 +162,7 @@ const metadataUpgrades = {
       trimFrames
     );
     /**
-     * @type {TrimInfo}
+     * @type {TrimInfo & { waveformPeaks: CachedInfo['waveformPeaks'] }}
      */
     const trim = {
       frames: trimFrames,
@@ -177,9 +196,9 @@ const metadataUpgrades = {
     /**
      * @typedef {OldMetadata & {
      *   scaleCoefficient: number;
-     *   trim: Omit<TrimInfo, 'waveformPeaks'> & {
+     *   trim: TrimInfo & {
      *     waveformPeaks: Omit<
-     *       TrimInfo['waveformPeaks'],
+     *       CachedInfo['waveformPeaks'],
      *       'normalizationCoefficient'
      *     >
      *   }
@@ -233,6 +252,36 @@ const metadataUpgrades = {
       ...oldMetadata,
       pitchAdjustment: 1,
       metadataVersion: '0.7.0',
+    };
+    return newMetadata;
+  },
+  '0.7.0': async (oldMetadata) => {
+    /**
+     * @typedef {OldMetadata & {
+     *   trim: TrimInfo & {
+     *     waveformPeaks: CachedInfo['waveformPeaks'];
+     *   }
+     * }} PrevMetadata
+     */
+    const {
+      trim: { frames, waveformPeaks },
+      ...prevMetadata
+    } = /** @type {PrevMetadata} */ (oldMetadata);
+    const audioBuffer = await getSourceAudioBuffer(
+      prevMetadata.sourceFileId,
+      false
+    );
+    /** @type {CachedInfo} */
+    const cachedInfo = {
+      waveformPeaks,
+      duration: audioBuffer.duration - (frames[0] + frames[1]) / SAMPLE_RATE,
+      srcDuration: audioBuffer.duration,
+    };
+    const newMetadata = {
+      ...oldMetadata,
+      trim: { frames },
+      cachedInfo,
+      metadataVersion: '0.8.0',
     };
     return newMetadata;
   },
@@ -294,21 +343,15 @@ async function upgradeMetadata(oldMetadata, noReload) {
 }
 
 /**
- * We need waveformPeaks to be cached for fast rendering but it's not a really
- * useful part of the data to export - plus, it doesn't serialize well because
- * it's a Float32Array. So we will export without it and recompute it on
- * import.
- *
- * TODO: figure out some versioning scheme for the export if we ever change
- * the structure of the trim property.
- *
- * NOTE: For now, try to leave the trim property alone.
+ * We will leave out cachedInfo and recompute on import. The trim property is
+ * needed to compute this. The cached info is redundant and computablem and is
+ * mainly to make rendering faster.
  *
  * NOTE: We are also going to assume the existence of a few extra properties,
  * since the export is a new feature that won't process older metadata.
  *
  * @typedef {OldMetadata & {
- *   trim?: Omit<TrimInfo, 'waveformPeaks'>;
+ *   trim?: TrimInfo;
  *   slotNumber: SampleMetadata['slotNumber'];
  *   dateSampled: SampleMetadata['dateSampled'];
  *   dateModified: SampleMetadata['dateModified'];
@@ -323,6 +366,7 @@ export class SampleContainer {
     name,
     sourceFileId,
     trim,
+    cachedInfo,
     id = uuidv4(),
     userFileInfo = null,
     slotNumber = 0,
@@ -343,6 +387,7 @@ export class SampleContainer {
       name,
       sourceFileId,
       trim,
+      cachedInfo,
       userFileInfo,
       slotNumber,
       dateSampled,
@@ -612,27 +657,43 @@ export class SampleContainer {
     let preUpgradeMetadata = exportMetadata;
     if (exportMetadata.trim) {
       // For now we aren't going to detect a specific version before recreating
-      // the waveformPeaks, we will just assume that if the trim property exists
+      // the cachedInfo, we will just assume that if the trim property exists
       // it must match the structure of the type we have currently. if we ever
       // change the trim property in the future we will have to get more advanced,
       // so we should try not to do that. NOTE: this works because there was
       // no export feature when the old trim structure existed.
-      const sourceFileData = await this.getSourceFileData(
-        exportMetadata.sourceFileId
+      const audioBuffer = await getSourceAudioBuffer(
+        exportMetadata.sourceFileId,
+        false
       );
-      const audioBuffer = await getAudioBufferForAudioFileData(sourceFileData);
-      /** @type {TrimInfo} */
-      const newTrim = {
-        frames: exportMetadata.trim.frames,
+      /** @type {CachedInfo} */
+      const cachedInfo = {
         waveformPeaks: await getSamplePeaksForAudioBuffer(
           audioBuffer,
           exportMetadata.trim.frames
         ),
+        duration:
+          audioBuffer.duration -
+          (exportMetadata.trim.frames[0] + exportMetadata.trim.frames[1]) /
+            SAMPLE_RATE,
+        srcDuration: audioBuffer.duration,
       };
-      /** @type {OldMetadata & { trim: SampleMetadata['trim'] }} */
+      // we do need to copy the info into the trim field if we know it's older
+      // than a certain version.
+      /** @type {TrimInfo} */
+      const newTrim =
+        ALL_METADATA_VERSIONS.indexOf(exportMetadata.metadataVersion) <
+        ALL_METADATA_VERSIONS.indexOf('0.8.0')
+          ? {
+              frames: exportMetadata.trim.frames,
+              ...cachedInfo,
+            }
+          : exportMetadata.trim;
+      /** @type {OldMetadata & { trim: TrimInfo; cachedInfo: CachedInfo }} */
       const recreatedMetadata = {
         ...exportMetadata,
         trim: newTrim,
+        cachedInfo,
       };
       preUpgradeMetadata = recreatedMetadata;
     }
@@ -669,15 +730,20 @@ export async function getFactorySamples() {
         normalize: null,
         trim: {
           frames: [params.trim.frames[0], params.trim.frames[1]],
+        },
+        cachedInfo: {
           waveformPeaks: {
-            ...params.trim.waveformPeaks,
             positive: new Float32Array(
-              decodeBase64(params.trim.waveformPeaks.positive)
+              decodeBase64(params.cachedInfo.waveformPeaks.positive)
             ),
             negative: new Float32Array(
-              decodeBase64(params.trim.waveformPeaks.negative)
+              decodeBase64(params.cachedInfo.waveformPeaks.negative)
             ),
+            normalizationCoefficient:
+              params.cachedInfo.waveformPeaks.normalizationCoefficient,
           },
+          duration: params.cachedInfo.duration,
+          srcDuration: params.cachedInfo.srcDuration,
         },
       }),
     ])

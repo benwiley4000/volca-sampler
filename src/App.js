@@ -124,13 +124,15 @@ function App() {
     const sample = new SampleContainer.Mutable({
       name,
       sourceFileId,
-      trim: {
-        frames: trimFrames,
-        waveformPeaks,
-      },
+      trim: { frames: trimFrames },
       userFileInfo: userFile && {
         type: userFile.type,
         ext: userFileExtension,
+      },
+      cachedInfo: {
+        waveformPeaks,
+        duration: audioBuffer.duration,
+        srcDuration: audioBuffer.duration,
       },
     });
     await sample.persist();

@@ -8,6 +8,8 @@ const pcmConvert = require('pcm-convert');
 const { getPeaksForSamples, WAVEFORM_CACHED_WIDTH } = require('esm')(module)(
   './src/utils/waveform.js'
 );
+/** @type {import('./src/utils/constants.js')} */
+const { SAMPLE_RATE } = require('esm')(module)('./src/utils/constants.js');
 const { encode: encodeBase64 } = require('base64-arraybuffer');
 
 const pathPrefix = 'factory-samples';
@@ -38,17 +40,21 @@ const factorySamplesDirLocalPath = path.join(__dirname, 'public', pathPrefix);
             sourceFileId: `${pathPrefix}/${filename}`,
             trim: {
               frames: [0, 0],
-              waveformPeaks: {
-                ...waveformPeaks,
-                positive: encodeBase64(waveformPeaks.positive.buffer),
-                negative: encodeBase64(waveformPeaks.negative.buffer),
-              },
             },
             id: uuidv4(),
             // track number should be stored in first two characters
             slotNumber: Number(filename.slice(0, 2)),
             // approximate date Volca Sample was released
             dateSampled: new Date('2014-10-01').toISOString(),
+            cachedInfo: {
+              waveformPeaks: {
+                ...waveformPeaks,
+                positive: encodeBase64(waveformPeaks.positive.buffer),
+                negative: encodeBase64(waveformPeaks.negative.buffer),
+              },
+              duration: float32Data.length / SAMPLE_RATE,
+              srcDuration: float32Data.length / SAMPLE_RATE,
+            },
           };
         })
     )

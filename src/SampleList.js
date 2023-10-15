@@ -141,7 +141,7 @@ const SampleListItem = React.memo(
           {waveformSeen && (
             <>
               <WaveformDisplay
-                peaks={sample.metadata.trim.waveformPeaks}
+                peaks={sample.metadata.cachedInfo.waveformPeaks}
                 scaleCoefficient={sample.metadata.normalize ? undefined : 1}
               />
               <WaveformListItemPlayback

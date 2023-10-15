@@ -15,6 +15,7 @@ import {
 } from './utils/audioData.js';
 import { getSyroSampleBuffer } from './utils/syro.js';
 import { formatLongTime } from './utils/datetime';
+import { SAMPLE_RATE } from './utils/constants.js';
 
 import classes from './VolcaTransferControl.module.scss';
 import SlotNumberInput from './SlotNumberInput.js';
@@ -66,6 +67,15 @@ function VolcaTransferControl({
     [samples]
   );
 
+  const totalSourceDuration = useMemo(() => {
+    let duration = 0;
+    for (const [, sample] of selectedSamples) {
+      duration += sample.metadata.cachedInfo.duration;
+    }
+    return duration;
+  }, [selectedSamples]);
+  const durationIsTooLong = totalSourceDuration > 65;
+
   const duplicateSlots = useMemo(() => {
     /** @type {Map<number, number>}  */
     const slotCounts = new Map();
@@ -95,9 +105,13 @@ function VolcaTransferControl({
       };
     }
   }, [syroTransferState]);
-  const [targetWavDataSize, setTargetWavDataSize] = useState(
-    /** @type {number | null} */ (null)
-  );
+  const targetWavDataSize = useMemo(() => {
+    let size = selectedSamples.size * 44;
+    for (const [, sample] of selectedSamples) {
+      size += sample.metadata.cachedInfo.duration * SAMPLE_RATE * 2; // 16-bit
+    }
+    return size;
+  }, [selectedSamples]);
   const [dataStartPoints, setDataStartPoints] = useState(
     /** @type {number[]} */ ([])
   );
@@ -118,6 +132,7 @@ function VolcaTransferControl({
   const canTransferSamples = Boolean(
     selectedSamples.size &&
       !duplicateSlots.length &&
+      !durationIsTooLong &&
       selectedSamples.size <= 110
   );
   useEffect(() => {
@@ -125,7 +140,6 @@ function VolcaTransferControl({
     let cancelled = false;
     setSyroProgress(0);
     setSyroTransferState('idle');
-    setTargetWavDataSize(null);
     setSyroAudioBuffer(null);
     setCallbackOnSyroBuffer(null);
     stop.current = () => {
@@ -144,22 +158,19 @@ function VolcaTransferControl({
         cancelWork();
         cancelled = true;
       };
-      syroBufferPromise.then(
-        async ({ syroBuffer, dataSizes, dataStartPoints }) => {
-          if (cancelled) {
-            return;
-          }
-          setTargetWavDataSize(dataSizes[0]);
-          stop.current = () => {
-            cancelled = true;
-          };
-          setDataStartPoints(dataStartPoints.map((p) => p / syroBuffer.length));
-          const audioBuffer = await getAudioBufferForAudioFileData(syroBuffer);
-          if (!cancelled) {
-            setSyroAudioBuffer(audioBuffer);
-          }
+      syroBufferPromise.then(async ({ syroBuffer, dataStartPoints }) => {
+        if (cancelled) {
+          return;
         }
-      );
+        stop.current = () => {
+          cancelled = true;
+        };
+        setDataStartPoints(dataStartPoints.map((p) => p / syroBuffer.length));
+        const audioBuffer = await getAudioBufferForAudioFileData(syroBuffer);
+        if (!cancelled) {
+          setSyroAudioBuffer(audioBuffer);
+        }
+      });
     } catch (err) {
       console.error(err);
       setSyroAudioBuffer(new Error(String(err)));
@@ -206,9 +217,7 @@ function VolcaTransferControl({
   const transferInfo = (
     <div className={classes.transferInfo}>
       <strong>Memory footprint:</strong>{' '}
-      {typeof targetWavDataSize === 'number'
-        ? byteSize(targetWavDataSize).toString()
-        : 'checking...'}
+      {byteSize(targetWavDataSize).toString()}
       <br />
       <strong>Time to transfer:</strong>{' '}
       {syroAudioBuffer instanceof AudioBuffer
@@ -311,16 +320,27 @@ function VolcaTransferControl({
         <Modal.Body>
           {transferInfo}
           {duplicateSlots.length > 0 && (
-            <p className={classes.duplicate}>
+            <p className={classes.invalidMessage}>
               <strong>
                 You cannot transfer multiple samples to the same slot.
+                <br />
+                (Slots {duplicateSlots.join(', ')})
               </strong>
             </p>
           )}
           {selectedSamples.size > 110 && (
-            <p className={classes.duplicate}>
+            <p className={classes.invalidMessage}>
               <strong>
                 You cannot transfer more than 110 samples at a time.
+              </strong>
+            </p>
+          )}
+          {durationIsTooLong && (
+            <p className={classes.invalidMessage}>
+              <strong>
+                The combined length of your samples is{' '}
+                {totalSourceDuration.toFixed(1)} seconds. The max length you can
+                transfer is 65 seconds.
               </strong>
             </p>
           )}

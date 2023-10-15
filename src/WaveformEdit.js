@@ -20,6 +20,7 @@ import {
   useWaveformPlayback,
 } from './utils/waveform.js';
 import { formatShortTime } from './utils/datetime.js';
+import { SAMPLE_RATE } from './utils/constants.js';
 import WaveformDisplay from './WaveformDisplay.js';
 import WaveformPlayback from './WaveformPlayback.js';
 import NormalizeControl from './NomalizeControl.js';
@@ -111,9 +112,13 @@ const WaveformEdit = React.memo(
           return metadata;
         }
         return {
-          trim: {
-            frames: trimFrames,
+          trim: { frames: trimFrames },
+          cachedInfo: {
             waveformPeaks,
+            duration:
+              sourceAudioBuffer.duration -
+              (trimFrames[0] + trimFrames[1]) / SAMPLE_RATE,
+            srcDuration: sourceAudioBuffer.duration,
           },
         };
       });

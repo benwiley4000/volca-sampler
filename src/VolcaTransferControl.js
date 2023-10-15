@@ -232,7 +232,9 @@ function VolcaTransferControl({
           <i>
             <small>
               Checking..{' '}
-              {syroProgress ? `${(syroProgress * 100).toFixed(0)}%` : ''}
+              {syroProgress && totalSourceDuration >= 10
+                ? `${(syroProgress * 100).toFixed(0)}%`
+                : ''}
             </small>
           </i>
         )}

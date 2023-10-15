@@ -14,7 +14,7 @@ import {
   useAudioPlaybackContext,
 } from './utils/audioData.js';
 import { getSyroSampleBuffer } from './utils/syro.js';
-import { formatLongTime } from './utils/datetime';
+import { formatLongTime, formatShortTime } from './utils/datetime';
 import { SAMPLE_RATE } from './utils/constants.js';
 
 import classes from './VolcaTransferControl.module.scss';
@@ -215,7 +215,8 @@ function VolcaTransferControl({
   const transferInfo = (
     <>
       <div>
-        <strong>Sample length:</strong> {formatLongTime(totalSourceDuration)}
+        <strong>Sample length:</strong>{' '}
+        {formatShortTime(totalSourceDuration, 2)}
       </div>
       <div>
         <strong>Memory footprint:</strong>{' '}

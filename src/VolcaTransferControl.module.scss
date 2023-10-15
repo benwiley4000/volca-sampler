@@ -3,13 +3,23 @@
 @import '~bootstrap/scss/mixins';
 @import '~bootstrap/scss/variables';
 
-.transferInfo {
+.transferInfoBox {
   width: 220px;
   white-space: nowrap;
   margin-bottom: 1rem;
   background-color: #f3f3f3;
   padding: 0.75rem;
   border-radius: 0.25rem;
+}
+
+.transferInfoForModal {
+  display: flex;
+  column-gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.errors summary {
+  margin-bottom: 1rem;
 }
 
 .invalidMessage {

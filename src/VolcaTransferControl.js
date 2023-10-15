@@ -215,17 +215,29 @@ function VolcaTransferControl({
     syroTransferState === 'transferring' && transferProgress < 1;
 
   const transferInfo = (
-    <div className={classes.transferInfo}>
-      <strong>Memory footprint:</strong>{' '}
-      {byteSize(targetWavDataSize).toString()}
-      <br />
-      <strong>Time to transfer:</strong>{' '}
-      {syroAudioBuffer instanceof AudioBuffer
-        ? formatLongTime(syroAudioBuffer.duration)
-        : syroAudioBuffer instanceof Error
-        ? 'error'
-        : 'checking...'}
-    </div>
+    <>
+      <div>
+        <strong>Sample length:</strong>{' '}
+        {formatLongTime(totalSourceDuration)}
+      </div>
+      <div>
+        <strong>Memory footprint:</strong>{' '}
+        {byteSize(targetWavDataSize).toString()}
+      </div>
+      <div>
+        <strong>Time to transfer:</strong>{' '}
+        {syroAudioBuffer instanceof AudioBuffer ? (
+          formatLongTime(syroAudioBuffer.duration)
+        ) : syroAudioBuffer instanceof Error ? (
+          'error'
+        ) : (
+          <i>
+            Computing...{' '}
+            {syroProgress ? `${(syroProgress * 100).toFixed(0)}%` : ''}
+          </i>
+        )}
+      </div>
+    </>
   );
 
   const {
@@ -275,7 +287,7 @@ function VolcaTransferControl({
     <>
       {!justTheButton && (
         <>
-          {transferInfo}
+          <div className={classes.transferInfoBox}>{transferInfo}</div>
           <SlotNumberInput
             slotNumber={samples[0].metadata.slotNumber}
             onSlotNumberUpdate={
@@ -318,31 +330,43 @@ function VolcaTransferControl({
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {transferInfo}
-          {duplicateSlots.length > 0 && (
-            <p className={classes.invalidMessage}>
-              <strong>
-                You cannot transfer multiple samples to the same slot.
-                <br />
-                (Slots {duplicateSlots.join(', ')})
-              </strong>
-            </p>
+          {canTransferSamples && (
+            <p className={classes.transferInfoForModal}>{transferInfo}</p>
           )}
-          {selectedSamples.size > 110 && (
-            <p className={classes.invalidMessage}>
-              <strong>
-                You cannot transfer more than 110 samples at a time.
-              </strong>
-            </p>
-          )}
-          {durationIsTooLong && (
-            <p className={classes.invalidMessage}>
-              <strong>
-                The combined length of your samples is{' '}
-                {totalSourceDuration.toFixed(1)} seconds. The max length you can
-                transfer is 65 seconds.
-              </strong>
-            </p>
+          {!canTransferSamples && (
+            <details className={classes.errors}>
+              <summary>
+                There are some issues you need to resolve to continue the
+                transfer.
+              </summary>
+              {duplicateSlots.length > 0 && (
+                <p className={classes.invalidMessage}>
+                  You cannot transfer multiple samples to the same slot.
+                  <br />
+                  (Slot{duplicateSlots.length > 1 && 's'}{' '}
+                  <strong>{duplicateSlots.join(', ')}</strong>)
+                </p>
+              )}
+              {!selectedSamples.size && (
+                <p className={classes.invalidMessage}>
+                  You must select at least one sample to transfer.
+                </p>
+              )}
+              {selectedSamples.size > 110 && (
+                <p className={classes.invalidMessage}>
+                  You cannot transfer more than <strong>110</strong> samples at
+                  once.
+                </p>
+              )}
+              {durationIsTooLong && (
+                <p className={classes.invalidMessage}>
+                  The combined length of your samples is{' '}
+                  <strong>{totalSourceDuration.toFixed(1)} seconds</strong>. The
+                  maximum length you can transfer is <strong>65 seconds</strong>
+                  .
+                </p>
+              )}
+            </details>
           )}
           <SampleSelectionTable
             samples={samplesMap}
@@ -371,10 +395,7 @@ function VolcaTransferControl({
               setInfoBeforeTransferModalOpen(false);
             }}
           >
-            Continue{' '}
-            {canTransferSamples &&
-              syroProgress < 1 &&
-              `(${(syroProgress * 100).toFixed(0)}%)`}
+            Continue
           </Button>
         </Modal.Footer>
       </Modal>

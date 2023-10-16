@@ -126,7 +126,8 @@ const SampleSelectionTable = React.memo(
                 <td title={metadata.name}>{metadata.name}</td>
                 <td
                   className={
-                    duplicateSlots.has(metadata.slotNumber)
+                    duplicateSlots.has(metadata.slotNumber) &&
+                    selectedSampleIds.has(id)
                       ? classes.duplicateSlot
                       : undefined
                   }

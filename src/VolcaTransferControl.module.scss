@@ -16,10 +16,22 @@
   display: flex;
   column-gap: 1rem;
   flex-wrap: wrap;
+
+  &.cannotTransfer {
+    visibility: hidden;
+    pointer-events: none;
+  }
 }
 
-.errors summary {
-  margin-bottom: 1rem;
+.summary {
+  position: relative;
+}
+
+.errors {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
 }
 
 .invalidMessage {

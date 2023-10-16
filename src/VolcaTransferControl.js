@@ -332,36 +332,37 @@ function VolcaTransferControl({
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {canTransferSamples && (
-            <p className={classes.transferInfoForModal}>{transferInfo}</p>
-          )}
-          {!canTransferSamples && (
-            <details className={classes.errors}>
-              <summary>
-                There are some issues you need to resolve to continue the
-                transfer.
-              </summary>
-              {duplicateSlots.length > 0 && (
-                <p className={classes.invalidMessage}>
-                  You cannot transfer multiple samples to the same slot.
-                  <br />
-                  (Slot{duplicateSlots.length > 1 && 's'}{' '}
-                  <strong>{duplicateSlots.join(', ')}</strong>)
-                </p>
-              )}
-              {!selectedSamples.size && (
-                <p className={classes.invalidMessage}>
-                  You must select at least one sample to transfer.
-                </p>
-              )}
-              {selectedSamples.size > 110 && (
-                <p className={classes.invalidMessage}>
-                  You cannot transfer more than <strong>110</strong> samples at
-                  once.
-                </p>
-              )}
-            </details>
-          )}
+          <div className={classes.summary}>
+            <p
+              className={[
+                classes.transferInfoForModal,
+                canTransferSamples ? '' : classes.cannotTransfer,
+              ].join(' ')}
+            >
+              {transferInfo}
+            </p>
+            {!canTransferSamples && (
+              <div className={classes.errors}>
+                {duplicateSlots.length > 0 ? (
+                  <p className={classes.invalidMessage}>
+                    You cannot transfer multiple samples to the same slot.
+                    <br />
+                    (Slot{duplicateSlots.length > 1 && 's'}{' '}
+                    <strong>{duplicateSlots.join(', ')}</strong>)
+                  </p>
+                ) : !selectedSamples.size ? (
+                  <p className={classes.invalidMessage}>
+                    You must select at least one sample to transfer.
+                  </p>
+                ) : selectedSamples.size > 110 ? (
+                  <p className={classes.invalidMessage}>
+                    You cannot transfer more than <strong>110</strong> samples
+                    at once.
+                  </p>
+                ) : null}{' '}
+              </div>
+            )}
+          </div>
           <SampleSelectionTable
             samples={samplesMap}
             selectedSampleIds={selectedSampleIds}
@@ -381,8 +382,7 @@ function VolcaTransferControl({
             type="button"
             variant="primary"
             disabled={
-              !(syroAudioBuffer instanceof AudioBuffer) ||
-              duplicateSlots.length > 0
+              !(syroAudioBuffer instanceof AudioBuffer) || !canTransferSamples
             }
             onClick={() => {
               setPreTransferModalOpen(true);

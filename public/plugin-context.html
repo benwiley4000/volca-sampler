@@ -89,9 +89,9 @@
               respond({
                 messageType: data.messageType,
                 messageId: data.messageId,
-                error: 'Invalid parameters',
+                error: 'Plugin failed to run',
               });
-              return;
+              window.location.reload();
             }
             respond({
               messageType: data.messageType,

@@ -94,34 +94,48 @@ async function sampleTransformPlugin(iframe, audioBuffer) {
     '*'
   );
 
-  const newAudioData = await /** @type {Promise<Float32Array>} */ (
-    new Promise((resolve, reject) => {
-      /** @type {ReturnType<typeof setTimeout>} */
-      let timeout;
+  /** @type {Float32Array} */
+  let newAudioData;
+  try {
+    newAudioData = await /** @type {Promise<Float32Array>} */ (
+      new Promise((resolve, reject) => {
+        /** @type {ReturnType<typeof setTimeout>} */
+        let timeout;
 
-      /** @param {MessageEvent} event */
-      const onMessage = ({ source, data }) => {
-        if (source !== iframe.contentWindow) return;
-        if (data.messageId !== messageId) return;
-        if (data.messageType !== 'sampleTransform') return;
-        if (data.error) {
-          console.error('Plugin call failed:', iframe.id);
-          reject();
-        } else {
-          resolve(data.newAudioData);
-        }
-        clearTimeout(timeout);
-        window.removeEventListener('message', onMessage);
-      };
+        /** @param {MessageEvent} event */
+        const onMessage = ({ source, data }) => {
+          if (source !== iframe.contentWindow) return;
+          if (data.messageId !== messageId) return;
+          if (data.messageType !== 'sampleTransform') return;
+          if (data.error) {
+            if (data.error === 'Invalid parameters') {
+              console.error('Invalid plugin input:', iframe.id);
+              reject(new Error('Invalid plugin input'));
+            } else {
+              console.error('Plugin call failed:', iframe.id);
+              reject(new Error('Plugin failed to run'));
+            }
+          } else {
+            resolve(data.newAudioData);
+          }
+          clearTimeout(timeout);
+          window.removeEventListener('message', onMessage);
+        };
 
-      window.addEventListener('message', onMessage);
-      timeout = setTimeout(() => {
-        console.error('Plugin took too long to run:', iframe.id);
-        reject();
-        window.removeEventListener('message', onMessage);
-      }, PLUGIN_TIMEOUT);
-    })
-  );
+        window.addEventListener('message', onMessage);
+        timeout = setTimeout(() => {
+          console.error('Plugin took too long to run:', iframe.id);
+          reject(new Error('Plugin took too long to return'));
+          window.removeEventListener('message', onMessage);
+        }, PLUGIN_TIMEOUT);
+      })
+    );
+  } catch (err) {
+    if (!(err instanceof Error && err.message === 'Invalid plugin input')) {
+      document.body.removeChild(iframe);
+    }
+    throw err;
+  }
 
   const newAudioBuffer = new AudioBuffer({
     length: newAudioData.length,

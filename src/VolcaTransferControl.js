@@ -345,10 +345,9 @@ function VolcaTransferControl({
               <div className={classes.errors}>
                 {duplicateSlots.length > 0 ? (
                   <p className={classes.invalidMessage}>
-                    You cannot transfer multiple samples to the same slot.
-                    <br />
-                    (Slot{duplicateSlots.length > 1 && 's'}{' '}
-                    <strong>{duplicateSlots.join(', ')}</strong>)
+                    You cannot transfer multiple samples to the same slot (slot
+                    {duplicateSlots.length > 1 && 's'}{' '}
+                    <strong>{duplicateSlots.join(', ')}</strong>).
                   </p>
                 ) : !selectedSamples.size ? (
                   <p className={classes.invalidMessage}>

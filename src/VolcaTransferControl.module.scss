@@ -12,21 +12,21 @@
   border-radius: 0.25rem;
 }
 
+.summary {
+  position: relative;
+}
+
+
 .transferInfoForModal {
   display: flex;
   column-gap: 1rem;
   flex-wrap: wrap;
 
   &.cannotTransfer {
-    visibility: hidden;
+    opacity: 0;
     pointer-events: none;
   }
 }
-
-.summary {
-  position: relative;
-}
-
 .errors {
   position: absolute;
   top: 0;

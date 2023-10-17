@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta name="robots" content="noindex" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval';"
+    />
+  </head>
+  <body>
+    <script>
+      // eval outside of the scope of any of the variables in the setup script
+      async function installPlugin(pluginSource) {
+        try {
+          eval(pluginSource);
+          if (
+            typeof samplePlugin !== 'function' ||
+            !(
+              (await samplePlugin(
+                new AudioBuffer({ length: 1, sampleRate: 31250 })
+              )) instanceof AudioBuffer
+            )
+          ) {
+            return false;
+          }
+          window.samplePlugin = samplePlugin;
+        } catch (err) {
+          console.error(err);
+          return false;
+        }
+        return true;
+      }
+
+      {
+        function respond(data) {
+          window.top.postMessage(data, window.location.origin);
+        }
+
+        window.addEventListener('message', async ({ data, origin }) => {
+          if (origin !== window.location.origin) {
+            console.error('Unexpected parent context');
+            return;
+          }
+
+          if (data.messageType === 'pluginInstall') {
+            const { pluginSource } = data;
+            if (!(await installPlugin(pluginSource))) {
+              respond({
+                messageType: data.messageType,
+                messageId: data.messageId,
+                error: 'Invalid plugin',
+              });
+              window.location.reload();
+            }
+            respond({
+              messageType: data.messageType,
+              messageId: data.messageId,
+              message: 'Plugin installed',
+            });
+            return;
+          }
+
+          if (data.messageType === 'sampleTransform') {
+            const { audioData, sampleRate } = data;
+            if (
+              !(
+                audioData instanceof Float32Array &&
+                typeof sampleRate === 'number'
+              )
+            ) {
+              respond({
+                messageType: data.messageType,
+                messageId: data.messageId,
+                error: 'Invalid parameters',
+              });
+              return;
+            }
+            let newAudioData;
+            try {
+              const audioBuffer = new AudioBuffer({
+                length: audioData.length,
+                sampleRate,
+              });
+              audioBuffer.copyToChannel(audioData, 0);
+              const newAudioBuffer = await window.samplePlugin(audioBuffer);
+              newAudioData = newAudioBuffer.getChannelData(0);
+            } catch (err) {
+              console.error(err);
+              respond({
+                messageType: data.messageType,
+                messageId: data.messageId,
+                error: 'Invalid parameters',
+              });
+              return;
+            }
+            respond({
+              messageType: data.messageType,
+              messageId: data.messageId,
+              newAudioData,
+            });
+            return;
+          }
+        });
+      }
+    </script>
+  </body>
+</html>

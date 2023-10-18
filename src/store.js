@@ -108,17 +108,6 @@ export async function storeAudioSourceFile(audioFileData, externalId) {
 
 const METADATA_VERSION = '0.8.0';
 
-const ALL_METADATA_VERSIONS = [
-  '0.1.0',
-  '0.2.0',
-  '0.3.0',
-  '0.4.0',
-  '0.5.0',
-  '0.6.0',
-  '0.7.0',
-  METADATA_VERSION,
-];
-
 // These properties are considered fundamental and should never break
 /**
  * @typedef {{
@@ -287,6 +276,98 @@ const metadataUpgrades = {
   },
 };
 
+/**
+ * We will leave out cachedInfo and recompute on import. The trim property is
+ * needed to compute this. The cached info is redundant and computablem and is
+ * mainly to make rendering faster.
+ *
+ * NOTE: We are also going to assume the existence of a few extra properties,
+ * since the export is a new feature that won't process older metadata.
+ *
+ * @typedef {OldMetadata & {
+ *   trim?: TrimInfo;
+ *   slotNumber: SampleMetadata['slotNumber'];
+ *   dateSampled: SampleMetadata['dateSampled'];
+ *   dateModified: SampleMetadata['dateModified'];
+ * }} SampleMetadataExport
+ */
+
+/** @typedef {import('./utils/waveform.js').SamplePeaks} SamplePeaks */
+
+/**
+ * @type {Record<string, (exportMetadata: SampleMetadataExport) => OldMetadata | Promise<OldMetadata>>}
+ */
+const exportMetadataToOldMetadata = {
+  '0.6.0': async (exportMetadata) => {
+    /**
+     * @typedef {SampleMetadataExport & { trim: TrimInfo }} ExportedMetadata
+     */
+    const {
+      trim: { frames },
+      ...exportedMetadata
+    } = /** @type {ExportedMetadata} */ (exportMetadata);
+    const audioBuffer = await getSourceAudioBuffer(
+      exportMetadata.sourceFileId,
+      false
+    );
+    const waveformPeaks = await getSamplePeaksForAudioBuffer(
+      audioBuffer,
+      frames
+    );
+    /**
+     * @type {OldMetadata & {
+     *   trim: TrimInfo & { waveformPeaks: SamplePeaks }
+     * }}
+     */
+    const oldMetadata = {
+      ...exportedMetadata,
+      trim: {
+        frames,
+        waveformPeaks,
+      },
+    };
+    return oldMetadata;
+  },
+  '0.7.0': (exportMetadata) => {
+    return exportMetadataToOldMetadata['0.6.0'](exportMetadata);
+  },
+  '0.8.0': async (exportMetadata) => {
+    /**
+     * @typedef {SampleMetadataExport & {
+     *   trim: TrimInfo
+     * }} ExportedMetadata
+     */
+    const exportedMetadata = /** @type {ExportedMetadata} */ (exportMetadata);
+    const audioBuffer = await getSourceAudioBuffer(
+      exportMetadata.sourceFileId,
+      false
+    );
+    const waveformPeaks = await getSamplePeaksForAudioBuffer(
+      audioBuffer,
+      exportedMetadata.trim.frames
+    );
+    /** @type {CachedInfo} */
+    const cachedInfo = {
+      waveformPeaks,
+      duration:
+        audioBuffer.duration -
+        (exportedMetadata.trim.frames[0] + exportedMetadata.trim.frames[1]) /
+          SAMPLE_RATE,
+      srcDuration: audioBuffer.duration,
+    };
+    /**
+     * @type {OldMetadata & {
+     *   cachedInfo: CachedInfo
+     * }}
+     */
+    const oldMetadata = {
+      ...exportedMetadata,
+      cachedInfo,
+    };
+    return oldMetadata;
+  },
+};
+
 let isReloadedToUpgrade =
   typeof window !== 'undefined' &&
   new URLSearchParams(window.location.search).has('reloaded_to_upgrade');
@@ -341,22 +422,6 @@ async function upgradeMetadata(oldMetadata, noReload) {
   }
   return /** @type {SampleMetadata} */ (/** @type {unknown} */ (prevMetadata));
 }
-
-/**
- * We will leave out cachedInfo and recompute on import. The trim property is
- * needed to compute this. The cached info is redundant and computablem and is
- * mainly to make rendering faster.
- *
- * NOTE: We are also going to assume the existence of a few extra properties,
- * since the export is a new feature that won't process older metadata.
- *
- * @typedef {OldMetadata & {
- *   trim?: TrimInfo;
- *   slotNumber: SampleMetadata['slotNumber'];
- *   dateSampled: SampleMetadata['dateSampled'];
- *   dateModified: SampleMetadata['dateModified'];
- * }} SampleMetadataExport
- */
 
 export class SampleContainer {
   /**
@@ -653,51 +718,14 @@ export class SampleContainer {
    * @return {Promise<SampleContainer>}
    */
   static async importToStorage(sampleId, exportMetadata) {
-    /** @type {OldMetadata} */
-    let preUpgradeMetadata = exportMetadata;
-    if (exportMetadata.trim) {
-      // For now we aren't going to detect a specific version before recreating
-      // the cachedInfo, we will just assume that if the trim property exists
-      // it must match the structure of the type we have currently. if we ever
-      // change the trim property in the future we will have to get more advanced,
-      // so we should try not to do that. NOTE: this works because there was
-      // no export feature when the old trim structure existed.
-      const audioBuffer = await getSourceAudioBuffer(
-        exportMetadata.sourceFileId,
-        false
-      );
-      /** @type {CachedInfo} */
-      const cachedInfo = {
-        waveformPeaks: await getSamplePeaksForAudioBuffer(
-          audioBuffer,
-          exportMetadata.trim.frames
-        ),
-        duration:
-          audioBuffer.duration -
-          (exportMetadata.trim.frames[0] + exportMetadata.trim.frames[1]) /
-            SAMPLE_RATE,
-        srcDuration: audioBuffer.duration,
-      };
-      // we do need to copy the info into the trim field if we know it's older
-      // than a certain version.
-      /** @type {TrimInfo} */
-      const newTrim =
-        ALL_METADATA_VERSIONS.indexOf(exportMetadata.metadataVersion) <
-        ALL_METADATA_VERSIONS.indexOf('0.8.0')
-          ? {
-              frames: exportMetadata.trim.frames,
-              ...cachedInfo,
-            }
-          : exportMetadata.trim;
-      /** @type {OldMetadata & { trim: TrimInfo; cachedInfo: CachedInfo }} */
-      const recreatedMetadata = {
-        ...exportMetadata,
-        trim: newTrim,
-        cachedInfo,
-      };
-      preUpgradeMetadata = recreatedMetadata;
+    const toOldMetadata =
+      exportMetadataToOldMetadata[exportMetadata.metadataVersion];
+    if (!toOldMetadata) {
+      console.error('Failed to import metadata', exportMetadata);
+      throw new Error('Failed to import metadata with no import migration');
     }
-    const upgradedMetadata = await upgradeMetadata(preUpgradeMetadata, true);
+    const oldMetadata = await toOldMetadata(exportMetadata);
+    const upgradedMetadata = await upgradeMetadata(oldMetadata, true);
     const sampleContainer = new SampleContainer.Mutable({
       id: sampleId,
       ...upgradedMetadata,

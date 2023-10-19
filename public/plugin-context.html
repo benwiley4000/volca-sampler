@@ -83,6 +83,12 @@
               });
               audioBuffer.copyToChannel(audioData, 0);
               const newAudioBuffer = await window.samplePlugin(audioBuffer);
+              if (newAudioBuffer.numberOfChannels > 1) {
+                console.warn(
+                  'Warning: Plugin returned audio buffer with more than one ' +
+                    'channel, but only the first channel will be read.'
+                );
+              }
               newAudioData = newAudioBuffer.getChannelData(0);
             } catch (err) {
               console.error(err);

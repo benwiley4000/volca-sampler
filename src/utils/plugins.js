@@ -12,6 +12,7 @@ export async function installPlugin(id, pluginSource) {
   iframe.hidden = true;
   iframe.title = 'plugin-context';
   iframe.src = 'plugin-context.html';
+  iframe.allow = 'none';
   iframe.setAttribute('sandbox', 'allow-scripts');
 
   document.body.appendChild(iframe);

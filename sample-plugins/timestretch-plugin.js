@@ -19,6 +19,7 @@ async function samplePlugin(audioBuffer) {
     length: Math.floor(length / stretchFactor)
   });
 
+  // Use SoundTouchJS to write a timestretched copy to newAudioBuffer
   {
     const channelData = newAudioBuffer.getChannelData(0);
 
@@ -48,14 +49,12 @@ async function samplePlugin(audioBuffer) {
 }
 
 /**
- * Note: If you know you will only use this plugin with short samples, you
- * can bring this number down to make the plugin use less memory. Note that
- * the plugin will only be loaded one time. The number should be well above
- * the max number of seconds for a given sample you might use with the plugin.
- * 
- * A 200 second buffer will use 25MB of memory. So if you know all your samples
- * are below 3-5 seconds, you can probably buffer around 10 seconds. Play with
- * the number if you run into issues.
+ * Note: assuming a maximum possible sample length around 130 seconds, prebuffer
+ * an AudioBuffer 200 seconds long. This demands about 25MB of static memory
+ * allocation. If this is too much for some reason, the user can lower this
+ * to something that is reasonably above the maximum sample length the plugin
+ * will be used for. For example if all samples are below 5 seconds long, a
+ * 15 second buffer should be plenty.
  */
 const EXTRA_LONG_BUFFER_LENGTH_SECS = 200;
 

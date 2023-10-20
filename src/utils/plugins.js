@@ -2,6 +2,9 @@ import { v4 as uuidv4 } from 'uuid';
 
 const PLUGIN_TIMEOUT = 10;
 
+/** @type {Record<string, Promise<void>>} */
+const pluginInstallPromises = {};
+
 /**
  * @param {string} id
  * @param {string} pluginSource
@@ -14,6 +17,9 @@ export async function installPlugin(id, pluginSource) {
   iframe.src = 'plugin-context.html';
   iframe.allow = 'none';
   iframe.setAttribute('sandbox', 'allow-scripts');
+
+  let onInstalled = () => {};
+  pluginInstallPromises[id] = new Promise(resolve => onInstalled = resolve);
 
   document.body.appendChild(iframe);
 
@@ -68,6 +74,8 @@ export async function installPlugin(id, pluginSource) {
     document.body.removeChild(iframe);
     throw err;
   }
+
+  onInstalled();
 }
 
 /**
@@ -150,7 +158,8 @@ async function sampleTransformPlugin(iframe, audioBuffer) {
 /**
  * @param {string} id
  */
-export function getPlugin(id) {
+export async function getPlugin(id) {
+  await pluginInstallPromises[id];
   const iframe = document.getElementById(id);
   if (iframe && iframe instanceof HTMLIFrameElement) {
     return {

@@ -17,7 +17,7 @@
             typeof samplePlugin !== 'function' ||
             !(
               (await samplePlugin(
-                new AudioBuffer({ length: 1, sampleRate: 31250 })
+                new AudioBuffer({ length: 10, sampleRate: 31250 })
               )) instanceof AudioBuffer
             )
           ) {

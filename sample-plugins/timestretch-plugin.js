@@ -48,6 +48,18 @@ async function samplePlugin(audioBuffer) {
 }
 
 /**
+ * Note: If you know you will only use this plugin with short samples, you
+ * can bring this number down to make the plugin use less memory. Note that
+ * the plugin will only be loaded one time. The number should be well above
+ * the max number of seconds for a given sample you might use with the plugin.
+ * 
+ * A 200 second buffer will use 25MB of memory. So if you know all your samples
+ * are below 3-5 seconds, you can probably buffer around 10 seconds. Play with
+ * the number if you run into issues.
+ */
+const EXTRA_LONG_BUFFER_LENGTH_SECS = 200;
+
+/**
  * For some reason SoundTouchJS doesn't do well with audio buffers
  * that are only as long as the data they contain. The solution is
  * to preload an audio buffer larger than any data we could process,
@@ -56,7 +68,7 @@ async function samplePlugin(audioBuffer) {
  */
 const extraLongAudioBuffer = new AudioBuffer({
   numberOfChannels: 1,
-  length: 150 * 31250,
+  length: EXTRA_LONG_BUFFER_LENGTH_SECS * 31250,
   sampleRate: 31250
 });
 

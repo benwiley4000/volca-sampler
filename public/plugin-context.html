@@ -43,6 +43,10 @@
           }
 
           if (data.messageType === 'pluginInstall') {
+            respond({
+              messageType: 'messageReceived',
+              messageId: data.messageId,
+            });
             const { pluginSource } = data;
             if (!(await installPlugin(pluginSource))) {
               respond({
@@ -82,6 +86,10 @@
                 sampleRate,
               });
               audioBuffer.copyToChannel(audioData, 0);
+              respond({
+                messageType: 'messageReceived',
+                messageId: data.messageId,
+              });
               const newAudioBuffer = await window.samplePlugin(audioBuffer);
               if (newAudioBuffer.numberOfChannels > 1) {
                 console.warn(

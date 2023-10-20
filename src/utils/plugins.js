@@ -51,6 +51,14 @@ export async function installPlugin(id, pluginSource) {
         const onMessage = ({ source, data }) => {
           if (source !== iframe.contentWindow) return;
           if (data.messageId !== messageId) return;
+          if (data.messageType === 'receivedMessage') {
+            timeout = setTimeout(() => {
+              console.error('Plugin took too long to install:', id);
+              reject();
+              window.removeEventListener('message', onMessage);
+            }, PLUGIN_TIMEOUT);
+            return;
+          }
           if (data.messageType !== 'pluginInstall') return;
           if (data.error) {
             console.error('Plugin failed to install:', id);
@@ -63,11 +71,6 @@ export async function installPlugin(id, pluginSource) {
         };
 
         window.addEventListener('message', onMessage);
-        timeout = setTimeout(() => {
-          console.error('Plugin took too long to install:', id);
-          reject();
-          window.removeEventListener('message', onMessage);
-        }, PLUGIN_TIMEOUT);
       })
     );
   } catch (err) {
@@ -115,6 +118,14 @@ async function sampleTransformPlugin(iframe, audioBuffer) {
         const onMessage = ({ source, data }) => {
           if (source !== iframe.contentWindow) return;
           if (data.messageId !== messageId) return;
+          if (data.messageType === 'receivedMessage') {
+            timeout = setTimeout(() => {
+              console.error('Plugin took too long to run:', iframe.id);
+              reject(new Error('Plugin took too long to return'));
+              window.removeEventListener('message', onMessage);
+            }, PLUGIN_TIMEOUT);
+            return;
+          }
           if (data.messageType !== 'sampleTransform') return;
           if (data.error) {
             if (data.error === 'Invalid parameters') {
@@ -132,11 +143,6 @@ async function sampleTransformPlugin(iframe, audioBuffer) {
         };
 
         window.addEventListener('message', onMessage);
-        timeout = setTimeout(() => {
-          console.error('Plugin took too long to run:', iframe.id);
-          reject(new Error('Plugin took too long to return'));
-          window.removeEventListener('message', onMessage);
-        }, PLUGIN_TIMEOUT);
       })
     );
   } catch (err) {

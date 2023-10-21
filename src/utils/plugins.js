@@ -2,7 +2,13 @@ import { v4 as uuidv4 } from 'uuid';
 
 const PLUGIN_TIMEOUT = 10;
 
-/** @type {Record<string, Promise<void>>} */
+/**
+ * @typedef {{ value: number; min: number; max: number }} PluginParamDef
+ * @typedef {Record<string, PluginParamDef>} PluginParamsDef
+ * @typedef {Record<string, number>} PluginParams
+ */
+
+/** @type {Record<string, Promise<PluginParamsDef>>} */
 const pluginInstallPromises = {};
 
 /**
@@ -18,8 +24,9 @@ export async function installPlugin(id, pluginSource) {
   iframe.allow = 'none';
   iframe.setAttribute('sandbox', 'allow-scripts');
 
+  /** @type {(params: PluginParamsDef) => void} */
   let onInstalled = () => {};
-  pluginInstallPromises[id] = new Promise(resolve => onInstalled = resolve);
+  pluginInstallPromises[id] = new Promise((resolve) => (onInstalled = resolve));
 
   document.body.appendChild(iframe);
 
@@ -40,6 +47,9 @@ export async function installPlugin(id, pluginSource) {
     },
     '*'
   );
+
+  /** @type {PluginParamsDef} */
+  let pluginParamsDef = {};
 
   try {
     await /** @type {Promise<void>} */ (
@@ -64,6 +74,7 @@ export async function installPlugin(id, pluginSource) {
             console.error('Plugin failed to install:', id);
             reject();
           } else {
+            pluginParamsDef = data.params;
             resolve();
           }
           clearTimeout(timeout);
@@ -78,16 +89,17 @@ export async function installPlugin(id, pluginSource) {
     throw err;
   }
 
-  onInstalled();
+  onInstalled(pluginParamsDef);
 }
 
 /**
  * Perform a transform on a mono audio buffer using an iframe plugin
  * @param {HTMLIFrameElement} iframe
  * @param {AudioBuffer} audioBuffer
+ * @param {PluginParams} params
  * @returns {Promise<AudioBuffer>} A transformed audio buffer
  */
-async function sampleTransformPlugin(iframe, audioBuffer) {
+async function sampleTransformPlugin(iframe, audioBuffer, params) {
   if (!iframe.contentWindow) {
     throw new Error('Expected iframe content window');
   }
@@ -102,6 +114,7 @@ async function sampleTransformPlugin(iframe, audioBuffer) {
       messageId,
       audioData,
       sampleRate,
+      params,
     },
     '*'
   );
@@ -165,13 +178,17 @@ async function sampleTransformPlugin(iframe, audioBuffer) {
  * @param {string} id
  */
 export async function getPlugin(id) {
-  await pluginInstallPromises[id];
+  const params = await pluginInstallPromises[id];
   const iframe = document.getElementById(id);
   if (iframe && iframe instanceof HTMLIFrameElement) {
     return {
-      /** @param {AudioBuffer} audioBuffer */
-      sampleTransform(audioBuffer) {
-        return sampleTransformPlugin(iframe, audioBuffer);
+      params,
+      /**
+       * @param {AudioBuffer} audioBuffer
+       * @param {PluginParams} params
+       */
+      sampleTransform(audioBuffer, params) {
+        return sampleTransformPlugin(iframe, audioBuffer, params);
       },
     };
   }

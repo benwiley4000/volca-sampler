@@ -51,8 +51,11 @@
           try {
             if (window.samplePlugin.params) {
               for (const [key, value] of Object.entries(params)) {
-                if (typeof window.samplePlugin.params[key] === typeof value) {
-                  window.samplePlugin.params[key] = value;
+                if (
+                  window.samplePlugin.params[key] &&
+                  typeof window.samplePlugin.params[key].value === typeof value
+                ) {
+                  window.samplePlugin.params[key].value = value;
                 }
               }
             }

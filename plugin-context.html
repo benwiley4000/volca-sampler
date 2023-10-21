@@ -32,6 +32,39 @@
       }
 
       {
+        // https://stackoverflow.com/a/51086893
+        const mutex = new (class Mutex {
+          unlockPromise = Promise.resolve();
+          lock() {
+            let unlock;
+            const nextUnlockPromise = new Promise(
+              (resolve) => (unlock = resolve)
+            );
+            const lockPromise = this.unlockPromise.then(() => unlock);
+            this.unlockPromise = nextUnlockPromise;
+            return lockPromise;
+          }
+        })();
+
+        async function callPlugin(audioBuffer, params) {
+          const unlock = await mutex.lock();
+          try {
+            if (window.samplePlugin.params) {
+              for (const [key, value] of Object.entries(params)) {
+                if (typeof window.samplePlugin.params[key] === typeof value) {
+                  window.samplePlugin.params[key] = value;
+                }
+              }
+            }
+            const newAudioBuffer = await window.samplePlugin(audioBuffer);
+            unlock();
+            return newAudioBuffer;
+          } catch (err) {
+            unlock();
+            throw err;
+          }
+        }
+
         function respond(data) {
           window.top.postMessage(data, window.location.origin);
         }
@@ -43,6 +76,10 @@
           }
 
           if (data.messageType === 'pluginInstall') {
+            respond({
+              messageType: 'messageReceived',
+              messageId: data.messageId,
+            });
             const { pluginSource } = data;
             if (!(await installPlugin(pluginSource))) {
               respond({
@@ -56,12 +93,13 @@
               messageType: data.messageType,
               messageId: data.messageId,
               message: 'Plugin installed',
+              params: window.samplePlugin.params || {},
             });
             return;
           }
 
           if (data.messageType === 'sampleTransform') {
-            const { audioData, sampleRate } = data;
+            const { audioData, sampleRate, params } = data;
             if (
               !(
                 audioData instanceof Float32Array &&
@@ -82,7 +120,11 @@
                 sampleRate,
               });
               audioBuffer.copyToChannel(audioData, 0);
-              const newAudioBuffer = await window.samplePlugin(audioBuffer);
+              respond({
+                messageType: 'messageReceived',
+                messageId: data.messageId,
+              });
+              const newAudioBuffer = await callPlugin(audioBuffer, params);
               if (newAudioBuffer.numberOfChannels > 1) {
                 console.warn(
                   'Warning: Plugin returned audio buffer with more than one ' +

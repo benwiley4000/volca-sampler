@@ -31,40 +31,40 @@
         return true;
       }
 
-      // https://stackoverflow.com/a/51086893
-      const mutex = new (class Mutex {
-        unlockPromise = Promise.resolve();
-        lock() {
-          let unlock;
-          const nextUnlockPromise = new Promise(
-            (resolve) => (unlock = resolve)
-          );
-          const lockPromise = this.unlockPromise.then(() => unlock);
-          this.unlockPromise = nextUnlockPromise;
-          return lockPromise;
-        }
-      })();
+      {
+        // https://stackoverflow.com/a/51086893
+        const mutex = new (class Mutex {
+          unlockPromise = Promise.resolve();
+          lock() {
+            let unlock;
+            const nextUnlockPromise = new Promise(
+              (resolve) => (unlock = resolve)
+            );
+            const lockPromise = this.unlockPromise.then(() => unlock);
+            this.unlockPromise = nextUnlockPromise;
+            return lockPromise;
+          }
+        })();
 
-      async function callPlugin(audioBuffer, params) {
-        const unlock = await mutex.lock();
-        try {
-          if (window.samplePlugin.params) {
-            for (const [key, value] of Object.entries(params)) {
-              if (typeof window.samplePlugin.params[key] === typeof value) {
-                window.samplePlugin.params[key] = value;
+        async function callPlugin(audioBuffer, params) {
+          const unlock = await mutex.lock();
+          try {
+            if (window.samplePlugin.params) {
+              for (const [key, value] of Object.entries(params)) {
+                if (typeof window.samplePlugin.params[key] === typeof value) {
+                  window.samplePlugin.params[key] = value;
+                }
               }
             }
+            const newAudioBuffer = await window.samplePlugin(audioBuffer);
+            unlock();
+            return newAudioBuffer;
+          } catch (err) {
+            unlock();
+            throw err;
           }
-          const newAudioBuffer = await window.samplePlugin(audioBuffer);
-          unlock();
-          return newAudioBuffer;
-        } catch (err) {
-          unlock();
-          throw err;
         }
-      }
 
-      {
         function respond(data) {
           window.top.postMessage(data, window.location.origin);
         }

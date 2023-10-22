@@ -20,8 +20,12 @@ export async function installPlugin(id, pluginSource) {
   iframe.id = id;
   iframe.hidden = true;
   iframe.title = 'plugin-context';
-  iframe.src = 'plugin-context.html';
   iframe.setAttribute('sandbox', 'allow-scripts');
+  const iframeOrigin =
+    window.location.protocol === 'http:'
+      ? 'http://localhost:3001'
+      : `https://plugin.${window.location.host}`;
+  iframe.src = `${iframeOrigin}${window.location.pathname}plugin-context.html`;
 
   /** @type {(params: PluginParamsDef) => void} */
   let onInstalled = () => {};

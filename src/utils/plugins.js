@@ -2,6 +2,11 @@ import { v4 as uuidv4 } from 'uuid';
 
 const PLUGIN_TIMEOUT = 10;
 
+const IFRAME_ORIGIN =
+  window.location.protocol === 'http:'
+    ? 'http://localhost:3001'
+    : `https://plugin.${window.location.host}`;
+
 /**
  * @typedef {{ value: number; min: number; max: number }} PluginParamDef
  * @typedef {Record<string, PluginParamDef>} PluginParamsDef
@@ -21,11 +26,7 @@ export async function installPlugin(id, pluginSource) {
   iframe.hidden = true;
   iframe.title = 'plugin-context';
   iframe.setAttribute('sandbox', 'allow-scripts');
-  const iframeOrigin =
-    window.location.protocol === 'http:'
-      ? 'http://localhost:3001'
-      : `https://plugin.${window.location.host}`;
-  iframe.src = `${iframeOrigin}${window.location.pathname}plugin-context.html`;
+  iframe.src = `${IFRAME_ORIGIN}${window.location.pathname}plugin-context.html`;
 
   /** @type {(params: PluginParamsDef) => void} */
   let onInstalled = () => {};

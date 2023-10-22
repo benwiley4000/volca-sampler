@@ -30,7 +30,11 @@ export async function installPlugin(id, pluginSource) {
 
   /** @type {(params: PluginParamsDef) => void} */
   let onInstalled = () => {};
-  pluginInstallPromises[id] = new Promise((resolve) => (onInstalled = resolve));
+  let onInstallError = () => {};
+  pluginInstallPromises[id] = new Promise((resolve, reject) => {
+    onInstalled = resolve;
+    onInstallError = reject;
+  });
 
   document.body.appendChild(iframe);
 
@@ -89,6 +93,7 @@ export async function installPlugin(id, pluginSource) {
       })
     );
   } catch (err) {
+    onInstallError();
     document.body.removeChild(iframe);
     throw err;
   }
@@ -164,6 +169,7 @@ async function sampleTransformPlugin(iframe, audioBuffer, params) {
     );
   } catch (err) {
     if (!(err instanceof Error && err.message === 'Invalid plugin input')) {
+      iframe.dispatchEvent(new Event('uninstall'));
       document.body.removeChild(iframe);
     }
     throw err;
@@ -193,6 +199,10 @@ export async function getPlugin(id) {
        */
       sampleTransform(audioBuffer, params) {
         return sampleTransformPlugin(iframe, audioBuffer, params);
+      },
+      /** @param {() => void} callback */
+      onUninstall(callback) {
+        iframe.addEventListener('uninstall', callback, { once: true });
       },
     };
   }

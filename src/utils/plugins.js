@@ -7,6 +7,9 @@ const IFRAME_ORIGIN =
     ? 'http://localhost:3001'
     : `https://plugin.${window.location.host}`;
 
+const iframeParent = document.createElement('div');
+document.body.appendChild(iframeParent);
+
 /**
  * @typedef {{ value: number; min: number; max: number }} PluginParamDef
  * @typedef {Record<string, PluginParamDef>} PluginParamsDef
@@ -17,12 +20,12 @@ const IFRAME_ORIGIN =
 const pluginInstallPromises = {};
 
 /**
- * @param {string} id
+ * @param {string} pluginName
  * @param {string} pluginSource
  */
-export async function installPlugin(id, pluginSource) {
+export async function installPlugin(pluginName, pluginSource) {
   const iframe = document.createElement('iframe');
-  iframe.id = id;
+  iframe.id = pluginName;
   iframe.hidden = true;
   iframe.title = 'plugin-context';
   iframe.setAttribute('sandbox', 'allow-scripts');
@@ -31,12 +34,12 @@ export async function installPlugin(id, pluginSource) {
   /** @type {(params: PluginParamsDef) => void} */
   let onInstalled = () => {};
   let onInstallError = () => {};
-  pluginInstallPromises[id] = new Promise((resolve, reject) => {
+  pluginInstallPromises[pluginName] = new Promise((resolve, reject) => {
     onInstalled = resolve;
     onInstallError = reject;
   });
 
-  document.body.appendChild(iframe);
+  iframeParent.appendChild(iframe);
 
   await new Promise((resolve) =>
     iframe.addEventListener('load', resolve, { once: true })
@@ -71,7 +74,7 @@ export async function installPlugin(id, pluginSource) {
           if (data.messageId !== messageId) return;
           if (data.messageType === 'receivedMessage') {
             timeout = setTimeout(() => {
-              console.error('Plugin took too long to install:', id);
+              console.error('Plugin took too long to install:', pluginName);
               reject();
               window.removeEventListener('message', onMessage);
             }, PLUGIN_TIMEOUT);
@@ -79,7 +82,7 @@ export async function installPlugin(id, pluginSource) {
           }
           if (data.messageType !== 'pluginInstall') return;
           if (data.error) {
-            console.error('Plugin failed to install:', id);
+            console.error('Plugin failed to install:', pluginName);
             reject();
           } else {
             pluginParamsDef = data.params;
@@ -94,7 +97,7 @@ export async function installPlugin(id, pluginSource) {
     );
   } catch (err) {
     onInstallError();
-    document.body.removeChild(iframe);
+    iframeParent.removeChild(iframe);
     throw err;
   }
 
@@ -169,8 +172,8 @@ async function sampleTransformPlugin(iframe, audioBuffer, params) {
     );
   } catch (err) {
     if (!(err instanceof Error && err.message === 'Invalid plugin input')) {
-      iframe.dispatchEvent(new Event('uninstall'));
-      document.body.removeChild(iframe);
+      iframe.dispatchEvent(new Event('uninstall', { bubbles: true }));
+      iframeParent.removeChild(iframe);
     }
     throw err;
   }
@@ -185,26 +188,78 @@ async function sampleTransformPlugin(iframe, audioBuffer, params) {
 }
 
 /**
- * @param {string} id
+ * @param {string} pluginName
  */
-export async function getPlugin(id) {
-  const params = await pluginInstallPromises[id];
-  const iframe = document.getElementById(id);
-  if (iframe && iframe instanceof HTMLIFrameElement) {
-    return {
-      params,
-      /**
-       * @param {AudioBuffer} audioBuffer
-       * @param {PluginParams} params
-       */
-      sampleTransform(audioBuffer, params) {
+export function getPlugin(pluginName) {
+  return {
+    getParams() {
+      return pluginInstallPromises[pluginName];
+    },
+    /**
+     * @param {AudioBuffer} audioBuffer
+     * @param {PluginParams} params
+     */
+    sampleTransform(audioBuffer, params) {
+      let iframe = document.getElementById(pluginName);
+      if (iframe && iframe instanceof HTMLIFrameElement) {
         return sampleTransformPlugin(iframe, audioBuffer, params);
-      },
-      /** @param {() => void} callback */
-      onUninstall(callback) {
-        iframe.addEventListener('uninstall', callback, { once: true });
-      },
-    };
-  }
-  throw new Error('Expected plugin to exist');
+      } else {
+        throw new Error('Expected plugin to exist');
+      }
+    },
+    /** @param {() => void} callback */
+    onUpdate(callback) {
+      iframeParent.addEventListener('sourceUpdate', (e) => {
+        if (
+          e.target instanceof HTMLIFrameElement &&
+          e.target.id === pluginName
+        ) {
+          callback();
+        }
+      });
+    },
+    /** @param {() => void} callback */
+    onUninstall(callback) {
+      iframeParent.addEventListener('uninstall', (e) => {
+        if (
+          e.target instanceof HTMLIFrameElement &&
+          e.target.id === pluginName
+        ) {
+          callback();
+        }
+      });
+    },
+    /** @param {string} newPluginSource */
+    async replaceSource(newPluginSource) {
+      let iframe = document.getElementById(pluginName);
+      const installPromise = pluginInstallPromises[pluginName];
+      if (iframe && iframe instanceof HTMLIFrameElement) {
+        iframe.id = '';
+        try {
+          await installPlugin(pluginName, newPluginSource);
+        } catch (err) {
+          iframe.id = pluginName;
+          pluginInstallPromises[pluginName] = installPromise;
+          throw err;
+        }
+        iframeParent.removeChild(iframe);
+        let newIframe = document.getElementById(pluginName);
+        if (newIframe) {
+          newIframe.dispatchEvent(new Event('sourceUpdate', { bubbles: true }));
+        }
+      } else {
+        throw new Error('Expected plugin to exist');
+      }
+    },
+  };
+}
+
+/** @param {string} pluginSource */
+export async function getPluginContentId(pluginSource) {
+  const data = new TextEncoder().encode(pluginSource);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hex = Array.from(new Uint8Array(hashBuffer))
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('');
+  return hex;
 }

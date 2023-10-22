@@ -37,9 +37,14 @@
           unlockPromise = Promise.resolve();
           lock() {
             let unlock;
+            // nextUnlockPromise resolves when the unlock function is called
+            // by the client who was passed the function.
             const nextUnlockPromise = new Promise(
               (resolve) => (unlock = resolve)
             );
+            // lockPromise resolves once the previous unlockPromise is resolved,
+            // and returns the new unlock function, which the client needs to
+            // call when work is finished.
             const lockPromise = this.unlockPromise.then(() => unlock);
             this.unlockPromise = nextUnlockPromise;
             return lockPromise;
@@ -68,14 +73,20 @@
           }
         }
 
-        function respond(data) {
-          window.top.postMessage(data, window.location.origin);
-        }
+        const expectedParentOrigin = window.location.origin.replace(
+          'plugin.',
+          ''
+        );
+        const isLocalDev = window.location.protocol === 'http:';
 
         window.addEventListener('message', async ({ data, origin }) => {
-          if (origin !== window.location.origin) {
+          if (origin !== expectedParentOrigin && !isLocalDev) {
             console.error('Unexpected parent context');
             return;
+          }
+
+          function respond(data) {
+            window.top.postMessage(data, origin);
           }
 
           if (data.messageType === 'pluginInstall') {

@@ -58,3 +58,12 @@ export async function addPlugin(file, onConfirmName, onConfirmReplace) {
 
   await pluginStore.setItem(pluginName, pluginSource);
 }
+
+// TODO: code that calls this needs to handle samples using this plugin
+
+/** @param {string} pluginName */
+export async function removePlugin(pluginName) {
+  const plugin = getPlugin(pluginName);
+  plugin.remove();
+  await pluginStore.removeItem(pluginName);
+}

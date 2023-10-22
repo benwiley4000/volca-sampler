@@ -251,6 +251,15 @@ export function getPlugin(pluginName) {
         throw new Error('Expected plugin to exist');
       }
     },
+    remove() {
+      let iframe = document.getElementById(pluginName);
+      if (iframe && iframe instanceof HTMLIFrameElement) {
+        iframe.dispatchEvent(new Event('uninstall', { bubbles: true }));
+        iframeParent.removeChild(iframe);
+      } else {
+        throw new Error('Expected plugin to exist');
+      }
+    },
   };
 }
 

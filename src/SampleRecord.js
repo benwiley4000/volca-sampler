@@ -662,6 +662,7 @@ function SampleRecord({ userSamples, onBulkImport, onRecordFinish }) {
                       <ButtonGroup className={classes.channelOptionSelect}>
                         {[1, 2].map((count) => (
                           <ToggleButton
+                            id="channels-toggle"
                             key={count}
                             className={classes.channelOption}
                             type="radio"

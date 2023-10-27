@@ -89,7 +89,7 @@ const sampleMetadataStore = localforage.createInstance({
 
 /** @param {string} id */
 export async function isAudioSourceFileInStore(id) {
-  return Boolean(await audioFileDataStore.getItem(id));
+  return (await audioFileDataStore.keys()).includes(id);
 }
 
 /**

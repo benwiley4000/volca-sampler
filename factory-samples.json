@@ -8,7 +8,7 @@
         0
       ]
     },
-    "id": "100ab67b-30cf-4601-a050-61400c7beafa",
+    "id": "efd6a6d9-b956-42d8-badf-b300bccdc34c",
     "slotNumber": 0,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -18,7 +18,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 0.219936,
-      "srcDuration": 0.219936
+      "failedPluginIndex": -1
     }
   },
   {
@@ -30,7 +30,7 @@
         0
       ]
     },
-    "id": "73cfe676-ff44-4d32-91c3-4a1af6b46ade",
+    "id": "fbf52b38-c932-426c-8c34-efb8c487aeeb",
     "slotNumber": 1,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -40,7 +40,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 0.23472,
-      "srcDuration": 0.23472
+      "failedPluginIndex": -1
     }
   },
   {
@@ -52,7 +52,7 @@
         0
       ]
     },
-    "id": "55c3574e-28a2-4683-9ea4-594da60a803d",
+    "id": "20c27cad-4793-483b-b57d-7e383a709980",
     "slotNumber": 2,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -62,7 +62,7 @@
         "normalizationCoefficient": 1.00149760078242
       },
       "duration": 0.497472,
-      "srcDuration": 0.497472
+      "failedPluginIndex": -1
     }
   },
   {
@@ -74,7 +74,7 @@
         0
       ]
     },
-    "id": "568eae45-ac1f-47fd-95e1-c6c4a06c7aa2",
+    "id": "b1f26ad6-cbd1-4d87-a128-aab37263b5db",
     "slotNumber": 3,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -84,7 +84,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 3.015296,
-      "srcDuration": 3.015296
+      "failedPluginIndex": -1
     }
   },
   {
@@ -96,7 +96,7 @@
         0
       ]
     },
-    "id": "d134bde1-4e3d-49d4-b8e8-e0054ff72bad",
+    "id": "6f46a054-67b0-4359-bb8e-4e3c2ac3c287",
     "slotNumber": 4,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -106,7 +106,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 0.144544,
-      "srcDuration": 0.144544
+      "failedPluginIndex": -1
     }
   },
   {
@@ -118,7 +118,7 @@
         0
       ]
     },
-    "id": "7a2075ae-5023-4a71-88c6-218c4469b912",
+    "id": "808ee70d-b830-45ee-b1d3-0d944dd5c0b3",
     "slotNumber": 5,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -128,7 +128,7 @@
         "normalizationCoefficient": 1.0239683759766696
       },
       "duration": 0.383712,
-      "srcDuration": 0.383712
+      "failedPluginIndex": -1
     }
   },
   {
@@ -140,7 +140,7 @@
         0
       ]
     },
-    "id": "2cbd3375-62ab-45b2-aeca-42e7326fb444",
+    "id": "d5673c1f-375f-440f-863a-7b56f1589d74",
     "slotNumber": 6,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -150,7 +150,7 @@
         "normalizationCoefficient": 1.0000610388817677
       },
       "duration": 0.094656,
-      "srcDuration": 0.094656
+      "failedPluginIndex": -1
     }
   },
   {
@@ -162,7 +162,7 @@
         0
       ]
     },
-    "id": "527c0c6c-c8ee-4f47-adb7-bbd063291978",
+    "id": "b7e7457c-42f0-4bf2-9a00-697411caded3",
     "slotNumber": 7,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -172,7 +172,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 0.21472,
-      "srcDuration": 0.21472
+      "failedPluginIndex": -1
     }
   },
   {
@@ -184,7 +184,7 @@
         0
       ]
     },
-    "id": "72941196-c105-4726-bb8e-a69b60527963",
+    "id": "746b418a-5e32-4d38-a253-379492605a50",
     "slotNumber": 8,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -194,7 +194,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 0.267424,
-      "srcDuration": 0.267424
+      "failedPluginIndex": -1
     }
   },
   {
@@ -206,7 +206,7 @@
         0
       ]
     },
-    "id": "16eb1b2a-75dd-49e7-8b24-7c7be7f1969b",
+    "id": "677ee320-85a1-4e21-b4ca-989d12c42ed8",
     "slotNumber": 9,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -216,7 +216,7 @@
         "normalizationCoefficient": 1.0005496183206106
       },
       "duration": 0.602112,
-      "srcDuration": 0.602112
+      "failedPluginIndex": -1
     }
   },
   {
@@ -228,7 +228,7 @@
         0
       ]
     },
-    "id": "be30ac4e-63e1-45ba-9377-ec45510f9f95",
+    "id": "34c92fda-4e5f-4102-a535-61d4ab84debb",
     "slotNumber": 10,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -238,7 +238,7 @@
         "normalizationCoefficient": 1.0044755674657084
       },
       "duration": 0.093504,
-      "srcDuration": 0.093504
+      "failedPluginIndex": -1
     }
   },
   {
@@ -250,7 +250,7 @@
         0
       ]
     },
-    "id": "de5967ca-1d95-4324-81be-4a2c52298adb",
+    "id": "b0b32d09-8616-4062-9ca8-0acbd5b582af",
     "slotNumber": 11,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -260,7 +260,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 0.415904,
-      "srcDuration": 0.415904
+      "failedPluginIndex": -1
     }
   },
   {
@@ -272,7 +272,7 @@
         0
       ]
     },
-    "id": "33dee919-e7f9-462c-b517-bedfcadde7f5",
+    "id": "8e950e5f-8759-44a0-a27b-ad0b41180318",
     "slotNumber": 12,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -282,7 +282,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 0.320512,
-      "srcDuration": 0.320512
+      "failedPluginIndex": -1
     }
   },
   {
@@ -294,7 +294,7 @@
         0
       ]
     },
-    "id": "7c9df559-b2ba-44bd-a51b-6f801e94f15b",
+    "id": "0acd0672-9f85-4671-bcf3-8526c849458a",
     "slotNumber": 13,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -304,7 +304,7 @@
         "normalizationCoefficient": 1.0018650441801449
       },
       "duration": 0.376352,
-      "srcDuration": 0.376352
+      "failedPluginIndex": -1
     }
   },
   {
@@ -316,7 +316,7 @@
         0
       ]
     },
-    "id": "825eaa4d-fb63-40ed-b9bb-0c8f85442628",
+    "id": "baffbac7-81f8-4247-9213-bdb1a4786e36",
     "slotNumber": 14,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -326,7 +326,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 0.194976,
-      "srcDuration": 0.194976
+      "failedPluginIndex": -1
     }
   },
   {
@@ -338,7 +338,7 @@
         0
       ]
     },
-    "id": "b7942e03-9d56-4885-9ef7-b8ba6edb69e6",
+    "id": "a5e5fd58-51db-4ec8-a736-4069cda303c1",
     "slotNumber": 15,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -348,7 +348,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 0.254112,
-      "srcDuration": 0.254112
+      "failedPluginIndex": -1
     }
   },
   {
@@ -360,7 +360,7 @@
         0
       ]
     },
-    "id": "81a66afa-1fe9-43de-98b3-a2c6be8f3b00",
+    "id": "31baf287-7e48-4a0d-98f9-8b00942c5bbc",
     "slotNumber": 16,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -370,7 +370,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 0.141824,
-      "srcDuration": 0.141824
+      "failedPluginIndex": -1
     }
   },
   {
@@ -382,7 +382,7 @@
         0
       ]
     },
-    "id": "fa088ce2-13db-41b2-a7eb-81371d077dae",
+    "id": "2ab2c3db-9047-48fd-9046-f09a5a43f229",
     "slotNumber": 17,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -392,7 +392,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 0.279552,
-      "srcDuration": 0.279552
+      "failedPluginIndex": -1
     }
   },
   {
@@ -404,7 +404,7 @@
         0
       ]
     },
-    "id": "2047821d-f485-424d-85ed-0545b4673ab4",
+    "id": "f7f4be77-f684-4061-a222-7c9f7c66e710",
     "slotNumber": 18,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -414,7 +414,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 0.222208,
-      "srcDuration": 0.222208
+      "failedPluginIndex": -1
     }
   },
   {
@@ -426,7 +426,7 @@
         0
       ]
     },
-    "id": "e3e9491d-66d7-426c-8eeb-e5a9d5a0b042",
+    "id": "c4c89745-987f-42ed-ae1e-08f3433febc9",
     "slotNumber": 19,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -436,7 +436,7 @@
         "normalizationCoefficient": 1.0239683759766696
       },
       "duration": 0.411392,
-      "srcDuration": 0.411392
+      "failedPluginIndex": -1
     }
   },
   {
@@ -448,7 +448,7 @@
         0
       ]
     },
-    "id": "660d1bb8-d839-4394-a7b1-c28f40704087",
+    "id": "a4c2d55a-279b-44a1-9241-90b1806039b5",
     "slotNumber": 20,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -458,7 +458,7 @@
         "normalizationCoefficient": 1.0239683759766696
       },
       "duration": 0.597536,
-      "srcDuration": 0.597536
+      "failedPluginIndex": -1
     }
   },
   {
@@ -470,7 +470,7 @@
         0
       ]
     },
-    "id": "a8875d33-ab9f-40ee-b640-ae9b5c60540b",
+    "id": "6ec045d3-fec7-49d1-bcf9-022ba31d27f9",
     "slotNumber": 21,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -480,7 +480,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 0.183872,
-      "srcDuration": 0.183872
+      "failedPluginIndex": -1
     }
   },
   {
@@ -492,7 +492,7 @@
         0
       ]
     },
-    "id": "3998f32f-45f4-4eaf-9543-24d0b0de6dba",
+    "id": "26d69112-6243-4adf-9346-2ac8d608563a",
     "slotNumber": 22,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -502,7 +502,7 @@
         "normalizationCoefficient": 1.001222195062332
       },
       "duration": 0.639872,
-      "srcDuration": 0.639872
+      "failedPluginIndex": -1
     }
   },
   {
@@ -514,7 +514,7 @@
         0
       ]
     },
-    "id": "1eaf612d-d84d-48e8-a517-ab78c5c1febd",
+    "id": "211bbd4a-7da2-451e-b0c0-818fcc3958ef",
     "slotNumber": 23,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -524,7 +524,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 0.247328,
-      "srcDuration": 0.247328
+      "failedPluginIndex": -1
     }
   },
   {
@@ -536,7 +536,7 @@
         0
       ]
     },
-    "id": "71851150-8635-4795-8e08-613dd908284a",
+    "id": "02795f3d-0d50-4499-bd48-33933332b4d1",
     "slotNumber": 24,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -546,7 +546,7 @@
         "normalizationCoefficient": 1.0019263109616268
       },
       "duration": 0.216928,
-      "srcDuration": 0.216928
+      "failedPluginIndex": -1
     }
   },
   {
@@ -558,7 +558,7 @@
         0
       ]
     },
-    "id": "f1e0a547-8604-4dfe-89ef-c5c8ac8e7c54",
+    "id": "cf886018-3acd-45c3-8480-54ae2a1ce423",
     "slotNumber": 25,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -568,7 +568,7 @@
         "normalizationCoefficient": 1.016692768939257
       },
       "duration": 0.56384,
-      "srcDuration": 0.56384
+      "failedPluginIndex": -1
     }
   },
   {
@@ -580,7 +580,7 @@
         0
       ]
     },
-    "id": "7456d2d0-42f2-433c-a612-337953de5333",
+    "id": "698928e6-d616-4fd6-a022-665fd17001a2",
     "slotNumber": 26,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -590,7 +590,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 0.313632,
-      "srcDuration": 0.313632
+      "failedPluginIndex": -1
     }
   },
   {
@@ -602,7 +602,7 @@
         0
       ]
     },
-    "id": "675a88c4-c405-4d24-8764-e8e7e780549f",
+    "id": "7ec67b40-0e6d-427b-85bf-2bd8c252a3d6",
     "slotNumber": 27,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -612,7 +612,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 0.514624,
-      "srcDuration": 0.514624
+      "failedPluginIndex": -1
     }
   },
   {
@@ -624,7 +624,7 @@
         0
       ]
     },
-    "id": "64c47cd6-6229-4f9b-a36a-fcfaddd45bf5",
+    "id": "1ad5bb05-369d-455c-be8a-6c9f691c2875",
     "slotNumber": 28,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -634,7 +634,7 @@
         "normalizationCoefficient": 1.0051842683287993
       },
       "duration": 0.238464,
-      "srcDuration": 0.238464
+      "failedPluginIndex": -1
     }
   },
   {
@@ -646,7 +646,7 @@
         0
       ]
     },
-    "id": "115ef009-4fa5-4194-aaca-315885024887",
+    "id": "c90ffac6-b9a0-4947-aa48-0d67a8215030",
     "slotNumber": 29,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -656,7 +656,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 0.600608,
-      "srcDuration": 0.600608
+      "failedPluginIndex": -1
     }
   },
   {
@@ -668,7 +668,7 @@
         0
       ]
     },
-    "id": "2172b4a8-6d59-4766-b41f-4b0d54753874",
+    "id": "de9a63db-38ef-47a5-a20f-afdb24cc8601",
     "slotNumber": 30,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -678,7 +678,7 @@
         "normalizationCoefficient": 1.0239683759766696
       },
       "duration": 0.131552,
-      "srcDuration": 0.131552
+      "failedPluginIndex": -1
     }
   },
   {
@@ -690,7 +690,7 @@
         0
       ]
     },
-    "id": "4eb7895c-d3a8-4b5c-82f2-5122963f0f0c",
+    "id": "9c51843c-db8d-4b2f-88b7-136fef7188d4",
     "slotNumber": 31,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -700,7 +700,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 0.309376,
-      "srcDuration": 0.309376
+      "failedPluginIndex": -1
     }
   },
   {
@@ -712,7 +712,7 @@
         0
       ]
     },
-    "id": "1b646b85-c21b-4500-9280-e7c383c86f2a",
+    "id": "efc9f80c-2704-416c-bd40-62145e8e7eea",
     "slotNumber": 32,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -722,7 +722,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 0.58976,
-      "srcDuration": 0.58976
+      "failedPluginIndex": -1
     }
   },
   {
@@ -734,17 +734,17 @@
         0
       ]
     },
-    "id": "bd6be4b5-4fce-421a-9054-6a929d5c8a98",
+    "id": "19993590-97a0-4c41-bc9e-0b71a985fb5c",
     "slotNumber": 33,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
       "waveformPeaks": {
-        "positive": "8+lyP/ZBdj/6QXo/+kF6P/oVej/6QXo/+hV6P/pBej/2QXY/8+lyP/ZBdj/6QXo/+kF6P/oVej/5+Xg/+kF6P/pBej/2QXY/+gF6P/cXdz+xATE/iQ8JP67yrT6GEoY+yIRHPvLo8T2KrAk+0IjPPd7wXT2JEAk9g3ADPbXgtDyTIJM81EBUPKZAJjygQCA89oD1O+vHaj/p8Wg//lF+P/49fj8Akn8/AACAP8NQQz0=",
-        "negative": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA2XFZv/gLeL/NOU2/puElv4h7CL+ZOpm+9Hx0vqtUK776SPq9u2i7vb0Yvb3l0GS9r7AuvZHQEL2PYI+8sGCwvMdAR7y5wDi8lUAVvJIAkroAAAAAl88Wv91/Xb/zePO9/Pl7v/oPer8=",
-        "normalizationCoefficient": 1
+        "positive": "8+lyP/ZBdj/6QXo/+kF6P/oVej/6QXo/+hV6P/pBej/2QXY/8+lyP/ZBdj/6QXo/+kF6P/oVej/5+Xg/+kF6P/pBej/2QXY/+gF6P/cXdz+xATE/iQ8JP67yrT6GEoY+yIRHPvLo8T2KrAk+0IjPPd7wXT2JEAk9g3ADPbXgtDyTIJM81EBUPKZAJjygQCA89oD1O+vHaj/6QXo/+kF6P/pBej/abVo/0I1PP7IFMj8=",
+        "negative": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA2XFZv/gLeL/NOU2/puElv4h7CL+ZOpm+9Hx0vqtUK776SPq9u2i7vb0Yvb3l0GS9r7AuvZHQEL2PYI+8sGCwvMdAR7y5wDi8lUAVvJIAkroAAAAAAAAAAPlPeb+IPAi+9Z90v+5fbr8=",
+        "normalizationCoefficient": 1.0229454621060199
       },
       "duration": 0.130368,
-      "srcDuration": 0.130368
+      "failedPluginIndex": -1
     }
   },
   {
@@ -756,7 +756,7 @@
         0
       ]
     },
-    "id": "5a0c0d37-8d75-4e38-8dd0-854149381495",
+    "id": "b33108b9-32d6-46a3-b880-16e9abe5f9e3",
     "slotNumber": 34,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -766,7 +766,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 0.369504,
-      "srcDuration": 0.369504
+      "failedPluginIndex": -1
     }
   },
   {
@@ -778,7 +778,7 @@
         0
       ]
     },
-    "id": "72c3b848-5f03-4406-bbb0-7e9f7f897d4e",
+    "id": "d854ceee-18d8-4bb9-9f5b-12cbaabdb662",
     "slotNumber": 35,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -788,7 +788,7 @@
         "normalizationCoefficient": 1.0239683759766696
       },
       "duration": 0.303744,
-      "srcDuration": 0.303744
+      "failedPluginIndex": -1
     }
   },
   {
@@ -800,7 +800,7 @@
         0
       ]
     },
-    "id": "e747db0f-4bef-4cb1-80bb-ce76934a2683",
+    "id": "101cf158-6a89-4d9d-a437-f8d2d58b137f",
     "slotNumber": 36,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -810,7 +810,7 @@
         "normalizationCoefficient": 1.0026008003611875
       },
       "duration": 0.568832,
-      "srcDuration": 0.568832
+      "failedPluginIndex": -1
     }
   },
   {
@@ -822,7 +822,7 @@
         0
       ]
     },
-    "id": "c3301d67-8b55-4a02-8b51-c8ef50df9e2e",
+    "id": "a2a12791-2fcf-4992-b01a-3ed8f46d6246",
     "slotNumber": 37,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -832,7 +832,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 0.248064,
-      "srcDuration": 0.248064
+      "failedPluginIndex": -1
     }
   },
   {
@@ -844,7 +844,7 @@
         0
       ]
     },
-    "id": "56a72eb2-b704-4a37-8e73-1a8018b7e6bc",
+    "id": "17ef6833-3a99-4a10-babd-cf33dd65e1d6",
     "slotNumber": 38,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -854,7 +854,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 0.07296,
-      "srcDuration": 0.07296
+      "failedPluginIndex": -1
     }
   },
   {
@@ -866,7 +866,7 @@
         0
       ]
     },
-    "id": "a077f092-a7bf-4542-b590-b055750c221a",
+    "id": "3c2ca355-3105-487b-8c74-f26a344615c2",
     "slotNumber": 39,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -876,7 +876,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 0.836576,
-      "srcDuration": 0.836576
+      "failedPluginIndex": -1
     }
   },
   {
@@ -888,7 +888,7 @@
         0
       ]
     },
-    "id": "d3d55bb0-b879-43c4-b639-c66ce0f35583",
+    "id": "9b424880-b2a9-46f6-9718-f8daba93260b",
     "slotNumber": 40,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -898,7 +898,7 @@
         "normalizationCoefficient": 1.009799813390771
       },
       "duration": 2.241056,
-      "srcDuration": 2.241056
+      "failedPluginIndex": -1
     }
   },
   {
@@ -910,7 +910,7 @@
         0
       ]
     },
-    "id": "b75e1b66-e60a-490b-a1a4-7f0297a5a742",
+    "id": "bfdc5da9-7361-4d27-886b-9b77561c84cc",
     "slotNumber": 41,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -920,7 +920,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 1.172672,
-      "srcDuration": 1.172672
+      "failedPluginIndex": -1
     }
   },
   {
@@ -932,7 +932,7 @@
         0
       ]
     },
-    "id": "a9a6fe57-5c59-4d74-98cc-8567ff03673c",
+    "id": "7b05417c-c8e4-43fd-8773-a96a1c13677c",
     "slotNumber": 42,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -942,7 +942,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 2.001184,
-      "srcDuration": 2.001184
+      "failedPluginIndex": -1
     }
   },
   {
@@ -954,7 +954,7 @@
         0
       ]
     },
-    "id": "fd35c4d2-974e-4e53-88e4-3698c2e23645",
+    "id": "bc379338-c956-43db-90ad-9a5294d388d2",
     "slotNumber": 43,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -964,7 +964,7 @@
         "normalizationCoefficient": 1.0239683759766696
       },
       "duration": 0.130368,
-      "srcDuration": 0.130368
+      "failedPluginIndex": -1
     }
   },
   {
@@ -976,7 +976,7 @@
         0
       ]
     },
-    "id": "80f863d2-60e4-4e22-9763-08b65a0126fa",
+    "id": "85c08619-f2d1-4062-acf7-635ea7036ff5",
     "slotNumber": 44,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -986,7 +986,7 @@
         "normalizationCoefficient": 1.000030518509476
       },
       "duration": 0.24688,
-      "srcDuration": 0.24688
+      "failedPluginIndex": -1
     }
   },
   {
@@ -998,7 +998,7 @@
         0
       ]
     },
-    "id": "890b1626-3998-4f86-ba31-e6251d0a6f89",
+    "id": "0931131e-f772-4c10-8aee-566c76a19776",
     "slotNumber": 45,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1008,7 +1008,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 0.576064,
-      "srcDuration": 0.576064
+      "failedPluginIndex": -1
     }
   },
   {
@@ -1020,7 +1020,7 @@
         0
       ]
     },
-    "id": "7bda56da-947f-4317-bae6-dd4399bb0d13",
+    "id": "99a4bae8-8d91-455f-a5d7-156d31fe2d70",
     "slotNumber": 46,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1030,7 +1030,7 @@
         "normalizationCoefficient": 1.0239683759766696
       },
       "duration": 0.265184,
-      "srcDuration": 0.265184
+      "failedPluginIndex": -1
     }
   },
   {
@@ -1042,7 +1042,7 @@
         0
       ]
     },
-    "id": "b6337610-af66-4b6c-a5cf-29e6bbe53123",
+    "id": "6ae0cb56-6aef-4b92-a2f6-0560f758455b",
     "slotNumber": 47,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1052,7 +1052,7 @@
         "normalizationCoefficient": 1.0239683759766696
       },
       "duration": 0.340864,
-      "srcDuration": 0.340864
+      "failedPluginIndex": -1
     }
   },
   {
@@ -1064,7 +1064,7 @@
         0
       ]
     },
-    "id": "b6106e39-5fd8-47d6-bb58-3c204a1a8565",
+    "id": "bc872962-74eb-44bd-94da-e4e6a916c61e",
     "slotNumber": 48,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1074,7 +1074,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 0.192032,
-      "srcDuration": 0.192032
+      "failedPluginIndex": -1
     }
   },
   {
@@ -1086,7 +1086,7 @@
         0
       ]
     },
-    "id": "c359a593-7e6d-4cdf-a1d4-6ceb780a135a",
+    "id": "74f75845-bd6c-46d5-9fae-128d993f99a1",
     "slotNumber": 49,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1096,7 +1096,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 0.2056,
-      "srcDuration": 0.2056
+      "failedPluginIndex": -1
     }
   },
   {
@@ -1108,7 +1108,7 @@
         0
       ]
     },
-    "id": "727524b1-7c58-4f74-80a0-730e898d248a",
+    "id": "80e32706-f80b-4972-baeb-ef6b07b70341",
     "slotNumber": 50,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1118,7 +1118,7 @@
         "normalizationCoefficient": 1.0027235214799834
       },
       "duration": 0.616832,
-      "srcDuration": 0.616832
+      "failedPluginIndex": -1
     }
   },
   {
@@ -1130,7 +1130,7 @@
         0
       ]
     },
-    "id": "42827b7f-50c0-45bc-a87a-e98c06031028",
+    "id": "ee7e4dcc-4ceb-4ca3-8da8-3d98997102dd",
     "slotNumber": 51,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1140,7 +1140,7 @@
         "normalizationCoefficient": 1.0039831472793854
       },
       "duration": 0.135584,
-      "srcDuration": 0.135584
+      "failedPluginIndex": -1
     }
   },
   {
@@ -1152,7 +1152,7 @@
         0
       ]
     },
-    "id": "b9d2d219-80e1-481a-a579-687d75883209",
+    "id": "851c4752-ae26-4e8b-8439-8d7d51144b51",
     "slotNumber": 52,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1162,7 +1162,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 0.299936,
-      "srcDuration": 0.299936
+      "failedPluginIndex": -1
     }
   },
   {
@@ -1174,7 +1174,7 @@
         0
       ]
     },
-    "id": "bc2c7441-8b86-402d-90b8-978570ff04d8",
+    "id": "b96afbbd-f164-465f-b8c8-54b68437f7eb",
     "slotNumber": 53,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1184,7 +1184,7 @@
         "normalizationCoefficient": 1.0239683759766696
       },
       "duration": 0.159328,
-      "srcDuration": 0.159328
+      "failedPluginIndex": -1
     }
   },
   {
@@ -1196,7 +1196,7 @@
         0
       ]
     },
-    "id": "76277ed7-49f1-48d1-9989-a9c2bb87bede",
+    "id": "6a434fec-bf7c-4abc-a4d1-d676c199d630",
     "slotNumber": 54,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1206,7 +1206,7 @@
         "normalizationCoefficient": 1.0239683759766696
       },
       "duration": 0.44384,
-      "srcDuration": 0.44384
+      "failedPluginIndex": -1
     }
   },
   {
@@ -1218,7 +1218,7 @@
         0
       ]
     },
-    "id": "67846f51-5214-4dfd-a796-ad23cd30f955",
+    "id": "1f6f8a5a-f656-4465-8d60-5f9d7afa37d7",
     "slotNumber": 55,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1228,7 +1228,7 @@
         "normalizationCoefficient": 1.0001526111772425
       },
       "duration": 0.211584,
-      "srcDuration": 0.211584
+      "failedPluginIndex": -1
     }
   },
   {
@@ -1240,7 +1240,7 @@
         0
       ]
     },
-    "id": "5707457d-08e5-4c80-bc6b-7799060cd662",
+    "id": "c0753b90-a235-4ed2-8ffb-a9a3e019acee",
     "slotNumber": 56,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1250,7 +1250,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 0.508192,
-      "srcDuration": 0.508192
+      "failedPluginIndex": -1
     }
   },
   {
@@ -1262,7 +1262,7 @@
         0
       ]
     },
-    "id": "e87c76a6-1e6c-4fd7-a23b-08f8f023aa8d",
+    "id": "f4efd93e-1b25-4a8b-9d25-df1ed18f11d4",
     "slotNumber": 57,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1272,7 +1272,7 @@
         "normalizationCoefficient": 1.0002747336609787
       },
       "duration": 0.483072,
-      "srcDuration": 0.483072
+      "failedPluginIndex": -1
     }
   },
   {
@@ -1284,7 +1284,7 @@
         0
       ]
     },
-    "id": "a4f089a7-1032-4a49-886d-1286be8d9d1e",
+    "id": "49eee605-e8e3-4a9c-809c-b45281dae614",
     "slotNumber": 58,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1294,7 +1294,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 0.194976,
-      "srcDuration": 0.194976
+      "failedPluginIndex": -1
     }
   },
   {
@@ -1306,7 +1306,7 @@
         0
       ]
     },
-    "id": "cfa294b4-86bd-49fa-bb75-2a2df458713f",
+    "id": "9307d2df-cd33-4185-b094-a86bec6aa76a",
     "slotNumber": 59,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1316,7 +1316,7 @@
         "normalizationCoefficient": 2.3741983981831964
       },
       "duration": 0.440384,
-      "srcDuration": 0.440384
+      "failedPluginIndex": -1
     }
   },
   {
@@ -1328,7 +1328,7 @@
         0
       ]
     },
-    "id": "0d1e3938-620f-4155-a37c-f173c6d9a487",
+    "id": "8fd36a61-23e4-44a7-a6e6-e22f9eab6fab",
     "slotNumber": 60,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1338,7 +1338,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 1.190272,
-      "srcDuration": 1.190272
+      "failedPluginIndex": -1
     }
   },
   {
@@ -1350,7 +1350,7 @@
         0
       ]
     },
-    "id": "46420c9d-147a-4b53-826f-5ad537ddc94f",
+    "id": "9589cdce-87fd-411a-baa9-b9fdc692c1d5",
     "slotNumber": 61,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1360,7 +1360,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 0.394592,
-      "srcDuration": 0.394592
+      "failedPluginIndex": -1
     }
   },
   {
@@ -1372,7 +1372,7 @@
         0
       ]
     },
-    "id": "9594ac2f-25ae-4c5e-9890-88f33c1e1fb3",
+    "id": "a3b28f8e-8146-431c-9c15-e012263f4ce9",
     "slotNumber": 62,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1382,7 +1382,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 0.26336,
-      "srcDuration": 0.26336
+      "failedPluginIndex": -1
     }
   },
   {
@@ -1394,7 +1394,7 @@
         0
       ]
     },
-    "id": "eb765fcd-f5a0-402d-b8cc-b2801238096b",
+    "id": "75440452-2496-4f60-9f0b-26d6d3f9e581",
     "slotNumber": 63,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1404,7 +1404,7 @@
         "normalizationCoefficient": 1.0239683759766696
       },
       "duration": 0.504768,
-      "srcDuration": 0.504768
+      "failedPluginIndex": -1
     }
   },
   {
@@ -1416,7 +1416,7 @@
         0
       ]
     },
-    "id": "cfead821-81ba-422d-83c6-ba4a546f1f01",
+    "id": "4abf94df-bcd0-4a9d-966a-df610be8580b",
     "slotNumber": 64,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1426,7 +1426,7 @@
         "normalizationCoefficient": 1.0107342974173743
       },
       "duration": 0.371936,
-      "srcDuration": 0.371936
+      "failedPluginIndex": -1
     }
   },
   {
@@ -1438,7 +1438,7 @@
         0
       ]
     },
-    "id": "790f272f-4400-46c6-9dd5-e425a8de08b0",
+    "id": "5c59af48-f1c7-4b6c-990e-13f824f0598b",
     "slotNumber": 65,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1448,7 +1448,7 @@
         "normalizationCoefficient": 1.0239683759766696
       },
       "duration": 0.70336,
-      "srcDuration": 0.70336
+      "failedPluginIndex": -1
     }
   },
   {
@@ -1460,7 +1460,7 @@
         0
       ]
     },
-    "id": "f91db688-d1a2-4f13-a984-5adac4a07b8d",
+    "id": "43a556a8-745b-4700-a00e-2930d21f956d",
     "slotNumber": 66,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1470,7 +1470,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 0.292768,
-      "srcDuration": 0.292768
+      "failedPluginIndex": -1
     }
   },
   {
@@ -1482,7 +1482,7 @@
         0
       ]
     },
-    "id": "afdee720-0ec2-4516-bcd9-212497f475b5",
+    "id": "ef73b801-54f2-4175-a2c3-77a8490e4664",
     "slotNumber": 67,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1492,7 +1492,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 0.369696,
-      "srcDuration": 0.369696
+      "failedPluginIndex": -1
     }
   },
   {
@@ -1504,7 +1504,7 @@
         0
       ]
     },
-    "id": "2b37094b-8d82-4c60-be54-89037fb5d9eb",
+    "id": "4bbbd65d-78cc-4151-a897-7afb7618506e",
     "slotNumber": 68,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1514,7 +1514,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 0.24048,
-      "srcDuration": 0.24048
+      "failedPluginIndex": -1
     }
   },
   {
@@ -1526,7 +1526,7 @@
         0
       ]
     },
-    "id": "13778001-1447-44b8-9c26-526448179d46",
+    "id": "6c17c5a6-ba4b-443a-8cc5-50ddbfd2eae9",
     "slotNumber": 69,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1536,7 +1536,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 1.179456,
-      "srcDuration": 1.179456
+      "failedPluginIndex": -1
     }
   },
   {
@@ -1548,7 +1548,7 @@
         0
       ]
     },
-    "id": "e11829f1-9f9c-47fb-bb8b-6e4fa86d02ea",
+    "id": "4c443e06-3b8d-4442-bcb1-9c5d3259a42b",
     "slotNumber": 70,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1558,7 +1558,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 0.608896,
-      "srcDuration": 0.608896
+      "failedPluginIndex": -1
     }
   },
   {
@@ -1570,7 +1570,7 @@
         0
       ]
     },
-    "id": "f9758c19-ce4a-49ef-b095-0954bafbbeb6",
+    "id": "2982327e-e073-4128-8fe7-b6961d7baf2d",
     "slotNumber": 71,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1580,7 +1580,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 1.27536,
-      "srcDuration": 1.27536
+      "failedPluginIndex": -1
     }
   },
   {
@@ -1592,7 +1592,7 @@
         0
       ]
     },
-    "id": "a25c4d40-f39e-4826-b992-78f0d2a120d5",
+    "id": "e4871e82-138f-42de-be68-d50e8cfc1ec1",
     "slotNumber": 72,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1602,7 +1602,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 0.660192,
-      "srcDuration": 0.660192
+      "failedPluginIndex": -1
     }
   },
   {
@@ -1614,7 +1614,7 @@
         0
       ]
     },
-    "id": "457974a7-d17b-4a96-b7af-24130e9f650a",
+    "id": "15b64011-38cf-4205-8442-6fc1f49991cc",
     "slotNumber": 73,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1624,7 +1624,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 1.069856,
-      "srcDuration": 1.069856
+      "failedPluginIndex": -1
     }
   },
   {
@@ -1636,7 +1636,7 @@
         0
       ]
     },
-    "id": "9f0b1f99-d9b7-4606-b6fd-26673106c6ec",
+    "id": "ace39b55-d283-4a12-aa40-17c598e74843",
     "slotNumber": 74,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1646,7 +1646,7 @@
         "normalizationCoefficient": 1.0018344135991195
       },
       "duration": 1.098016,
-      "srcDuration": 1.098016
+      "failedPluginIndex": -1
     }
   },
   {
@@ -1658,7 +1658,7 @@
         0
       ]
     },
-    "id": "c377856d-c1e5-4d53-a9b9-8c74db4a518a",
+    "id": "63f99ff9-06f1-4805-8c9e-13c3ff150dac",
     "slotNumber": 75,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1668,7 +1668,7 @@
         "normalizationCoefficient": 1.0002136686914318
       },
       "duration": 0.949312,
-      "srcDuration": 0.949312
+      "failedPluginIndex": -1
     }
   },
   {
@@ -1680,7 +1680,7 @@
         0
       ]
     },
-    "id": "4b647f88-3624-4c94-9410-8721bb3985df",
+    "id": "5589164c-8922-4012-9bd1-73e22e210788",
     "slotNumber": 76,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1690,7 +1690,7 @@
         "normalizationCoefficient": 1.0049068315354714
       },
       "duration": 0.493152,
-      "srcDuration": 0.493152
+      "failedPluginIndex": -1
     }
   },
   {
@@ -1702,7 +1702,7 @@
         0
       ]
     },
-    "id": "72ceceb4-a306-424d-aeca-b59f37b5efa6",
+    "id": "cb8a5529-7551-48bf-9014-3769c701ea35",
     "slotNumber": 77,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1712,7 +1712,7 @@
         "normalizationCoefficient": 1.0063883271254424
       },
       "duration": 0.48944,
-      "srcDuration": 0.48944
+      "failedPluginIndex": -1
     }
   },
   {
@@ -1724,7 +1724,7 @@
         0
       ]
     },
-    "id": "4407cf9d-d7ea-4e29-ad2f-0216b6ac763e",
+    "id": "1f65d3b4-15e9-48a5-a86c-5ea640c518a4",
     "slotNumber": 78,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1734,7 +1734,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 0.561312,
-      "srcDuration": 0.561312
+      "failedPluginIndex": -1
     }
   },
   {
@@ -1746,7 +1746,7 @@
         0
       ]
     },
-    "id": "430838f0-2230-4bb6-8976-b849c4b6d3e1",
+    "id": "4526b9c0-ade3-4a9a-8f05-18dd57abe19a",
     "slotNumber": 79,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1756,7 +1756,7 @@
         "normalizationCoefficient": 1.0804906550708249
       },
       "duration": 0.566912,
-      "srcDuration": 0.566912
+      "failedPluginIndex": -1
     }
   },
   {
@@ -1768,7 +1768,7 @@
         0
       ]
     },
-    "id": "26a99105-b511-4452-910b-a803d1a9acfd",
+    "id": "a56ff72d-7137-4e02-a669-cea7ab81157b",
     "slotNumber": 80,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1778,7 +1778,7 @@
         "normalizationCoefficient": 1.0133599065331427
       },
       "duration": 0.474112,
-      "srcDuration": 0.474112
+      "failedPluginIndex": -1
     }
   },
   {
@@ -1790,7 +1790,7 @@
         0
       ]
     },
-    "id": "fdd8e4a3-4f36-48d5-8014-f9c2035b24a3",
+    "id": "52b65415-0fdd-40cc-a088-4910361fb921",
     "slotNumber": 81,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1800,7 +1800,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 1.87488,
-      "srcDuration": 1.87488
+      "failedPluginIndex": -1
     }
   },
   {
@@ -1812,7 +1812,7 @@
         0
       ]
     },
-    "id": "fd7b69da-dd52-4a96-8785-2f0e9ac4fbb5",
+    "id": "4a306393-6f01-4604-82ad-3f6745b1e0ea",
     "slotNumber": 82,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1822,7 +1822,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 0.732576,
-      "srcDuration": 0.732576
+      "failedPluginIndex": -1
     }
   },
   {
@@ -1834,7 +1834,7 @@
         0
       ]
     },
-    "id": "343bfde5-88e9-44d3-a953-ef6e54bbd0eb",
+    "id": "d3922fbb-c90b-4569-8a84-896a843ce156",
     "slotNumber": 83,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1844,7 +1844,7 @@
         "normalizationCoefficient": 1.0013445789023347
       },
       "duration": 0.465728,
-      "srcDuration": 0.465728
+      "failedPluginIndex": -1
     }
   },
   {
@@ -1856,7 +1856,7 @@
         0
       ]
     },
-    "id": "cad2a822-b374-485f-a1e6-c37a1d588475",
+    "id": "0b2fc00a-e1e7-4efe-b052-9c94f6bf088a",
     "slotNumber": 84,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1866,7 +1866,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 0.890592,
-      "srcDuration": 0.890592
+      "failedPluginIndex": -1
     }
   },
   {
@@ -1878,7 +1878,7 @@
         0
       ]
     },
-    "id": "4938be4a-0b3d-4fe9-852f-f37cddbf7ab7",
+    "id": "012d0c43-fbde-473b-96aa-aaba7e60b978",
     "slotNumber": 85,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1888,7 +1888,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 0.4816,
-      "srcDuration": 0.4816
+      "failedPluginIndex": -1
     }
   },
   {
@@ -1900,7 +1900,7 @@
         0
       ]
     },
-    "id": "7149cef5-2032-454c-9f51-79c793a55cc5",
+    "id": "ab71b150-4930-45f0-a95f-89f92ffcf974",
     "slotNumber": 86,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1910,7 +1910,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 0.387424,
-      "srcDuration": 0.387424
+      "failedPluginIndex": -1
     }
   },
   {
@@ -1922,7 +1922,7 @@
         0
       ]
     },
-    "id": "21811d32-e648-4208-be83-620d4c7ed754",
+    "id": "abbe1f45-e192-4635-87f2-85f304bdd84f",
     "slotNumber": 87,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1932,7 +1932,7 @@
         "normalizationCoefficient": 1.0012527882176796
       },
       "duration": 1.3248,
-      "srcDuration": 1.3248
+      "failedPluginIndex": -1
     }
   },
   {
@@ -1944,7 +1944,7 @@
         0
       ]
     },
-    "id": "9c58d30f-ac11-4e50-b471-5c31ca31a709",
+    "id": "a5164697-de61-41cc-ad11-f2c72c8986f9",
     "slotNumber": 88,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1954,7 +1954,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 2.2528,
-      "srcDuration": 2.2528
+      "failedPluginIndex": -1
     }
   },
   {
@@ -1966,7 +1966,7 @@
         0
       ]
     },
-    "id": "598d865b-8bb5-424b-a2b2-d2f2c3e19792",
+    "id": "44398df2-1979-4eec-b43f-f338237adf44",
     "slotNumber": 89,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1976,7 +1976,7 @@
         "normalizationCoefficient": 1.0239683759766696
       },
       "duration": 2.37856,
-      "srcDuration": 2.37856
+      "failedPluginIndex": -1
     }
   },
   {
@@ -1988,7 +1988,7 @@
         0
       ]
     },
-    "id": "ac27c010-7333-42b0-b3af-5cca76e74d9d",
+    "id": "d618d3a4-33c8-4918-8c62-5dc16bbf64ad",
     "slotNumber": 90,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -1998,7 +1998,7 @@
         "normalizationCoefficient": 1.0239683759766696
       },
       "duration": 0.47568,
-      "srcDuration": 0.47568
+      "failedPluginIndex": -1
     }
   },
   {
@@ -2010,7 +2010,7 @@
         0
       ]
     },
-    "id": "c15dda76-038d-4f25-b09f-e4004f2031a5",
+    "id": "6fe7b5e0-b98c-4520-acb5-6b9def807d6e",
     "slotNumber": 91,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -2020,7 +2020,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 0.222816,
-      "srcDuration": 0.222816
+      "failedPluginIndex": -1
     }
   },
   {
@@ -2032,7 +2032,7 @@
         0
       ]
     },
-    "id": "6bd8e25c-1741-42e8-92f8-5c0375401cff",
+    "id": "011099c4-0beb-499c-8b56-501e08e87eca",
     "slotNumber": 92,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -2042,7 +2042,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 0.2336,
-      "srcDuration": 0.2336
+      "failedPluginIndex": -1
     }
   },
   {
@@ -2054,7 +2054,7 @@
         0
       ]
     },
-    "id": "00bcf072-3c95-4d44-a5ec-55bb8dd53fa4",
+    "id": "52700547-172a-4d20-98d8-837c0c6dc9c7",
     "slotNumber": 93,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -2064,7 +2064,7 @@
         "normalizationCoefficient": 1
       },
       "duration": 0.350272,
-      "srcDuration": 0.350272
+      "failedPluginIndex": -1
     }
   },
   {
@@ -2076,7 +2076,7 @@
         0
       ]
     },
-    "id": "1281693e-af1d-4e36-b4ee-761cc8875ca5",
+    "id": "173f6ab1-6377-4f15-9dcc-ff8d67a27bf5",
     "slotNumber": 94,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -2086,7 +2086,7 @@
         "normalizationCoefficient": 1.0239683759766696
       },
       "duration": 0.620672,
-      "srcDuration": 0.620672
+      "failedPluginIndex": -1
     }
   },
   {
@@ -2098,7 +2098,7 @@
         0
       ]
     },
-    "id": "3d8b5c6c-fe95-4f26-b322-1b8ac6404d2f",
+    "id": "e791a360-9917-41c7-bf57-e85e13374101",
     "slotNumber": 95,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -2108,7 +2108,7 @@
         "normalizationCoefficient": 1.0239683759766696
       },
       "duration": 1.620736,
-      "srcDuration": 1.620736
+      "failedPluginIndex": -1
     }
   },
   {
@@ -2120,7 +2120,7 @@
         0
       ]
     },
-    "id": "fe3030fa-d120-42c7-a9a6-85d1065b04ad",
+    "id": "efe847a2-87e5-4bf7-bb18-33b4adc056bf",
     "slotNumber": 96,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -2130,7 +2130,7 @@
         "normalizationCoefficient": 1.0239683759766696
       },
       "duration": 0.284768,
-      "srcDuration": 0.284768
+      "failedPluginIndex": -1
     }
   },
   {
@@ -2142,7 +2142,7 @@
         0
       ]
     },
-    "id": "e212534a-134a-4893-93f0-eeb4ea0d2294",
+    "id": "25bbea43-125d-4b67-8606-9748e3183902",
     "slotNumber": 97,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -2152,7 +2152,7 @@
         "normalizationCoefficient": 1.0239683759766696
       },
       "duration": 0.23616,
-      "srcDuration": 0.23616
+      "failedPluginIndex": -1
     }
   },
   {
@@ -2164,7 +2164,7 @@
         0
       ]
     },
-    "id": "5fa7f6d2-52b3-41b5-87f3-c01d633c2ea9",
+    "id": "4d6a12a5-d3f2-4bc2-add6-392fe8db7706",
     "slotNumber": 98,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -2174,7 +2174,7 @@
         "normalizationCoefficient": 1.0239683759766696
       },
       "duration": 2.67984,
-      "srcDuration": 2.67984
+      "failedPluginIndex": -1
     }
   },
   {
@@ -2186,7 +2186,7 @@
         0
       ]
     },
-    "id": "f0a16d5a-49bf-4420-8481-f2e45707b8e4",
+    "id": "102f234d-785d-4e6b-86dc-8134cd3d9802",
     "slotNumber": 99,
     "dateSampled": "2014-10-01T00:00:00.000Z",
     "cachedInfo": {
@@ -2196,7 +2196,7 @@
         "normalizationCoefficient": 1.0239683759766696
       },
       "duration": 0.92608,
-      "srcDuration": 0.92608
+      "failedPluginIndex": -1
     }
   }
 ]

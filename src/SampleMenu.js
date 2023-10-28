@@ -24,6 +24,7 @@ import { exportSampleContainersToZip } from './utils/zipExport.js';
 import { downloadBlob } from './utils/download.js';
 
 /** @typedef {import('./store').SampleContainer} SampleContainer */
+/** @typedef {import('./sampleCacheStore.js').SampleCache} SampleCache */
 
 const SampleMenu = React.memo(
   /**
@@ -32,6 +33,8 @@ const SampleMenu = React.memo(
    *   focusedSampleId: string | null;
    *   userSamples: Map<string, SampleContainer>;
    *   factorySamples: Map<string, SampleContainer>;
+   *   userSampleCaches: Map<string, SampleCache>;
+   *   factorySampleCaches: Map<string, SampleCache>;
    *   onSampleSelect: (id: string | null) => void;
    *   onSampleDelete: (id: string | string[]) => void;
    * }} props
@@ -41,6 +44,8 @@ const SampleMenu = React.memo(
     focusedSampleId,
     userSamples,
     factorySamples,
+    userSampleCaches,
+    factorySampleCaches,
     onSampleSelect,
     onSampleDelete,
   }) {
@@ -203,6 +208,11 @@ const SampleMenu = React.memo(
 
     const [deleting, setDeleting] = useState(false);
 
+    const allSampleCaches = useMemo(
+      () => new Map([...userSampleCaches, ...factorySampleCaches]),
+      [userSampleCaches, factorySampleCaches]
+    );
+
     return (
       <>
         <Button
@@ -260,6 +270,7 @@ const SampleMenu = React.memo(
           {(multiSelectedSampleList && (
             <VolcaTransferControl
               samples={multiSelectedSampleList}
+              sampleCaches={allSampleCaches}
               justTheButton
               showInfoBeforeTransfer
               button={
@@ -339,6 +350,7 @@ const SampleMenu = React.memo(
              * @type {{
              *   eventKey: 'user' | 'factory';
              *   filteredSamples: typeof userSamplesFiltered;
+             *   sampleCaches: Map<string, SampleCache>;
              *   headerRef: React.Ref<HTMLHeadingElement>;
              *   headerMouseDownRef: React.RefObject<boolean>;
              * }[]}
@@ -347,12 +359,14 @@ const SampleMenu = React.memo(
               {
                 eventKey: 'user',
                 filteredSamples: userSamplesFiltered,
+                sampleCaches: userSampleCaches,
                 headerRef: userSamplesHeader,
                 headerMouseDownRef: userSamplesHeaderMouseDown,
               },
               {
                 eventKey: 'factory',
                 filteredSamples: factorySamplesFiltered,
+                sampleCaches: factorySampleCaches,
                 headerRef: factorySamplesHeader,
                 headerMouseDownRef: factorySamplesHeaderMouseDown,
               },
@@ -360,6 +374,7 @@ const SampleMenu = React.memo(
               ({
                 eventKey,
                 filteredSamples,
+                sampleCaches,
                 headerRef,
                 headerMouseDownRef,
               }) => (
@@ -411,6 +426,7 @@ const SampleMenu = React.memo(
                     <Accordion.Body className={classes.accordionBody}>
                       <SampleList
                         samples={filteredSamples}
+                        sampleCaches={sampleCaches}
                         selectedSampleId={focusedSampleId}
                         multipleSelection={multipleSelection}
                         onSampleSelect={handleSampleSelect}

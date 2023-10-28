@@ -8,15 +8,20 @@ import {
 } from './utils/zipExport.js';
 
 import classes from './ImportFromZip.module.scss';
+import PluginConfirmModal from './PluginConfirmModal.js';
 
 /** @typedef {import('./store.js').SampleContainer} SampleContainer */
 /** @typedef {import('./store.js').SampleMetadataExport} SampleMetadataExport */
+/** @typedef {import('./sampleCacheStore.js').SampleCache} SampleCache */
 
 const ImportFromZip = React.memo(
   /**
    * @param {{
    *   userSamples: Map<string, SampleContainer>;
-   *   onImport: (samples: SampleContainer[]) => void;
+   *   onImport: (
+   *     samples: SampleContainer[],
+   *     sampleCaches: SampleCache[]
+   *   ) => void;
    * }} props
    */
   function ImportFromZip({ userSamples, onImport }) {
@@ -91,6 +96,18 @@ const ImportFromZip = React.memo(
       }
     }, [uiDismissed]);
 
+    const [pluginConfirmationState, setPluginConfirmationState] = useState(
+      /**
+       * @type {{
+       *   pluginName: string;
+       *   variant: 'confirm-name' | 'replace';
+       *   onConfirmName: (name: string) => void;
+       *   onConfirmReplace: (shouldReplace: boolean) => void;
+       * } | null}
+       */
+      (null)
+    );
+
     {
       const isImporting = uiState === 'import';
       const sampleIdsToImportRef = useRef(sampleIdsToImport);
@@ -98,15 +115,45 @@ const ImportFromZip = React.memo(
       useEffect(() => {
         if (!fileRef.current || !isImporting) return;
         let cancelled = false;
-        importSampleContainersFromZip(
-          fileRef.current,
-          [...sampleIdsToImportRef.current],
-          (progress) => {
+        importSampleContainersFromZip({
+          zipFile: fileRef.current,
+          idsToImport: [...sampleIdsToImportRef.current],
+          onProgress(progress) {
             if (!cancelled) setImportProgress(progress);
-          }
-        )
-          .then(async ({ sampleContainers, failedImports }) => {
-            onImport(sampleContainers);
+          },
+          onConfirmPluginName(name) {
+            return /** @type {Promise<string>} */ (
+              new Promise((resolve) => {
+                setPluginConfirmationState({
+                  pluginName: name,
+                  variant: 'confirm-name',
+                  onConfirmName(newName) {
+                    resolve(newName);
+                    setPluginConfirmationState(null);
+                  },
+                  onConfirmReplace() {},
+                });
+              })
+            );
+          },
+          onConfirmPluginReplace(name) {
+            return /** @type {Promise<boolean>} */ (
+              new Promise((resolve) => {
+                setPluginConfirmationState({
+                  pluginName: name,
+                  variant: 'replace',
+                  onConfirmReplace(shouldReplace) {
+                    resolve(shouldReplace);
+                    setPluginConfirmationState(null);
+                  },
+                  onConfirmName() {},
+                });
+              })
+            );
+          },
+        })
+          .then(async ({ sampleContainers, sampleCaches, failedImports }) => {
+            onImport(sampleContainers, sampleCaches);
             setFailedImports(failedImports);
             setUiState('report');
           })
@@ -333,6 +380,9 @@ const ImportFromZip = React.memo(
             )}
           </Modal.Footer>
         </Modal>
+        {pluginConfirmationState && (
+          <PluginConfirmModal {...pluginConfirmationState} />
+        )}
       </>
     );
   }

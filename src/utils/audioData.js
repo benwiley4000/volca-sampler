@@ -3,7 +3,6 @@ import {
   createElement,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useRef,
   useState,
@@ -14,6 +13,8 @@ import { resample } from 'wave-resampler';
 import { SampleContainer } from '../store.js';
 import { SAMPLE_RATE } from './constants.js';
 import { userOS } from './os.js';
+import { PluginError, getPlugin } from './plugins.js';
+import { WAVEFORM_CACHED_WIDTH, getPeaksForSamples } from './waveform.js';
 
 /**
  * @param {Float32Array} array
@@ -29,10 +30,15 @@ export function getTrimmedView(array, trimFrames) {
 /**
  * @param {AudioBuffer} audioBuffer
  * @param {[number, number]} trimFrames
+ * @param {Float32Array} [suppliedSampleArray]
  */
-export function getMonoSamplesFromAudioBuffer(audioBuffer, trimFrames) {
+export function getMonoSamplesFromAudioBuffer(
+  audioBuffer,
+  trimFrames,
+  suppliedSampleArray
+) {
   const trimmedLength = audioBuffer.length - trimFrames[0] - trimFrames[1];
-  const samples = new Float32Array(trimmedLength);
+  const samples = suppliedSampleArray || new Float32Array(trimmedLength);
   const channels = /** @type {void[]} */ (Array(audioBuffer.numberOfChannels))
     .fill()
     .map((_, i) => getTrimmedView(audioBuffer.getChannelData(i), trimFrames));
@@ -81,10 +87,12 @@ function scaleSamples(samples, coef) {
  * Normalizes an array of samples so the peak value is 1 or -1.
  * Note: mutates input array (no return value).
  * @param {Float32Array} samples array of floats
+ * @returns {number} peak
  */
 function normalizeSamples(samples) {
   const peak = findSamplePeak(samples);
   scaleSamples(samples, 1 / peak);
+  return peak;
 }
 
 /**
@@ -125,10 +133,14 @@ export function interleaveSampleChannels(sampleChannels) {
   const channelCount = sampleChannels.length;
   const sampleCount = sampleChannels[0].length;
   const interleaved = new Float32Array(channelCount * sampleCount);
-  for (let sampleIndex = 0; sampleIndex < interleaved.length; sampleIndex++) {
-    const i = channelCount * sampleIndex;
+  for (
+    let samplepluginIndex = 0;
+    samplepluginIndex < interleaved.length;
+    samplepluginIndex++
+  ) {
+    const i = channelCount * samplepluginIndex;
     for (let ch = 0; ch < channelCount; ch++) {
-      interleaved[i + ch] = sampleChannels[ch][sampleIndex];
+      interleaved[i + ch] = sampleChannels[ch][samplepluginIndex];
     }
   }
   return interleaved;
@@ -203,12 +215,27 @@ export async function getSourceAudioBuffer(sourceFileId, shouldClampValues) {
   return audioBuffer;
 }
 
+export class PluginRunError extends Error {
+  /**
+   * @param {string} message
+   * @param {number} pluginIndex
+   */
+  constructor(message, pluginIndex) {
+    super(message);
+    this.pluginIndex = pluginIndex;
+  }
+}
+
 /**
  * Given sample container, returns a 16-bit mono wav file with the sample's
  * metadata parameters applied
  * @param {import('../store').SampleContainer} sampleContainer
  * @param {boolean} [forPreview]
- * @returns {Promise<{ data: Uint8Array; sampleRate: number }>}
+ * @returns {Promise<{
+ *   data: Uint8Array;
+ *   sampleRate: number;
+ *   cachedInfo: import('../sampleCacheStore').CachedInfo;
+ * }>}
  */
 export async function getTargetWavForSample(sampleContainer, forPreview) {
   const {
@@ -218,6 +245,7 @@ export async function getTargetWavForSample(sampleContainer, forPreview) {
     normalize,
     trim: { frames: trimFrames },
     pitchAdjustment,
+    plugins,
   } = sampleContainer.metadata;
   if (
     qualityBitDepth < 8 ||
@@ -232,24 +260,64 @@ export async function getTargetWavForSample(sampleContainer, forPreview) {
     sourceFileId,
     Boolean(userFileInfo)
   );
-  const monoSamplesPreNormalize =
+  /** @type {AudioBuffer} */
+  let monoAudioBuffer;
+  if (sourceAudioBuffer.numberOfChannels === 1) {
+    monoAudioBuffer = sourceAudioBuffer;
+  } else {
+    monoAudioBuffer = new AudioBuffer({
+      length: sourceAudioBuffer.length,
+      sampleRate: sourceAudioBuffer.sampleRate,
+      numberOfChannels: 1,
+    });
+    getMonoSamplesFromAudioBuffer(
+      sourceAudioBuffer,
+      [0, 0],
+      monoAudioBuffer.getChannelData(0)
+    );
+  }
+
+  let postPluginBuffer = monoAudioBuffer;
+  let i = 0;
+  for (const { pluginName, pluginParams } of plugins) {
+    const plugin = getPlugin(pluginName);
+    try {
+      postPluginBuffer = await plugin.sampleTransform(
+        postPluginBuffer,
+        pluginParams
+      );
+    } catch (err) {
+      if (err instanceof PluginError) {
+        throw new PluginRunError(
+          err && err instanceof Error && err.message
+            ? err.message
+            : 'Plugin failed',
+          i
+        );
+      } else {
+        throw err;
+      }
+    }
+    i++;
+  }
+
+  const samplesPreNormalize =
     normalize === 'all'
-      ? sourceAudioBuffer.numberOfChannels === 1
-        ? sourceAudioBuffer.getChannelData(0)
-        : getMonoSamplesFromAudioBuffer(sourceAudioBuffer, [0, 0])
-      : sourceAudioBuffer.numberOfChannels === 1
-      ? getTrimmedView(sourceAudioBuffer.getChannelData(0), trimFrames)
-      : getMonoSamplesFromAudioBuffer(sourceAudioBuffer, trimFrames);
+      ? postPluginBuffer.getChannelData(0)
+      : getTrimmedView(postPluginBuffer.getChannelData(0), trimFrames);
   if (normalize === 'all') {
-    normalizeSamples(monoSamplesPreNormalize);
+    normalizeSamples(samplesPreNormalize);
   }
   const samples =
     normalize === 'all'
-      ? getTrimmedView(monoSamplesPreNormalize, trimFrames)
-      : monoSamplesPreNormalize;
+      ? getTrimmedView(samplesPreNormalize, trimFrames)
+      : samplesPreNormalize;
   if (normalize === 'selection') {
     normalizeSamples(samples);
   }
+
+  const waveformPeaks = getPeaksForSamples(samples, WAVEFORM_CACHED_WIDTH);
+
   // for now we don't support pitch adjustments out of these bounds
   const hasValidPitchAdjustment =
     !isNaN(pitchAdjustment) &&
@@ -265,9 +333,11 @@ export async function getTargetWavForSample(sampleContainer, forPreview) {
         )
       )
     : samples;
+
   if (forPreview && qualityBitDepth < 16) {
     applyQualityBitDepthToSamples(pitchAdjustedSamples, qualityBitDepth);
   }
+
   const samples16 = convertSamplesTo16Bit(pitchAdjustedSamples);
   const samplesByteLength = samples16.length * 2;
   /**
@@ -285,45 +355,11 @@ export async function getTargetWavForSample(sampleContainer, forPreview) {
   return {
     data: wavBuffer,
     sampleRate: 16,
-  };
-}
-
-/**
- * @param {import('../store').SampleContainer} sampleContainer
- * @param {boolean} [neededYet]
- */
-export function useTargetAudioForSample(sampleContainer, neededYet = true) {
-  const [targetWav, setTargetWav] = useState(
-    /** @type {Uint8Array | null} */ (null)
-  );
-  const [audioBufferForAudioFileData, setAudioBufferForAudioFileData] =
-    useState(/** @type {AudioBuffer | null} */ (null));
-  useEffect(() => {
-    if (!neededYet) {
-      return;
-    }
-    setTargetWav(null);
-    let cancelled = false;
-    getTargetWavForSample(sampleContainer, true).then(({ data }) => {
-      if (!cancelled) {
-        setTargetWav(data);
-      }
-    });
-  }, [sampleContainer, neededYet]);
-  useEffect(() => {
-    setAudioBufferForAudioFileData(null);
-    if (targetWav) {
-      let cancelled = false;
-      getAudioBufferForAudioFileData(targetWav).then((audioBuffer) => {
-        if (!cancelled) {
-          setAudioBufferForAudioFileData(audioBuffer);
-        }
-      });
-    }
-  }, [targetWav]);
-  return {
-    wav: targetWav,
-    audioBuffer: audioBufferForAudioFileData,
+    cachedInfo: {
+      waveformPeaks,
+      duration: samples16.length / sourceAudioBuffer.sampleRate,
+      failedPluginIndex: -1,
+    },
   };
 }
 

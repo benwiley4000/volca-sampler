@@ -33,13 +33,24 @@ function useSampleWithTemporalSlotNumber(readonlySample) {
 /**
  * @param {{
  *   sample: import('./store').SampleContainer;
+ *   sampleCache: import('./sampleCacheStore.js').SampleCache | null;
  *   onSampleDuplicate: (id: string) => void;
  * }} props
  */
-function SampleDetailReadonly({ sample: readonlySample, onSampleDuplicate }) {
+function SampleDetailReadonly({
+  sample: readonlySample,
+  sampleCache,
+  onSampleDuplicate,
+}) {
   const { sample, setSlotNumber } =
     useSampleWithTemporalSlotNumber(readonlySample);
-
+  const sampleCaches = useMemo(
+    () =>
+      sampleCache
+        ? new Map().set(sampleCache.sampleContainer.id, sampleCache)
+        : new Map(),
+    [sampleCache]
+  );
   return (
     <Container fluid="sm">
       <h2 className={classes.sampleName}>{sample.metadata.name}</h2>
@@ -61,10 +72,11 @@ function SampleDetailReadonly({ sample: readonlySample, onSampleDuplicate }) {
         </p>
       </Alert>
       <h4>Preview</h4>
-      <WaveformReadonly sample={sample} />
+      <WaveformReadonly sample={sample} sampleCache={sampleCache} />
       <h4>Transfer</h4>
       <VolcaTransferControl
         samples={sample}
+        sampleCaches={sampleCaches}
         onSlotNumberUpdate={setSlotNumber}
       />
     </Container>

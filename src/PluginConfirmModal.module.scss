@@ -1,0 +1,20 @@
+@import 'bootstrap_custom_variables';
+@import '~bootstrap/scss/functions';
+@import '~bootstrap/scss/mixins';
+@import '~bootstrap/scss/variables';
+
+@include media-breakpoint-up(md) {
+  .pluginConfirmModal > * {
+    // We don't always have enough text content to fill up the modal space
+    // but it's weird for the modal to be changing size all the time.
+    width: var(--bs-modal-width);
+  }
+}
+
+.footer {
+  justify-content: space-between !important;
+
+  &:only-child {
+    margin-left: auto;
+  }
+}

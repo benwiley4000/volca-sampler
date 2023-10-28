@@ -19,13 +19,11 @@ import {
   sampleContainerDateCompare,
   storeAudioSourceFile,
 } from './store.js';
+import { SampleCache } from './sampleCacheStore.js';
 import { getSamplePeaksForAudioBuffer } from './utils/waveform.js';
 import { getAudioBufferForAudioFileData } from './utils/audioData.js';
 import { newSampleName } from './utils/words.js';
-import {
-  onSampleUpdateEvent,
-  sendSampleUpdateEvent,
-} from './utils/sampleTabSync.js';
+import { onTabUpdateEvent, sendTabUpdateEvent } from './utils/tabSync.js';
 
 import classes from './App.module.scss';
 
@@ -35,14 +33,39 @@ function App() {
   const [userSamples, setUserSamples] = useState(
     /** @type {Map<string, SampleContainer>} */ (new Map())
   );
+  const [userSampleCaches, setUserSampleCaches] = useState(
+    /** @type {Map<string, SampleCache>} */ (new Map())
+  );
   const [factorySamples, setFactorySamples] = useState(
     /** @type {Map<string, SampleContainer>} */ (new Map())
+  );
+  const [factorySampleCaches, setFactorySampleCaches] = useState(
+    /** @type {Map<string, SampleCache>} */ (new Map())
   );
   const allSamples = useMemo(() => {
     return new Map([...userSamples, ...factorySamples]);
   }, [userSamples, factorySamples]);
   useEffect(() => {
-    getFactorySamples().then(setFactorySamples).catch(console.error);
+    getFactorySamples()
+      .then((factorySamples) => {
+        setFactorySamples(
+          new Map(
+            [...factorySamples].map(([id, { sampleContainer }]) => [
+              id,
+              sampleContainer,
+            ])
+          )
+        );
+        setFactorySampleCaches(
+          new Map(
+            [...factorySamples].map(([id, { sampleContainer, cachedInfo }]) => [
+              id,
+              new SampleCache({ sampleContainer, cachedInfo }),
+            ])
+          )
+        );
+      })
+      .catch(console.error);
   }, []);
   const restoredFocusedSampleId = sessionStorage.getItem(sessionStorageKey);
   const [focusedSampleId, setFocusedSampleId] = useState(
@@ -63,7 +86,7 @@ function App() {
   useEffect(() => {
     // TODO: error handling
     SampleContainer.getAllFromStorage()
-      .then((storedSamples) => {
+      .then(async ({ sampleContainers: storedSamples, cachedInfos }) => {
         setUserSamples((samples) => {
           const newSamples = new Map([
             ...samples,
@@ -77,6 +100,38 @@ function App() {
               sampleContainerDateCompare(a, b)
             )
           );
+        });
+        const storedSampleCachedInfo =
+          await SampleCache.getAllCachedInfoFromStore();
+        setUserSampleCaches((sampleCaches) => {
+          return new Map([
+            ...sampleCaches,
+            ...storedSamples
+              .filter(
+                (s) => storedSampleCachedInfo.has(s.id) || cachedInfos.has(s.id)
+              )
+              .map((sampleContainer) => {
+                const upgradedCachedInfo = cachedInfos.get(sampleContainer.id);
+                if (upgradedCachedInfo) {
+                  return /** @type {[string, SampleCache]} */ ([
+                    sampleContainer.id,
+                    new SampleCache.Mutable.Upgraded({
+                      sampleContainer,
+                      cachedInfo: upgradedCachedInfo,
+                    }),
+                  ]);
+                }
+                return /** @type {[string, SampleCache]} */ ([
+                  sampleContainer.id,
+                  new SampleCache.Mutable({
+                    sampleContainer,
+                    cachedInfo: /** @type {CachedInfo} */ (
+                      storedSampleCachedInfo.get(sampleContainer.id)
+                    ),
+                  }),
+                ]);
+              }),
+          ]);
         });
       })
       .finally(() => {
@@ -129,18 +184,33 @@ function App() {
         type: userFile.type,
         ext: userFileExtension,
       },
-      cachedInfo: {
-        waveformPeaks,
-        duration: audioBuffer.duration,
-        srcDuration: audioBuffer.duration,
-      },
     });
     await sample.persist();
     setUserSamples((samples) => new Map([[sample.id, sample], ...samples]));
     setFocusedSampleId(sample.id);
-    Promise.resolve().then(() => sendSampleUpdateEvent([sample.id], 'create'));
+    Promise.resolve().then(() =>
+      sendTabUpdateEvent('sample', [sample.id], 'create')
+    );
+    const sampleCache = new SampleCache.Mutable({
+      sampleContainer: sample,
+      cachedInfo: {
+        waveformPeaks,
+        duration: audioBuffer.duration,
+        failedPluginIndex: -1,
+      },
+    });
+    await sampleCache.persist();
+    setUserSampleCaches((caches) =>
+      new Map(caches).set(sample.id, sampleCache)
+    );
+    Promise.resolve().then(() =>
+      sendTabUpdateEvent('cache', [sample.id], 'create')
+    );
     return 'saved';
   }, []);
+
+  const userSampleCachesRef = useRef(userSampleCaches);
+  userSampleCachesRef.current = userSampleCaches;
 
   /**
    * @type {(id: string, update: import('./store').SampleMetadataUpdateArg) => void}
@@ -150,7 +220,16 @@ function App() {
       const sample = samples.get(id);
       if (sample && sample instanceof SampleContainer.Mutable) {
         const updated = sample.update(updater, () => {
-          sendSampleUpdateEvent([sample.id], 'edit');
+          sendTabUpdateEvent('sample', [sample.id], 'edit');
+        });
+        Promise.resolve().then(async () => {
+          const sampleCache = userSampleCachesRef.current.get(id);
+          if (!(sampleCache && sampleCache instanceof SampleCache.Mutable))
+            return;
+          const newSampleCache = await sampleCache.update(updated);
+          setUserSampleCaches((caches) =>
+            new Map(caches).set(id, newSampleCache)
+          );
         });
         if (updated !== sample) {
           const newSamples = new Map(samples);
@@ -162,26 +241,49 @@ function App() {
     });
   }, []);
   /**
-   * @type {(bulkAddSamples: SampleContainer[]) => void}
+   * @type {(
+   *   bulkAddSamples: SampleContainer[],
+   *   bulkAddSampleCaches: SampleCache[]
+   * ) => void}
    */
-  const handleSampleBulkAdd = useCallback((bulkAddSamples) => {
-    setUserSamples((samples) => {
-      const newSamples = new Map([
-        ...samples,
-        ...bulkAddSamples.map(
-          (s) => /** @type {[string, SampleContainer]} */ ([s.id, s])
-        ),
-      ]);
-      return new Map(
-        [...newSamples].sort(([, a], [, b]) => sampleContainerDateCompare(a, b))
+  const handleSampleBulkAdd = useCallback(
+    (bulkAddSamples, bulkAddSampleCaches) => {
+      setUserSamples((samples) => {
+        const newSamples = new Map([
+          ...samples,
+          ...bulkAddSamples.map(
+            (s) => /** @type {[string, SampleContainer]} */ ([s.id, s])
+          ),
+        ]);
+        return new Map(
+          [...newSamples].sort(([, a], [, b]) =>
+            sampleContainerDateCompare(a, b)
+          )
+        );
+      });
+      sendTabUpdateEvent(
+        'sample',
+        bulkAddSamples.map((s) => s.id),
+        'create'
       );
-    });
-    sendSampleUpdateEvent(
-      bulkAddSamples.map((s) => s.id),
-      'create'
-    );
-    setSelectedMobilePage('sampleList');
-  }, []);
+      setUserSampleCaches((caches) => {
+        return new Map([
+          ...caches,
+          ...bulkAddSampleCaches.map(
+            (s) =>
+              /** @type {[string, SampleCache]} */ ([s.sampleContainer.id, s])
+          ),
+        ]);
+      });
+      sendTabUpdateEvent(
+        'cache',
+        bulkAddSampleCaches.map((s) => s.sampleContainer.id),
+        'create'
+      );
+      setSelectedMobilePage('sampleList');
+    },
+    []
+  );
 
   const allSamplesRef = useRef(allSamples);
   allSamplesRef.current = allSamples;
@@ -193,12 +295,24 @@ function App() {
       const sample = allSamplesRef.current.get(id);
       if (sample) {
         const newSample = sample.duplicate((id) => {
-          sendSampleUpdateEvent([id], 'create');
+          sendTabUpdateEvent('sample', [id], 'create');
         });
         setUserSamples(
           (samples) => new Map([[newSample.id, newSample], ...samples])
         );
-        // TODO: scroll new sample into view
+        const oldSampleCache = userSampleCachesRef.current.get(id);
+        if (oldSampleCache) {
+          const newSampleCache = new SampleCache.Mutable({
+            sampleContainer: newSample,
+            cachedInfo: oldSampleCache.cachedInfo,
+          });
+          newSampleCache.persist().then(() => {
+            sendTabUpdateEvent('cache', [newSample.id], 'create');
+          });
+          setUserSampleCaches((caches) =>
+            new Map(caches).set(newSample.id, newSampleCache)
+          );
+        }
         setFocusedSampleId(newSample.id);
       }
     },
@@ -247,7 +361,18 @@ function App() {
               await sample.remove();
             }
           })
-        ).then(() => sendSampleUpdateEvent(ids, 'delete'));
+        ).then(() => sendTabUpdateEvent('sample', ids, 'delete'));
+        Promise.all(
+          ids.map(async (idToDelete) => {
+            const sampleCache = userSampleCachesRef.current.get(idToDelete);
+            if (sampleCache && sampleCache instanceof SampleCache.Mutable) {
+              await sampleCache.remove();
+            }
+          })
+          // Maybe we don't really need to send this event because they will
+          // already be deleted with the earlier event... but just for
+          // consistency we'll keep it for now.
+        ).then(() => sendTabUpdateEvent('cache', ids, 'delete'));
       }
       setUserSamples((samples) => {
         const newSamples = new Map(samples);
@@ -256,17 +381,24 @@ function App() {
         }
         return newSamples;
       });
+      setUserSampleCaches((caches) => {
+        const newCaches = new Map(caches);
+        for (const id of ids) {
+          newCaches.delete(id);
+        }
+        return newCaches;
+      });
     },
     []
   );
 
   useEffect(() => {
-    return onSampleUpdateEvent(async (event) => {
+    return onTabUpdateEvent('sample', async (event) => {
       if (event.action === 'delete') {
-        handleSampleDelete(event.sampleIds, true);
+        handleSampleDelete(event.ids, true);
       } else {
         const syncedSamples = await SampleContainer.getByIdsFromStorage(
-          event.sampleIds
+          event.ids
         );
         setUserSamples((samples) => {
           const newSamples = new Map([
@@ -284,6 +416,47 @@ function App() {
       }
     });
   }, [handleSampleDelete]);
+
+  useEffect(() => {
+    return onTabUpdateEvent('cache', async (event) => {
+      if (event.action === 'delete') {
+        setUserSampleCaches((caches) => {
+          const newCaches = new Map(caches);
+          for (const id of event.ids) {
+            newCaches.delete(id);
+          }
+          return newCaches;
+        });
+      } else {
+        const syncedCachedInfos =
+          await SampleCache.getCachedInfoByIdsFromStorage(event.ids);
+        // request animation frame to make sure userSamples ref is updated
+        // with previous sample event
+        requestAnimationFrame(() => {
+          setUserSampleCaches((caches) => {
+            const userSamples = userSamplesRef.current;
+            if (!userSamples) return caches;
+            return new Map([
+              ...caches,
+              ...syncedCachedInfos.map(
+                (cachedInfo, i) =>
+                  /** @type {[string, SampleCache]} */ ([
+                    event.ids[i],
+                    new SampleCache.Mutable({
+                      cachedInfo,
+                      // we assume the sample event was processed first
+                      sampleContainer: /** @type {SampleContainer} */ (
+                        userSamples.get(event.ids[i])
+                      ),
+                    }),
+                  ])
+              ),
+            ]);
+          });
+        });
+      }
+    });
+  }, []);
 
   const [selectedMobilePage, setSelectedMobilePage] = useState(
     /** @type {'sampleList' | 'currentSample' | 'about'} */ ('currentSample')
@@ -306,6 +479,11 @@ function App() {
   }, []);
 
   const sample = focusedSampleId ? allSamples.get(focusedSampleId) : null;
+  const sampleCache =
+    (sample &&
+      (userSampleCaches.get(sample.id) ||
+        factorySampleCaches.get(sample.id))) ||
+    null;
 
   return (
     <div className={classes.app}>
@@ -319,6 +497,8 @@ function App() {
             focusedSampleId={focusedSampleId}
             userSamples={userSamples}
             factorySamples={factorySamples}
+            userSampleCaches={userSampleCaches}
+            factorySampleCaches={factorySampleCaches}
             onSampleSelect={handleSampleSelect}
             onSampleDelete={handleSampleDelete}
           />
@@ -327,6 +507,7 @@ function App() {
           {!sample ? null : sample instanceof SampleContainer.Mutable ? (
             <SampleDetail
               sample={sample}
+              sampleCache={sampleCache}
               onSampleUpdate={handleSampleUpdate}
               onSampleDuplicate={handleSampleDuplicate}
               onSampleDelete={handleSampleDelete}
@@ -334,6 +515,7 @@ function App() {
           ) : (
             <SampleDetailReadonly
               sample={sample}
+              sampleCache={sampleCache}
               onSampleDuplicate={handleSampleDuplicate}
             />
           )}

@@ -1,6 +1,7 @@
 import localforage from 'localforage';
 
 import { getPlugin, getPluginContentId, installPlugin } from './utils/plugins';
+import { onTabUpdateEvent, sendTabUpdateEvent } from './utils/tabSync';
 
 const pluginStore = localforage.createInstance({
   name: 'plugin_store',
@@ -8,11 +9,13 @@ const pluginStore = localforage.createInstance({
 });
 
 /**
+ * Always use this when a user is uploading a new plugin.
  * @param {File} file
  * @param {(name: string) => Promise<string>} onConfirmName
  * @param {(name: string) => Promise<boolean>} onConfirmReplace
+ * @returns {Promise<'added' | 'replaced' | 'exists'>}
  */
-export async function addPlugin(file, onConfirmName, onConfirmReplace) {
+export async function addPluginFromFile(file, onConfirmName, onConfirmReplace) {
   if (file.size > 5_000_000) {
     throw new Error('Plugin is too big.');
   }
@@ -21,6 +24,28 @@ export async function addPlugin(file, onConfirmName, onConfirmReplace) {
     throw new Error('Expecting JavaScript file.');
   }
   const pluginSource = await file.text();
+  return await addPlugin(
+    pluginName,
+    pluginSource,
+    onConfirmName,
+    onConfirmReplace
+  );
+}
+
+/**
+ * This can be called directly when importing plugins from an export file.
+ * @param {string} pluginName
+ * @param {string} pluginSource
+ * @param {(name: string) => Promise<string>} onConfirmName
+ * @param {(name: string) => Promise<boolean>} onConfirmReplace
+ * @returns {Promise<'added' | 'replaced' | 'exists'>}
+ */
+export async function addPlugin(
+  pluginName,
+  pluginSource,
+  onConfirmName,
+  onConfirmReplace
+) {
   const contentId = await getPluginContentId(pluginSource);
 
   const existingNames = await pluginStore.keys();
@@ -34,7 +59,7 @@ export async function addPlugin(file, onConfirmName, onConfirmReplace) {
       );
       const existingContentId = await getPluginContentId(existingContent);
       if (existingContentId === contentId) {
-        throw new Error('Plugin already added.');
+        return 'exists';
       }
       shouldReplace = await onConfirmReplace(pluginName);
       if (shouldReplace) {
@@ -57,18 +82,55 @@ export async function addPlugin(file, onConfirmName, onConfirmReplace) {
   }
 
   await pluginStore.setItem(pluginName, pluginSource);
+  sendTabUpdateEvent('plugin', [pluginName], shouldReplace ? 'edit' : 'create');
+
+  return shouldReplace ? 'replaced' : 'added';
+}
+
+// TODO: code that calls this needs to handle samples using this plugin first
+/** @param {string} pluginName */
+export async function removePlugin(pluginName) {
+  const plugin = getPlugin(pluginName);
+  plugin.remove();
+  await pluginStore.removeItem(pluginName);
+  sendTabUpdateEvent('plugin', [pluginName], 'delete');
+}
+
+/** @param {string} pluginName */
+export async function getPluginSource(pluginName) {
+  /** @type {string | null} */
+  const pluginSource = await pluginStore.getItem(pluginName);
+  return pluginSource;
 }
 
 export async function initPlugins() {
   await pluginStore.iterate(async (pluginSource, pluginName) => {
     await installPlugin(pluginName, pluginSource);
   });
+  onTabUpdateEvent('plugin', async ({ action, ids }) => {
+    for (const pluginName of ids) {
+      if (action === 'create') {
+        await addPluginFromStorage(pluginName);
+      }
+      if (action === 'edit') {
+        await updatePluginFromStorage(pluginName);
+      }
+      if (action === 'delete') {
+        await removePlugin(pluginName);
+      }
+    }
+  });
 }
 
-// TODO: code that calls this needs to handle samples using this plugin
 /** @param {string} pluginName */
-export async function removePlugin(pluginName) {
+async function addPluginFromStorage(pluginName) {
+  const pluginSource = await pluginStore.getItem(pluginName);
+  await installPlugin(pluginName, pluginSource);
+}
+
+/** @param {string} pluginName */
+async function updatePluginFromStorage(pluginName) {
+  const pluginSource = await pluginStore.getItem(pluginName);
   const plugin = getPlugin(pluginName);
-  plugin.remove();
-  await pluginStore.removeItem(pluginName);
+  await plugin.replaceSource(pluginSource);
 }

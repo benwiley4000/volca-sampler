@@ -358,7 +358,10 @@ function drawRecordingPeaks({ canvas, peaks, drawUntil, scaleCoefficient }) {
 /**
  * @param {{
  *   userSamples: Map<string, import('./store.js').SampleContainer>;
- *   onBulkImport: (samples: import('./store.js').SampleContainer[]) => void;
+ *   onBulkImport: (
+ *     samples: import('./store.js').SampleContainer[],
+ *     sampleCaches: import('./sampleCacheStore.js').SampleCache[]
+ *   ) => void;
  *   onRecordFinish: RecordingCallback;
  * }} props
  */

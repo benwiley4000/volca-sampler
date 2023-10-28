@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   Container,
   Dropdown,
@@ -25,6 +31,7 @@ const SampleDetail = React.memo(
   /**
    * @param {{
    *   sample: import('./store').SampleContainer;
+   *   sampleCache: import('./sampleCacheStore.js').SampleCache | null;
    *   onSampleUpdate: (id: string, update: import('./store').SampleMetadataUpdateArg) => void;
    *   onSampleDuplicate: (id: string) => void;
    *   onSampleDelete: (id: string | string[]) => void;
@@ -32,6 +39,7 @@ const SampleDetail = React.memo(
    */
   function SampleDetail({
     sample,
+    sampleCache,
     onSampleUpdate,
     onSampleDuplicate,
     onSampleDelete,
@@ -47,6 +55,13 @@ const SampleDetail = React.memo(
         }));
       },
       [sample.id, onSampleUpdate]
+    );
+    const sampleCaches = useMemo(
+      () =>
+        sampleCache
+          ? new Map().set(sampleCache.sampleContainer.id, sampleCache)
+          : new Map(),
+      [sampleCache]
     );
     return (
       <Container fluid="sm">
@@ -86,10 +101,15 @@ const SampleDetail = React.memo(
           pitchAdjustment={sample.metadata.pitchAdjustment}
           onSampleUpdate={onSampleUpdate}
         />
-        <WaveformEdit sample={sample} onSampleUpdate={onSampleUpdate} />
+        <WaveformEdit
+          sample={sample}
+          sampleCache={sampleCache}
+          onSampleUpdate={onSampleUpdate}
+        />
         <h4>Transfer</h4>
         <VolcaTransferControl
           samples={sample}
+          sampleCaches={sampleCaches}
           onSlotNumberUpdate={handleSlotNumberUpdate}
         />
       </Container>

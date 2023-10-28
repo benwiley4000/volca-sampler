@@ -23,8 +23,10 @@ import SampleSelectionTable from './SampleSelectionTable.js';
 
 /**
  * @typedef {import('./store').SampleContainer} SampleContainer
+ * @typedef {import('./sampleCacheStore.js').SampleCache} SampleCache
  * @param {{
  *   samples: (SampleContainer)[] | SampleContainer;
+ *   sampleCaches: Map<string, SampleCache>;
  *   justTheButton?: boolean;
  *   showInfoBeforeTransfer?: boolean;
  *   button?: React.ReactElement;
@@ -33,6 +35,7 @@ import SampleSelectionTable from './SampleSelectionTable.js';
  */
 function VolcaTransferControl({
   samples: _samples,
+  sampleCaches,
   justTheButton,
   showInfoBeforeTransfer,
   button,
@@ -69,11 +72,14 @@ function VolcaTransferControl({
 
   const totalSourceDuration = useMemo(() => {
     let duration = 0;
-    for (const [, sample] of selectedSamples) {
-      duration += sample.metadata.cachedInfo.duration;
+    for (const [id] of selectedSamples) {
+      const sampleCache = sampleCaches.get(id);
+      if (sampleCache) {
+        duration += sampleCache.cachedInfo.duration;
+      }
     }
     return duration;
-  }, [selectedSamples]);
+  }, [selectedSamples, sampleCaches]);
 
   const duplicateSlots = useMemo(() => {
     /** @type {Map<number, number>}  */
@@ -86,6 +92,18 @@ function VolcaTransferControl({
       .filter(([_, count]) => count > 1)
       .map(([slotNumber]) => slotNumber);
   }, [selectedSamples]);
+
+  const sampleIdsWithPluginFails = useMemo(() => {
+    /** @type {string[]}  */
+    const sampleIdsWithPluginFails = [];
+    for (const [id] of selectedSamples) {
+      const sampleCache = sampleCaches.get(id);
+      if (sampleCache && sampleCache.cachedInfo.failedPluginIndex > -1) {
+        sampleIdsWithPluginFails.push(id);
+      }
+    }
+    return sampleIdsWithPluginFails;
+  }, [selectedSamples, sampleCaches]);
 
   const [syroProgress, setSyroProgress] = useState(1);
   const [transferProgress, setTransferProgress] = useState(0);
@@ -106,11 +124,14 @@ function VolcaTransferControl({
   }, [syroTransferState]);
   const targetWavDataSize = useMemo(() => {
     let size = selectedSamples.size * 44;
-    for (const [, sample] of selectedSamples) {
-      size += sample.metadata.cachedInfo.duration * SAMPLE_RATE * 2; // 16-bit
+    for (const [id] of selectedSamples) {
+      const sampleCache = sampleCaches.get(id);
+      if (sampleCache) {
+        size += sampleCache.cachedInfo.duration * SAMPLE_RATE * 2; // 16-bit
+      }
     }
     return size;
-  }, [selectedSamples]);
+  }, [selectedSamples, sampleCaches]);
   const [dataStartPoints, setDataStartPoints] = useState(
     /** @type {number[]} */ ([])
   );
@@ -131,6 +152,7 @@ function VolcaTransferControl({
   const canTransferSamples = Boolean(
     selectedSamples.size &&
       !duplicateSlots.length &&
+      !sampleIdsWithPluginFails.length &&
       selectedSamples.size <= 110
   );
   useEffect(() => {
@@ -165,6 +187,7 @@ function VolcaTransferControl({
         };
         setDataStartPoints(dataStartPoints.map((p) => p / syroBuffer.length));
         const audioBuffer = await getAudioBufferForAudioFileData(syroBuffer);
+        console.log(audioBuffer);
         if (!cancelled) {
           setSyroAudioBuffer(audioBuffer);
         }
@@ -349,6 +372,10 @@ function VolcaTransferControl({
                     {duplicateSlots.length > 1 && 's'}{' '}
                     <strong>{duplicateSlots.join(', ')}</strong>).
                   </p>
+                ) : sampleIdsWithPluginFails.length > 0 ? (
+                  <p className={classes.invalidMessage}>
+                    Please fix or unselect samples with broken plugins.
+                  </p>
                 ) : !selectedSamples.size ? (
                   <p className={classes.invalidMessage}>
                     You must select at least one sample to transfer.
@@ -366,6 +393,7 @@ function VolcaTransferControl({
             samples={samplesMap}
             selectedSampleIds={selectedSampleIds}
             setSelectedSampleIds={setSelectedSampleIds}
+            sampleIdsWithPluginFails={sampleIdsWithPluginFails}
             highlightDuplicateSlots
           />
         </Modal.Body>

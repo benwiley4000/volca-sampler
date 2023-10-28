@@ -8,22 +8,17 @@ import React, {
 } from 'react';
 import { Button, Form } from 'react-bootstrap';
 
+import { findSamplePeak, getTrimmedView } from './utils/audioData.js';
 import {
-  findSamplePeak,
-  getTrimmedView,
-  useTargetAudioForSample,
-} from './utils/audioData.js';
-import {
-  getSamplePeaksForAudioBuffer,
   useLoadedSample,
   useWaveformInfo,
   useWaveformPlayback,
 } from './utils/waveform.js';
 import { formatShortTime } from './utils/datetime.js';
-import { SAMPLE_RATE } from './utils/constants.js';
 import WaveformDisplay from './WaveformDisplay.js';
 import WaveformPlayback from './WaveformPlayback.js';
 import NormalizeControl from './NomalizeControl.js';
+import { usePreviewAudio } from './sampleCacheStore.js';
 
 import classes from './WaveformEdit.module.scss';
 
@@ -31,12 +26,13 @@ const WaveformEdit = React.memo(
   /**
    * @param {{
    *   sample: import('./store').SampleContainer;
+   *   sampleCache: import('./sampleCacheStore.js').SampleCache | null;
    *   onSampleUpdate: (id: string, update: import('./store').SampleMetadataUpdateArg) => void;
    * }} props
    */
-  function WaveformEdit({ sample: _sample, onSampleUpdate }) {
-    const { wav: previewWavFile, audioBuffer: previewAudioBuffer } =
-      useTargetAudioForSample(_sample);
+  function WaveformEdit({ sample: _sample, sampleCache, onSampleUpdate }) {
+    const { wavData: previewWavFile, audioBuffer: previewAudioBuffer } =
+      usePreviewAudio(sampleCache);
     const {
       sample: {
         id: loadedSampleId,
@@ -93,33 +89,17 @@ const WaveformEdit = React.memo(
     trimFramesLocalRef.current = trimFramesLocal;
     const selectedSampleId = useRef(_sample.id);
     selectedSampleId.current = _sample.id;
-    const lastCommitId = useRef(0);
-    const commitTrimFrames = useCallback(async () => {
+    const commitTrimFrames = useCallback(() => {
       if (!sourceAudioBuffer || loadedSampleId !== selectedSampleId.current) {
         return;
       }
-      let commitId = (lastCommitId.current = Math.random());
       const { trimFrames } = trimFramesLocalRef.current;
-      const waveformPeaks = await getSamplePeaksForAudioBuffer(
-        sourceAudioBuffer,
-        trimFrames
-      );
-      if (lastCommitId.current !== commitId) {
-        return;
-      }
       onSampleUpdate(loadedSampleId, (metadata) => {
         if (metadata.trim.frames.every((frame, i) => trimFrames[i] === frame)) {
           return metadata;
         }
         return {
           trim: { frames: trimFrames },
-          cachedInfo: {
-            waveformPeaks,
-            duration:
-              sourceAudioBuffer.duration -
-              (trimFrames[0] + trimFrames[1]) / SAMPLE_RATE,
-            srcDuration: sourceAudioBuffer.duration,
-          },
         };
       });
     }, [loadedSampleId, sourceAudioBuffer, onSampleUpdate]);
@@ -572,7 +552,7 @@ const WaveformEdit = React.memo(
       displayedTime,
       togglePlayback,
       stopPlayback,
-    } = useWaveformPlayback(previewAudioBuffer, true);
+    } = useWaveformPlayback(previewAudioBuffer || null, true);
 
     useEffect(() => {
       return stopPlayback;
@@ -627,7 +607,7 @@ const WaveformEdit = React.memo(
             playbackProgress={playbackProgress}
             displayedTime={displayedTime}
             downloadFilename={`${name}.volcasample.wav`}
-            wavFile={previewWavFile}
+            wavFile={previewWavFile || null}
             togglePlayback={togglePlayback}
           />
           <div className={classes.cursor} />

@@ -3,12 +3,23 @@ import { v4 as uuidv4 } from 'uuid';
 const PLUGIN_TIMEOUT = 10;
 
 const IFRAME_ORIGIN =
-  window.location.protocol === 'http:'
+  typeof window === 'undefined'
+    ? ''
+    : window.location.protocol === 'http:'
     ? 'http://localhost:3001'
     : `https://plugin.${window.location.host}`;
 
-const iframeParent = document.createElement('div');
-document.body.appendChild(iframeParent);
+const iframeParent =
+  typeof window === 'undefined'
+    ? /** @type {HTMLDivElement} */ ({})
+    : document.createElement('div');
+
+if (typeof window !== 'undefined') {
+  document.body.appendChild(iframeParent);
+}
+
+/** Used only for errors that will cause plugin to uninstall itself */
+export class PluginError extends Error {}
 
 /**
  * @typedef {{ value: number; min: number; max: number }} PluginParamDef
@@ -146,7 +157,7 @@ async function sampleTransformPlugin(iframe, audioBuffer, params) {
           if (data.messageType === 'receivedMessage') {
             timeout = setTimeout(() => {
               console.error('Plugin took too long to run:', iframe.id);
-              reject(new Error('Plugin took too long to return'));
+              reject(new PluginError('Plugin took too long to return'));
               window.removeEventListener('message', onMessage);
             }, PLUGIN_TIMEOUT);
             return;
@@ -158,7 +169,7 @@ async function sampleTransformPlugin(iframe, audioBuffer, params) {
               reject(new Error('Invalid plugin input'));
             } else {
               console.error('Plugin call failed:', iframe.id);
-              reject(new Error('Plugin failed to run'));
+              reject(new PluginError('Plugin failed to run'));
             }
           } else {
             resolve(data.newAudioData);
@@ -199,7 +210,8 @@ export function getPlugin(pluginName) {
      * @param {AudioBuffer} audioBuffer
      * @param {PluginParams} params
      */
-    sampleTransform(audioBuffer, params) {
+    async sampleTransform(audioBuffer, params) {
+      await pluginInstallPromises[pluginName];
       let iframe = document.getElementById(pluginName);
       if (iframe && iframe instanceof HTMLIFrameElement) {
         return sampleTransformPlugin(iframe, audioBuffer, params);
@@ -256,6 +268,7 @@ export function getPlugin(pluginName) {
       if (iframe && iframe instanceof HTMLIFrameElement) {
         iframe.dispatchEvent(new Event('uninstall', { bubbles: true }));
         iframeParent.removeChild(iframe);
+        delete pluginInstallPromises[pluginName];
       } else {
         throw new Error('Expected plugin to exist');
       }

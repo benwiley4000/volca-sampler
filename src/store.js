@@ -11,6 +11,10 @@ import {
 import { getSamplePeaksForAudioBuffer } from './utils/waveform.js';
 
 /**
+ * @typedef {import('./sampleCacheStore').CachedInfo} CachedInfo
+ */
+
+/**
  * @typedef {{
  *   frames: [number, number];
  * }} TrimInfo
@@ -18,10 +22,9 @@ import { getSamplePeaksForAudioBuffer } from './utils/waveform.js';
 
 /**
  * @typedef {{
- *   waveformPeaks: import('./utils/waveform').SamplePeaks;
- *   duration: number;
- *   srcDuration: number;
- * }} CachedInfo
+ *   pluginName: string;
+ *   pluginParams: import('./utils/plugins.js').PluginParams;
+ * }} PluginClientSpec
  */
 
 /**
@@ -33,7 +36,6 @@ import { getSamplePeaksForAudioBuffer } from './utils/waveform.js';
  * @property {string} name
  * @property {string} sourceFileId
  * @property {TrimInfo} trim
- * @property {CachedInfo} cachedInfo
  * @property {string} [id]
  * @property {{ type: string; ext: string } | null} [userFileInfo]
  * @property {number} [slotNumber]
@@ -43,6 +45,7 @@ import { getSamplePeaksForAudioBuffer } from './utils/waveform.js';
  * @property {number} [qualityBitDepth]
  * @property {NormalizeSetting} [normalize]
  * @property {number} [pitchAdjustment]
+ * @property {PluginClientSpec[]} [plugins]
  */
 
 /**
@@ -59,7 +62,7 @@ import { getSamplePeaksForAudioBuffer } from './utils/waveform.js';
  * @property {NormalizeSetting} normalize
  * @property {string} metadataVersion
  * @property {number} pitchAdjustment
- * @property {CachedInfo} cachedInfo
+ * @property {PluginClientSpec[]} plugins
  */
 
 /**
@@ -71,6 +74,7 @@ import { getSamplePeaksForAudioBuffer } from './utils/waveform.js';
  * @property {number} [qualityBitDepth]
  * @property {NormalizeSetting} [normalize]
  * @property {number} [pitchAdjustment]
+ * @property {PluginClientSpec[]} [plugins]
  */
 
 /**
@@ -106,7 +110,7 @@ export async function storeAudioSourceFile(audioFileData, externalId) {
   return id;
 }
 
-const METADATA_VERSION = '0.8.0';
+const METADATA_VERSION = '0.9.0';
 
 // These properties are considered fundamental and should never break
 /**
@@ -118,7 +122,13 @@ const METADATA_VERSION = '0.8.0';
  */
 
 /**
- * @type {Record<string, (oldMetadata: OldMetadata) => OldMetadata | Promise<OldMetadata>>}
+ * @type {Record<
+ *   string,
+ *   (
+ *     oldMetadata: OldMetadata,
+ *     getCachedInfo: (c: CachedInfo) => void
+ *   ) => OldMetadata | Promise<OldMetadata>
+ * >}
  */
 const metadataUpgrades = {
   '0.1.0': (oldMetadata) => {
@@ -260,17 +270,49 @@ const metadataUpgrades = {
       prevMetadata.sourceFileId,
       false
     );
-    /** @type {CachedInfo} */
+    /**
+     * @type {Omit<CachedInfo, 'failedPluginIndex'> & {
+     *   srcDuration: number
+     * }}
+     */
     const cachedInfo = {
       waveformPeaks,
       duration: audioBuffer.duration - (frames[0] + frames[1]) / SAMPLE_RATE,
       srcDuration: audioBuffer.duration,
     };
     const newMetadata = {
-      ...oldMetadata,
+      ...prevMetadata,
       trim: { frames },
       cachedInfo,
       metadataVersion: '0.8.0',
+    };
+    return newMetadata;
+  },
+  '0.8.0': (oldMetadata, getCachedInfo) => {
+    /**
+     * @typedef {OldMetadata & {
+     *   cachedInfo: Omit<CachedInfo, 'failedPluginIndex'> & {
+     *     srcDuration: number
+     *   }
+     * }} PrevMetadata
+     */
+    const { cachedInfo, ...prevMetadata } = /** @type {PrevMetadata} */ (
+      oldMetadata
+    );
+    /** @type {CachedInfo} */
+    const newCachedInfo = {
+      // normalizationCoefficient is lost and until a sample is updated, it will
+      // render incorrectly in the list if normalization wasn't 'selection'.
+      // probably not a huge deal though.
+      waveformPeaks: cachedInfo.waveformPeaks,
+      duration: cachedInfo.duration,
+      failedPluginIndex: -1,
+    };
+    getCachedInfo(newCachedInfo);
+    const newMetadata = {
+      ...prevMetadata,
+      plugins: [],
+      metadataVersion: '0.9.0',
     };
     return newMetadata;
   },
@@ -289,6 +331,7 @@ const metadataUpgrades = {
  *   slotNumber: SampleMetadata['slotNumber'];
  *   dateSampled: SampleMetadata['dateSampled'];
  *   dateModified: SampleMetadata['dateModified'];
+ *   plugins?: SampleMetadata['plugins'];
  * }} SampleMetadataExport
  */
 
@@ -346,7 +389,11 @@ const exportMetadataToOldMetadata = {
       audioBuffer,
       exportedMetadata.trim.frames
     );
-    /** @type {CachedInfo} */
+    /**
+     * @type {Omit<CachedInfo, 'failedPluginIndex'> & {
+     *   srcDuration: number
+     * }}
+     */
     const cachedInfo = {
       waveformPeaks,
       duration:
@@ -357,7 +404,7 @@ const exportMetadataToOldMetadata = {
     };
     /**
      * @type {OldMetadata & {
-     *   cachedInfo: CachedInfo
+     *   cachedInfo: typeof cachedInfo
      * }}
      */
     const oldMetadata = {
@@ -365,6 +412,11 @@ const exportMetadataToOldMetadata = {
       cachedInfo,
     };
     return oldMetadata;
+  },
+  '0.9.0': async (exportMetadata) => {
+    // we got rid of cachedInfo property on metadata so we don't need to do
+    // anything special anymore.
+    return exportMetadata;
   },
 };
 
@@ -392,10 +444,19 @@ function clearReloadToUpgrade() {
 /**
  * @param {OldMetadata} oldMetadata
  * @param {boolean} [noReload]
- * @returns {Promise<SampleMetadata>}
+ * @returns {Promise<{
+ *   upgradedMetadata: SampleMetadata;
+ *   cachedInfo: CachedInfo | null;
+ * }>}
  */
 async function upgradeMetadata(oldMetadata, noReload) {
   let prevMetadata = oldMetadata;
+  /** @type {CachedInfo | null} */
+  let cachedInfo = null;
+  /** @type {(c: CachedInfo) => void} */
+  const cachedInfoCallback = (c) => {
+    cachedInfo = c;
+  };
   while (prevMetadata.metadataVersion !== METADATA_VERSION) {
     /**
      * @type {(typeof metadataUpgrades)[string] | undefined}
@@ -418,9 +479,14 @@ async function upgradeMetadata(oldMetadata, noReload) {
       };
       break;
     }
-    prevMetadata = await matchedUpgrade(prevMetadata);
+    prevMetadata = await matchedUpgrade(prevMetadata, cachedInfoCallback);
   }
-  return /** @type {SampleMetadata} */ (/** @type {unknown} */ (prevMetadata));
+  return {
+    upgradedMetadata: /** @type {SampleMetadata} */ (
+      /** @type {unknown} */ (prevMetadata)
+    ),
+    cachedInfo,
+  };
 }
 
 export class SampleContainer {
@@ -431,7 +497,6 @@ export class SampleContainer {
     name,
     sourceFileId,
     trim,
-    cachedInfo,
     id = uuidv4(),
     userFileInfo = null,
     slotNumber = 0,
@@ -441,6 +506,7 @@ export class SampleContainer {
     qualityBitDepth = 16,
     normalize = 'selection',
     pitchAdjustment = 1,
+    plugins = [],
   }) {
     /** @readonly */
     this.id = id;
@@ -452,7 +518,6 @@ export class SampleContainer {
       name,
       sourceFileId,
       trim,
-      cachedInfo,
       userFileInfo,
       slotNumber,
       dateSampled,
@@ -461,6 +526,7 @@ export class SampleContainer {
       qualityBitDepth,
       normalize,
       pitchAdjustment,
+      plugins,
       metadataVersion: METADATA_VERSION,
     };
   }
@@ -538,8 +604,9 @@ export class SampleContainer {
         return;
       }
       // check if source file is used by other sample containers
-      const allMetadata = await SampleContainer.getAllMetadataFromStore();
-      for (const [, { sourceFileId }] of allMetadata) {
+      const { sampleMetadata } =
+        await SampleContainer.getAllMetadataFromStore();
+      for (const [, { sourceFileId }] of sampleMetadata) {
         if (sourceFileId === this.metadata.sourceFileId) {
           // still used.. don't do anything
           return;
@@ -637,6 +704,10 @@ export class SampleContainer {
      */
     const sampleMetadata = new Map();
     /**
+     * @type {Map<string, CachedInfo>}
+     */
+    const cachedInfos = new Map();
+    /**
      * @type {Promise<void>[]}
      */
     const upgradePromises = [];
@@ -644,8 +715,11 @@ export class SampleContainer {
       if (metadata) {
         upgradePromises.push(
           upgradeMetadata(metadata)
-            .then((upgradedMetadata) => {
+            .then(({ upgradedMetadata, cachedInfo }) => {
               sampleMetadata.set(id, upgradedMetadata);
+              if (cachedInfo) {
+                cachedInfos.set(id, cachedInfo);
+              }
             })
             .catch((err) => {
               console.error(err);
@@ -660,11 +734,15 @@ export class SampleContainer {
     if (isReloadedToUpgrade) {
       clearReloadToUpgrade();
     }
-    return sampleMetadata;
+    return {
+      sampleMetadata,
+      cachedInfos,
+    };
   }
 
   static async getAllFromStorage() {
-    const sampleMetadata = await this.getAllMetadataFromStore();
+    const { sampleMetadata, cachedInfos } =
+      await this.getAllMetadataFromStore();
     const factorySampleParams = await getFactorySampleParams();
     const sourceIds = (await audioFileDataStore.keys()).concat(
       factorySampleParams.map(({ sourceFileId }) => sourceFileId)
@@ -685,7 +763,10 @@ export class SampleContainer {
         })
         .filter(Boolean)
     ).sort(sampleContainerDateCompare);
-    return sampleContainers;
+    return {
+      sampleContainers,
+      cachedInfos,
+    };
   }
 
   /**
@@ -696,7 +777,7 @@ export class SampleContainer {
     return Promise.all(
       sampleIds.map(async (sampleId) => {
         const metadata = await sampleMetadataStore.getItem(sampleId);
-        const upgradedMetadata = await upgradeMetadata(metadata);
+        const { upgradedMetadata } = await upgradeMetadata(metadata);
         const sampleContainer = new SampleContainer.Mutable({
           id: sampleId,
           ...upgradedMetadata,
@@ -725,7 +806,7 @@ export class SampleContainer {
       throw new Error('Failed to import metadata with no import migration');
     }
     const oldMetadata = await toOldMetadata(exportMetadata);
-    const upgradedMetadata = await upgradeMetadata(oldMetadata, true);
+    const { upgradedMetadata } = await upgradeMetadata(oldMetadata, true);
     const sampleContainer = new SampleContainer.Mutable({
       id: sampleId,
       ...upgradedMetadata,
@@ -753,12 +834,14 @@ export async function getFactorySamples() {
   return new Map(
     factorySampleParams.map((params) => [
       params.id,
-      new SampleContainer({
-        ...params,
-        normalize: null,
-        trim: {
-          frames: [params.trim.frames[0], params.trim.frames[1]],
-        },
+      {
+        sampleContainer: new SampleContainer({
+          ...params,
+          normalize: null,
+          trim: {
+            frames: [params.trim.frames[0], params.trim.frames[1]],
+          },
+        }),
         cachedInfo: {
           waveformPeaks: {
             positive: new Float32Array(
@@ -771,9 +854,9 @@ export async function getFactorySamples() {
               params.cachedInfo.waveformPeaks.normalizationCoefficient,
           },
           duration: params.cachedInfo.duration,
-          srcDuration: params.cachedInfo.srcDuration,
+          failedPluginIndex: params.cachedInfo.failedPluginIndex,
         },
-      }),
+      },
     ])
   );
 }

@@ -1,9 +1,5 @@
 import React, { useEffect, useMemo } from 'react';
-import {
-  findSamplePeak,
-  getTrimmedView,
-  useTargetAudioForSample,
-} from './utils/audioData.js';
+import { findSamplePeak, getTrimmedView } from './utils/audioData.js';
 
 import {
   useLoadedSample,
@@ -12,21 +8,23 @@ import {
 } from './utils/waveform.js';
 import WaveformDisplay from './WaveformDisplay.js';
 import WaveformPlayback from './WaveformPlayback.js';
+import { usePreviewAudio } from './sampleCacheStore.js';
 
 import classes from './WaveformReadonly.module.scss';
 
 /**
  * @typedef {{
  *   sample: import('./store').SampleContainer;
+ *   sampleCache: import('./sampleCacheStore.js').SampleCache | null;
  * }} WaveformReadonlyProps
  */
 
 /**
  * @param {WaveformReadonlyProps} props
  */
-function WaveformReadonly({ sample: _sample }) {
-  const { wav: previewWavFile, audioBuffer: previewAudioBuffer } =
-    useTargetAudioForSample(_sample);
+function WaveformReadonly({ sample: _sample, sampleCache }) {
+  const { wavData: previewWavFile, audioBuffer: previewAudioBuffer } =
+    usePreviewAudio(sampleCache);
   const {
     sample: {
       metadata: {
@@ -57,7 +55,7 @@ function WaveformReadonly({ sample: _sample }) {
     displayedTime,
     togglePlayback,
     stopPlayback,
-  } = useWaveformPlayback(previewAudioBuffer, true);
+  } = useWaveformPlayback(previewAudioBuffer || null, true);
 
   useEffect(() => {
     return stopPlayback;
@@ -76,7 +74,7 @@ function WaveformReadonly({ sample: _sample }) {
         playbackProgress={playbackProgress}
         displayedTime={displayedTime}
         downloadFilename={`${name}.volcasample.wav`}
-        wavFile={previewWavFile}
+        wavFile={previewWavFile || null}
         togglePlayback={togglePlayback}
       />
     </div>

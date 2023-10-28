@@ -5,17 +5,21 @@ import {
   sampleContainerDateCompare,
   storeAudioSourceFile,
 } from '../store';
+import { SampleCache } from '../sampleCacheStore';
+import { addPlugin, getPluginSource } from '../pluginStore';
+import { Mutex } from './mutex';
 
 /** @typedef {import('../store').SampleMetadataExport} SampleMetadataExport */
 /** @typedef {Record<string, SampleMetadataExport>} MetadataMap */
 
 const rootFolderName = 'volcasampler';
 const samplesFolderName = 'user samples';
+const pluginsFolderName = 'plugins';
 const metadataJSONName = 'volcasampler.json';
 
 /**
  * @param {SampleContainer[]} sampleContainers
- * @param {(progress: number) => void} onProgress
+ * @param {(progress: number) => void} onProgress
  * @returns {Promise<Blob>}
  */
 export async function exportSampleContainersToZip(
@@ -44,15 +48,13 @@ export async function exportSampleContainersToZip(
   if (!samplesFolder) {
     throw new Error('Failed to create samples folder');
   }
+  const pluginsFolder = zipRoot.folder(pluginsFolderName);
+  if (!pluginsFolder) {
+    throw new Error('Failed to create plugins folder');
+  }
   const metadataMap = sampleContainersToExport.reduce(
     (metadataMap, sampleContainer) => {
-      metadataMap[sampleContainer.id] = {
-        ...sampleContainer.metadata,
-        trim: {
-          // leave out waveformPeaks
-          frames: sampleContainer.metadata.trim.frames,
-        },
-      };
+      metadataMap[sampleContainer.id] = sampleContainer.metadata;
       return metadataMap;
     },
     /** @type {MetadataMap} */ ({})
@@ -64,25 +66,44 @@ export async function exportSampleContainersToZip(
   );
   /** @type {Set<string>} */
   const processedSourceFileIds = new Set();
+  /** @type {Set<string>} */
+  const processedPluginNames = new Set();
   for (const sampleContainer of sampleContainersToExport) {
-    const { sourceFileId, userFileInfo, name } = sampleContainer.metadata;
-    if (processedSourceFileIds.has(sourceFileId)) continue;
-    processedSourceFileIds.add(sourceFileId);
-    if (sourceFileId.includes('.')) {
-      // assume it's a url to a factory sample, don't include in zip
-      continue;
+    const { sourceFileId, userFileInfo, name, plugins } =
+      sampleContainer.metadata;
+    if (!processedSourceFileIds.has(sourceFileId)) {
+      processedSourceFileIds.add(sourceFileId);
+      if (sourceFileId.includes('.')) {
+        // assume it's a url to a factory sample, don't include in zip
+        continue;
+      }
+      const filename = `${name} - ${sourceFileId}${
+        userFileInfo ? userFileInfo.ext : '.wav'
+      }`;
+      samplesFolder.file(
+        filename,
+        SampleContainer.getSourceFileData(sourceFileId, true).then((data) => {
+          return new Blob([data], {
+            type: userFileInfo ? userFileInfo.type : 'audio/x-wav',
+          });
+        })
+      );
     }
-    const filename = `${name} - ${sourceFileId}${
-      userFileInfo ? userFileInfo.ext : '.wav'
-    }`;
-    samplesFolder.file(
-      filename,
-      SampleContainer.getSourceFileData(sourceFileId, true).then((data) => {
-        return new Blob([data], {
-          type: userFileInfo ? userFileInfo.type : 'audio/x-wav',
-        });
-      })
-    );
+    for (const { pluginName } of plugins) {
+      if (!processedPluginNames.has(pluginName)) {
+        processedPluginNames.add(pluginName);
+        const pluginSource = await getPluginSource(pluginName);
+        if (pluginSource) {
+          samplesFolder.file(
+            pluginName,
+            new Blob([pluginSource], { type: 'text/javascript' })
+          );
+        }
+      }
+    }
+  }
+  if (!processedPluginNames.size) {
+    zipRoot.remove(pluginsFolderName);
   }
   const zipWriteStream = zip.generateInternalStream({
     type: 'blob',
@@ -126,19 +147,25 @@ export async function readSampleMetadataFromZip(zipFile) {
  */
 
 /**
- * @param {Blob} zipFile
- * @param {string[]} idsToImport
- * @param {(progress: number) => void} onProgress
+ * @param {object} params
+ * @param {Blob} params.zipFile
+ * @param {string[]} params.idsToImport
+ * @param {(progress: number) => void} params.onProgress
+ * @param {(name: string) => Promise<string>} params.onConfirmPluginName
+ * @param {(name: string) => Promise<boolean>} params.onConfirmPluginReplace
  * @returns {Promise<{
  *   sampleContainers: SampleContainer[];
+ *   sampleCaches: SampleCache[];
  *   failedImports: FailedImports;
  * }>}
  */
-export async function importSampleContainersFromZip(
+export async function importSampleContainersFromZip({
   zipFile,
   idsToImport,
-  onProgress
-) {
+  onProgress,
+  onConfirmPluginName,
+  onConfirmPluginReplace,
+}) {
   const zip = await JSZip.loadAsync(zipFile);
   const metadataMap = await readSampleMetadataFromZip(zip);
   const zipRoot = zip.folder(rootFolderName);
@@ -149,12 +176,20 @@ export async function importSampleContainersFromZip(
   if (!samplesFolder) {
     throw new Error('Failed to create samples folder');
   }
+  const pluginsFolder = zipRoot.folder(pluginsFolderName);
+  if (!pluginsFolder) {
+    throw new Error('Failed to create plugins folder');
+  }
   /** @type {Map<string, Promise<void>>} */
   const sourceDataProcessingPromises = new Map();
+  /** @type {Map<string, Promise<void>>} */
+  const pluginProcessingPromises = new Map();
   /** @type {FailedImports} */
   const failedImports = {};
   /** @type {SampleContainer[]} */
   const sampleContainers = [];
+  /** @type {SampleCache[]} */
+  const sampleCaches = [];
   const progresses = /** @type {number[]} */ (Array(idsToImport.length)).fill(
     0
   );
@@ -162,11 +197,12 @@ export async function importSampleContainersFromZip(
     onProgress(
       progresses.reduce((total, p) => total + p, 0) / progresses.length
     );
+  const pluginMutex = new Mutex();
   await Promise.all(
     Object.entries(metadataMap).map(async ([id, metadata], i) => {
       if (!idsToImport.includes(id)) return;
       try {
-        const { sourceFileId } = metadata;
+        const { sourceFileId, plugins = [] } = metadata;
         if (!sourceDataProcessingPromises.has(sourceFileId)) {
           sourceDataProcessingPromises.set(
             sourceFileId,
@@ -193,10 +229,46 @@ export async function importSampleContainersFromZip(
             })()
           );
         }
+        for (const { pluginName } of plugins) {
+          if (!pluginProcessingPromises.has(pluginName)) {
+            pluginProcessingPromises.set(
+              pluginName,
+              (async () => {
+                const pluginFileHandle = pluginsFolder.file(pluginName);
+                if (!pluginFileHandle) {
+                  throw new Error('Cannot find plugin file');
+                }
+                const pluginSource = await pluginFileHandle.async('string');
+                const unlock = await pluginMutex.lock();
+                try {
+                  await addPlugin(
+                    pluginName,
+                    pluginSource,
+                    onConfirmPluginName,
+                    onConfirmPluginReplace
+                  );
+                  unlock();
+                } catch (err) {
+                  unlock();
+                  throw err;
+                }
+              })()
+            );
+          }
+        }
         await sourceDataProcessingPromises.get(sourceFileId);
-        sampleContainers.push(
-          await SampleContainer.importToStorage(id, metadata)
+        await Promise.all(
+          plugins.map(({ pluginName }) =>
+            pluginProcessingPromises.get(pluginName)
+          )
         );
+        const sampleContainer = await SampleContainer.importToStorage(
+          id,
+          metadata
+        );
+        sampleContainers.push(sampleContainer);
+        const sampleCache = await SampleCache.importToStorage(sampleContainer);
+        sampleCaches.push(sampleCache);
       } catch (error) {
         progresses[i] = 1;
         failedImports[id] = {
@@ -210,6 +282,7 @@ export async function importSampleContainersFromZip(
   onProgress(1);
   return {
     sampleContainers: sampleContainers.slice().sort(sampleContainerDateCompare),
+    sampleCaches,
     failedImports,
   };
 }

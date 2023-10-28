@@ -14,6 +14,7 @@ const SampleSelectionTable = React.memo(
    *   selectedSampleIds: Set<string>;
    *   setSelectedSampleIds:
    *     (updater: (prevIds: Set<string>) => Set<string>) => void;
+   *   sampleIdsWithPluginFails?: string[];
    *   highlightDuplicateSlots?: boolean;
    * }} props
    */
@@ -21,6 +22,7 @@ const SampleSelectionTable = React.memo(
     samples,
     selectedSampleIds,
     setSelectedSampleIds,
+    sampleIdsWithPluginFails,
     highlightDuplicateSlots,
   }) {
     const allChecked = [...samples.keys()].every((id) =>
@@ -86,6 +88,9 @@ const SampleSelectionTable = React.memo(
             <th className={classes.name}>Name</th>
             <th className={classes.slotNumber}>Slot</th>
             <th className={classes.updated}>Updated</th>
+            {sampleIdsWithPluginFails && (
+              <th className={classes.pluginsOk}>Plugins ok?</th>
+            )}
           </tr>
         </thead>
         <tbody>
@@ -137,6 +142,16 @@ const SampleSelectionTable = React.memo(
                 <td title={new Date(metadata.dateModified).toLocaleString()}>
                   {new Date(metadata.dateModified).toLocaleDateString()}
                 </td>
+                {sampleIdsWithPluginFails && (
+                  <td>
+                    {sampleIdsWithPluginFails.includes(id)
+                      ? '❌'
+                      : s instanceof SampleContainer &&
+                        s.metadata.plugins.length
+                      ? '✅'
+                      : null}
+                  </td>
+                )}
               </tr>
             );
           })}

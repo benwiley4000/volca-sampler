@@ -13,9 +13,9 @@ import {
   useWaveformPlayback,
   WAVEFORM_CACHED_WIDTH,
 } from './utils/waveform.js';
-import { useTargetAudioForSample } from './utils/audioData.js';
 import WaveformDisplay from './WaveformDisplay.js';
 import WaveformListItemPlayback from './WaveformListItemPlayback.js';
+import { usePreviewAudio } from './sampleCacheStore.js';
 
 import classes from './SampleList.module.scss';
 
@@ -26,11 +26,17 @@ const SampleListItem = React.memo(
   /**
    * @param {{
    *   sample: import('./store').SampleContainer;
+   *   sampleCache: import('./sampleCacheStore.js').SampleCache | null;
    *   selected: boolean;
    *   onSampleSelectClick: (id: string, e: React.MouseEvent) => void;
    * }} props
    */
-  function SampleListItem({ sample, selected, onSampleSelectClick }) {
+  function SampleListItem({
+    sample,
+    sampleCache,
+    selected,
+    onSampleSelectClick,
+  }) {
     /**
      * @type {React.RefObject<HTMLDivElement>}
      */
@@ -68,16 +74,13 @@ const SampleListItem = React.memo(
 
     const [audioRequested, setAudioRequested] = useState(false);
 
-    const { audioBuffer: previewAudioBuffer } = useTargetAudioForSample(
-      sample,
-      audioRequested
-    );
+    const { audioBuffer } = usePreviewAudio(sampleCache, audioRequested);
 
     const {
       isPlaybackActive,
       playbackProgress,
       togglePlayback: _togglePlayback,
-    } = useWaveformPlayback(previewAudioBuffer);
+    } = useWaveformPlayback(audioBuffer || null);
 
     const togglePlayback = useCallback(
       /** @param {MouseEvent | KeyboardEvent} e */
@@ -138,10 +141,10 @@ const SampleListItem = React.memo(
           }}
           ref={waveformContainerRef}
         >
-          {waveformSeen && (
+          {waveformSeen && sampleCache && (
             <>
               <WaveformDisplay
-                peaks={sample.metadata.cachedInfo.waveformPeaks}
+                peaks={sampleCache.cachedInfo.waveformPeaks}
                 scaleCoefficient={sample.metadata.normalize ? undefined : 1}
               />
               <WaveformListItemPlayback
@@ -159,6 +162,7 @@ const SampleListItem = React.memo(
 /**
  * @param {{
  *   samples: import('./store').SampleContainer[];
+ *   sampleCaches: Map<string, import('./sampleCacheStore.js').SampleCache>;
  *   selectedSampleId: string | null;
  *   multipleSelection: Set<string> | null;
  *   onSampleSelect: (...ids: string[]) => void;
@@ -166,6 +170,7 @@ const SampleListItem = React.memo(
  */
 function SampleList({
   samples,
+  sampleCaches,
   selectedSampleId,
   multipleSelection,
   onSampleSelect,
@@ -407,6 +412,7 @@ function SampleList({
           <SampleListItem
             key={sample.id}
             sample={sample}
+            sampleCache={sampleCaches.get(sample.id) || null}
             selected={
               multipleSelection
                 ? multipleSelection.has(sample.id)

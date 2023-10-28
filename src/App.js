@@ -103,6 +103,18 @@ function App() {
         });
         const storedSampleCachedInfo =
           await SampleCache.getAllCachedInfoFromStore();
+        // Create sample caches for any samples that are missing one
+        const samplesWithoutCache = storedSamples.filter(
+          (s) => !cachedInfos.has(s.id) && !storedSampleCachedInfo.has(s.id)
+        );
+        for (const sample of samplesWithoutCache) {
+          SampleCache.importToStorage(sample).then((sampleCache) => {
+            setUserSampleCaches((sampleCaches) =>
+              new Map(sampleCaches).set(sample.id, sampleCache)
+            );
+          });
+        }
+        // And add the rest of the sample caches that we have already
         setUserSampleCaches((sampleCaches) => {
           return new Map([
             ...sampleCaches,

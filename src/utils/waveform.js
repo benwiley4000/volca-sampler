@@ -37,7 +37,7 @@ export function getPeaksForSamples(samples, containerPixelWidth) {
   for (let i = 0; i < positive.length; i++) {
     const group = new Float32Array(
       samples.buffer,
-      i * groupSize * 4,
+      samples.byteOffset + i * groupSize * 4,
       groupSize
     );
     let max = 0;
@@ -63,7 +63,7 @@ export function getPeaksForSamples(samples, containerPixelWidth) {
   peakSearchArray.set(
     new Float32Array(
       samples.buffer,
-      (samples.length - ignoredSamplesCount) * 4,
+      samples.byteOffset + (samples.length - ignoredSamplesCount) * 4,
       ignoredSamplesCount
     ),
     positive.length + negative.length

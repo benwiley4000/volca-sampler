@@ -22,7 +22,7 @@ import { WAVEFORM_CACHED_WIDTH, getPeaksForSamples } from './waveform.js';
  */
 export function getTrimmedView(array, trimFrames) {
   const frameSizeInBytes = 4;
-  const byteOffset = trimFrames[0] * frameSizeInBytes;
+  const byteOffset = array.byteOffset + trimFrames[0] * frameSizeInBytes;
   const viewLength = array.length - trimFrames[0] - trimFrames[1];
   return new Float32Array(array.buffer, byteOffset, viewLength);
 }

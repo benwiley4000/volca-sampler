@@ -72,7 +72,7 @@ export function getPeaksForSamples(samples, containerPixelWidth) {
   return {
     positive,
     negative,
-    normalizationCoefficient: 1 / samplePeak,
+    normalizationCoefficient: samplePeak && 1 / samplePeak,
   };
 }
 

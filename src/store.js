@@ -24,6 +24,7 @@ import { getSamplePeaksForAudioBuffer } from './utils/waveform.js';
  * @typedef {{
  *   pluginName: string;
  *   pluginParams: import('./utils/plugins.js').PluginParams;
+ *   isBypassed: boolean;
  * }} PluginClientSpec
  */
 

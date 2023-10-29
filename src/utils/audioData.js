@@ -279,23 +279,25 @@ export async function getTargetWavForSample(sampleContainer, forPreview) {
 
   let postPluginBuffer = monoAudioBuffer;
   let i = 0;
-  for (const { pluginName, pluginParams } of plugins) {
-    const plugin = getPlugin(pluginName);
-    try {
-      postPluginBuffer = await plugin.sampleTransform(
-        postPluginBuffer,
-        pluginParams
-      );
-    } catch (err) {
-      if (err instanceof PluginError) {
-        throw new PluginRunError(
-          err && err instanceof Error && err.message
-            ? err.message
-            : 'Plugin failed',
-          i
+  for (const { pluginName, pluginParams, isBypassed } of plugins) {
+    if (!isBypassed) {
+      const plugin = getPlugin(pluginName);
+      try {
+        postPluginBuffer = await plugin.sampleTransform(
+          postPluginBuffer,
+          pluginParams
         );
-      } else {
-        throw err;
+      } catch (err) {
+        if (err instanceof PluginError) {
+          throw new PluginRunError(
+            err && err instanceof Error && err.message
+              ? err.message
+              : 'Plugin failed',
+            i
+          );
+        } else {
+          throw err;
+        }
       }
     }
     i++;

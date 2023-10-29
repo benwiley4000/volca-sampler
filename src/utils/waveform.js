@@ -247,7 +247,7 @@ export function useWaveformPlayback(audioBuffer, shouldHandleSpace = false) {
         // don't do this if a dialog is open
         return;
       }
-      if (e.key === ' ') {
+      if (e.key === ' ' && !(e.target instanceof HTMLInputElement)) {
         e.preventDefault();
         togglePlayback(e);
       }

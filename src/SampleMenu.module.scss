@@ -34,6 +34,29 @@ button.exporting {
 
 .search {
   margin-bottom: 1rem;
+
+  .clearSearch {
+    position: absolute;
+    z-index: 5;
+    background-color: transparent;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    border: 0;
+    font-size: 2rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0;
+
+    &::after {
+      content: '×';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      line-height: 0;
+    }
+  }
 }
 
 .offcanvasBody {

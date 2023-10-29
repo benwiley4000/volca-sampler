@@ -10,6 +10,7 @@ import {
   Accordion,
   Button,
   Form,
+  InputGroup,
   ListGroup,
   Modal,
   ProgressBar,
@@ -338,12 +339,20 @@ const SampleMenu = React.memo(
             Delete
           </Button>
         </div>
-        <Form.Control
-          className={classes.search}
-          placeholder="Search for a sample..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+        <InputGroup className={classes.search}>
+          <Form.Control
+            placeholder="Search for a sample..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <button
+            hidden={!search}
+            className={classes.clearSearch}
+            type="reset"
+            aria-label="Clear search"
+            onClick={() => setSearch('')}
+          />
+        </InputGroup>
         <ListGroup className={classes.listGroup}>
           {!loading &&
             /**

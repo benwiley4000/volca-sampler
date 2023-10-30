@@ -69,7 +69,7 @@ const SampleMenu = React.memo(
     onSampleDelete,
   }) {
     const [search, setSearch] = useState('');
-    const searchTerm = search.trim().toLowerCase();
+    const searchTrimmed = search.trim().toLowerCase();
     const [activeKey, setActiveKey] = useState(
       /** @type {'user' | 'factory' | null} */ (null)
     );
@@ -90,10 +90,10 @@ const SampleMenu = React.memo(
       'factory',
     ]);
     useLayoutEffect(() => {
-      if (searchTerm) {
+      if (searchTrimmed) {
         setSearchActiveKeys(['user', 'factory']);
       }
-    }, [searchTerm]);
+    }, [searchTrimmed]);
     const toggleSearchActiveKey = useCallback(
       /** @param {'user' | 'factory'} key */
       (key) => {
@@ -124,10 +124,10 @@ const SampleMenu = React.memo(
 
     const searchWords = useMemo(
       () =>
-        searchTerm
-          ? [...new Set(searchTerm.split(/\s+/).filter(Boolean))]
+        searchTrimmed
+          ? [...new Set(searchTrimmed.split(/\s+/).filter(Boolean))]
           : [],
-      [searchTerm]
+      [searchTrimmed]
     );
     const userSamplesFiltered = useMemo(
       () => searchSamples([...userSamples.values()], searchWords),
@@ -460,7 +460,7 @@ const SampleMenu = React.memo(
                     '--results-count': filteredSamples.length,
                     // @ts-ignore
                     '--accordion-open': (
-                      searchTerm
+                      searchTrimmed
                         ? searchActiveKeys.includes(eventKey)
                         : activeKey === eventKey
                     )
@@ -468,7 +468,7 @@ const SampleMenu = React.memo(
                       : '0',
                   }}
                   activeKey={
-                    searchTerm
+                    searchTrimmed
                       ? searchActiveKeys.filter((k) => k === eventKey)[0] ||
                         'nothing'
                       : activeKey === eventKey
@@ -487,7 +487,7 @@ const SampleMenu = React.memo(
                         setActiveKey((key) =>
                           key === eventKey ? null : eventKey
                         );
-                        if (searchTerm) {
+                        if (searchTrimmed) {
                           toggleSearchActiveKey(eventKey);
                         }
                       }}

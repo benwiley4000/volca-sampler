@@ -17,7 +17,6 @@ export const WAVEFORM_CACHED_WIDTH = GROUP_PIXEL_WIDTH * 44; // 264
  * @typedef {{
  *   positive: Float32Array;
  *   negative: Float32Array;
- *   normalizationCoefficient: number
  * }} SamplePeaks
  */
 
@@ -72,7 +71,6 @@ export function getPeaksForSamples(samples, containerPixelWidth) {
   return {
     positive,
     negative,
-    normalizationCoefficient: samplePeak && 1 / samplePeak,
   };
 }
 
@@ -155,7 +153,6 @@ export function useWaveformInfo(sourceAudioBuffer) {
       return {
         positive: new Float32Array(),
         negative: new Float32Array(),
-        normalizationCoefficient: Infinity,
       };
     }
     return getPeaksForSamples(monoSamples, pixelWidth);

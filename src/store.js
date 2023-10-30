@@ -197,10 +197,7 @@ const metadataUpgrades = {
      * @typedef {OldMetadata & {
      *   scaleCoefficient: number;
      *   trim: TrimInfo & {
-     *     waveformPeaks: Omit<
-     *       CachedInfo['waveformPeaks'],
-     *       'normalizationCoefficient'
-     *     >
+     *     waveformPeaks: CachedInfo['waveformPeaks'];
      *   }
      * }} PrevMetadata
      */
@@ -851,8 +848,6 @@ export async function getFactorySamples() {
             negative: new Float32Array(
               decodeBase64(params.cachedInfo.waveformPeaks.negative)
             ),
-            normalizationCoefficient:
-              params.cachedInfo.waveformPeaks.normalizationCoefficient,
           },
           duration: params.cachedInfo.duration,
           failedPluginIndex: params.cachedInfo.failedPluginIndex,

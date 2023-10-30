@@ -86,7 +86,7 @@ function drawWaveform(canvas, peaks, scaleCoefficient) {
 /**
  * @typedef {{
  *   peaks: import('./utils/waveform').SamplePeaks;
- *   scaleCoefficient?: number;
+ *   scaleCoefficient: number;
  *   waveformRef?: React.Ref<HTMLElement | null>;
  *   onResize?: (size: { width: number; height: number }) => void;
  * }} WaveformProps
@@ -147,9 +147,7 @@ function WaveformDisplayCanvas({
         drawWaveform(
           canvas,
           peaks,
-          scaleCoefficient === undefined
-            ? peaks.normalizationCoefficient
-            : scaleCoefficient
+          scaleCoefficient
         );
       });
     });

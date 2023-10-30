@@ -374,6 +374,7 @@ export async function getTargetWavForPluginProcessedSample(
     sampleRate: 16,
     cachedInfo: {
       waveformPeaks,
+      postPluginFrameCount: pluginProcessedAudioBuffer.length,
       duration: samples16.length / pluginProcessedAudioBuffer.sampleRate,
       failedPluginIndex: -1,
     },

@@ -48,7 +48,6 @@ const factorySamplesDirLocalPath = path.join(__dirname, 'public', pathPrefix);
             dateSampled: new Date('2014-10-01').toISOString(),
             cachedInfo: {
               waveformPeaks: {
-                ...waveformPeaks,
                 positive: encodeBase64(waveformPeaks.positive.buffer),
                 negative: encodeBase64(waveformPeaks.negative.buffer),
               },

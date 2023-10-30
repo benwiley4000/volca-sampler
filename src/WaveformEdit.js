@@ -618,10 +618,11 @@ const WaveformEdit = React.memo(
               className={classes.handle}
               tabIndex={0}
             />
-            {sourceAudioBuffer && Boolean(monoSamples.length) && (
+            {sampleCache && Boolean(monoSamples.length) && (
               <span className={classes.time}>
                 {formatShortTime(
-                  (sourceAudioBuffer.duration * trimFramesLocal.trimFrames[0]) /
+                  (sampleCache.cachedInfo.duration *
+                    trimFramesLocal.trimFrames[0]) /
                     monoSamples.length,
                   2
                 )}
@@ -635,10 +636,10 @@ const WaveformEdit = React.memo(
               className={classes.handle}
               tabIndex={0}
             />
-            {sourceAudioBuffer && Boolean(monoSamples.length) && (
+            {sampleCache && Boolean(monoSamples.length) && (
               <span className={classes.time}>
                 {formatShortTime(
-                  (sourceAudioBuffer.duration *
+                  (sampleCache.cachedInfo.duration *
                     (monoSamples.length - 1 - trimFramesLocal.trimFrames[1])) /
                     monoSamples.length,
                   2

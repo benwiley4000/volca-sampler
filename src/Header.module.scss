@@ -22,22 +22,6 @@
   }
 }
 
-.menuIcon {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  left: 1rem;
-  margin-right: 1rem;
-  cursor: pointer;
-  font-size: 3rem;
-  border: 0;
-  background: transparent;
-
-  @include media-breakpoint-up(md) {
-    display: none;
-  }
-}
-
 .title {
   --stroke-width: 1px;
   --stroke-color: var(--bs-dark);
@@ -46,7 +30,7 @@
   cursor: pointer;
   position: relative;
 
-  @media screen and (min-width: 350px) {
+  @media screen and (min-width: 390px) {
     font-size: 2.5rem;
   }
 
@@ -127,12 +111,15 @@
 
 .titleGraphic {
   margin-left: 1.5rem;
-  height: 1.6em;
-  filter: url(#outline);
   transition: transform 0.1s;
   will-change: transform;
   .title:hover & {
     transform: rotate(-5deg) scale(1.1);
+  }
+
+  img {
+    width: 2.5em;
+    filter: url(#outline);
   }
 }
 

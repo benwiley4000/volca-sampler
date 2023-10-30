@@ -36,11 +36,12 @@ const Header = React.memo(
                 }
               </svg>
             </span>
-            <img
-              className={classes.titleGraphic}
-              src="volca_sample.png"
-              alt=""
-            />
+            <div className={classes.titleGraphic}>
+              <img
+                src="volca_sample.png"
+                alt=""
+              />
+            </div>
             <div className={classes.tagline}>
               <h2>for volca sample</h2>
             </div>

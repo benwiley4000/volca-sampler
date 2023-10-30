@@ -227,35 +227,12 @@ export class PluginRunError extends Error {
 }
 
 /**
- * Given sample container, returns a 16-bit mono wav file with the sample's
- * metadata parameters applied
+ * Given sample container, returns a mono audio buffer with plugins applied
  * @param {import('../store').SampleContainer} sampleContainer
- * @param {boolean} [forPreview]
- * @returns {Promise<{
- *   data: Uint8Array;
- *   sampleRate: number;
- *   cachedInfo: import('../sampleCacheStore').CachedInfo;
- * }>}
+ * @returns {Promise<AudioBuffer>}
  */
-export async function getTargetWavForSample(sampleContainer, forPreview) {
-  const {
-    qualityBitDepth,
-    sourceFileId,
-    userFileInfo,
-    normalize,
-    trim: { frames: trimFrames },
-    pitchAdjustment,
-    plugins,
-  } = sampleContainer.metadata;
-  if (
-    qualityBitDepth < 8 ||
-    qualityBitDepth > 16 ||
-    !Number.isInteger(qualityBitDepth)
-  ) {
-    throw new Error(
-      `Expected bit depth between 8 and 16. Received: ${qualityBitDepth}`
-    );
-  }
+export async function processPluginsForSample(sampleContainer) {
+  const { sourceFileId, userFileInfo, plugins } = sampleContainer.metadata;
   const sourceAudioBuffer = await getSourceAudioBuffer(
     sourceFileId,
     Boolean(userFileInfo)
@@ -303,10 +280,48 @@ export async function getTargetWavForSample(sampleContainer, forPreview) {
     i++;
   }
 
+  return postPluginBuffer;
+}
+/**
+ * Given sample container, returns a 16-bit mono wav file with the sample's
+ * metadata parameters applied
+ * @param {import('../store').SampleContainer} sampleContainer
+ * @param {AudioBuffer} pluginProcessedAudioBuffer
+ * @param {boolean} [forPreview]
+ * @returns {Promise<{
+ *   data: Uint8Array;
+ *   sampleRate: number;
+ *   cachedInfo: import('../sampleCacheStore').CachedInfo;
+ * }>}
+ */
+export async function getTargetWavForPluginProcessedSample(
+  sampleContainer,
+  pluginProcessedAudioBuffer,
+  forPreview
+) {
+  const {
+    qualityBitDepth,
+    normalize,
+    trim: { frames: trimFrames },
+    pitchAdjustment,
+  } = sampleContainer.metadata;
+  if (
+    qualityBitDepth < 8 ||
+    qualityBitDepth > 16 ||
+    !Number.isInteger(qualityBitDepth)
+  ) {
+    throw new Error(
+      `Expected bit depth between 8 and 16. Received: ${qualityBitDepth}`
+    );
+  }
+
   const samplesPreNormalize =
     normalize === 'all'
-      ? postPluginBuffer.getChannelData(0)
-      : getTrimmedView(postPluginBuffer.getChannelData(0), trimFrames);
+      ? pluginProcessedAudioBuffer.getChannelData(0)
+      : getTrimmedView(
+          pluginProcessedAudioBuffer.getChannelData(0),
+          trimFrames
+        );
   if (normalize === 'all') {
     normalizeSamples(samplesPreNormalize);
   }
@@ -347,7 +362,7 @@ export async function getTargetWavForSample(sampleContainer, forPreview) {
    */
   const wavHeader = getWavFileHeaders({
     channels: 1,
-    sampleRate: sourceAudioBuffer.sampleRate,
+    sampleRate: pluginProcessedAudioBuffer.sampleRate,
     bitDepth: 16,
     dataLength: samplesByteLength,
   });
@@ -359,10 +374,32 @@ export async function getTargetWavForSample(sampleContainer, forPreview) {
     sampleRate: 16,
     cachedInfo: {
       waveformPeaks,
-      duration: samples16.length / sourceAudioBuffer.sampleRate,
+      duration: samples16.length / pluginProcessedAudioBuffer.sampleRate,
       failedPluginIndex: -1,
     },
   };
+}
+
+/**
+ * Given sample container, returns a 16-bit mono wav file with the sample's
+ * metadata parameters applied
+ * @param {import('../store').SampleContainer} sampleContainer
+ * @param {boolean} [forPreview]
+ * @returns {Promise<{
+ *   data: Uint8Array;
+ *   sampleRate: number;
+ *   cachedInfo: import('../sampleCacheStore').CachedInfo;
+ * }>}
+ */
+export async function getTargetWavForSample(sampleContainer, forPreview) {
+  const pluginProcessedAudioBuffer = await processPluginsForSample(
+    sampleContainer
+  );
+  return getTargetWavForPluginProcessedSample(
+    sampleContainer,
+    pluginProcessedAudioBuffer,
+    forPreview
+  );
 }
 
 /**

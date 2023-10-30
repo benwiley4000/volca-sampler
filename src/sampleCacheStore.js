@@ -4,16 +4,18 @@ import {
   PluginRunError,
   getAudioBufferForAudioFileData,
   getSourceAudioBuffer,
+  processPluginsForSample,
+  getTargetWavForPluginProcessedSample,
   getTargetWavForSample,
 } from './utils/audioData';
 import { getSamplePeaksForAudioBuffer } from './utils/waveform';
 import { SAMPLE_RATE } from './utils/constants';
-
-/** @typedef {import('./store').SampleContainer} SampleContainer */
+import { SampleContainer } from './store';
 
 /**
  * @typedef {{
  *   waveformPeaks: import('./utils/waveform').SamplePeaks;
+ *   postPluginFrameCount: number;
  *   duration: number;
  *   failedPluginIndex: number; // index of failed plugin, -1 if all good
  * }} CachedInfo
@@ -93,12 +95,45 @@ export class SampleCache {
       }
       /** @type {CachedInfo} */
       let cachedInfo;
+      let finalSampleContainer = sampleContainer;
       try {
-        const { data, cachedInfo: _cachedInfo } = await getTargetWavForSample(
-          sampleContainer,
-          true
+        const pluginProcessedAudioBuffer = await processPluginsForSample(
+          finalSampleContainer
         );
-        await SampleCache.cachePreviewAudioData(sampleContainer.id, data);
+        // If the duration after plugins and before trim is different than
+        // before, we should update the trim to a similar relative position
+        // in the plugin-processed buffer before continuing.
+        if (
+          sampleContainer instanceof SampleContainer.Mutable &&
+          pluginProcessedAudioBuffer.length !==
+            this.cachedInfo.postPluginFrameCount
+        ) {
+          const ratio =
+            pluginProcessedAudioBuffer.length /
+            this.cachedInfo.postPluginFrameCount;
+          await /**@type {Promise<void>} */ (
+            new Promise((resolve) => {
+              finalSampleContainer = sampleContainer.update(
+                ({ trim }) => ({
+                  trim: {
+                    frames: [
+                      Math.round(trim.frames[0] * ratio),
+                      Math.round(trim.frames[1] * ratio),
+                    ],
+                  },
+                }),
+                resolve
+              );
+            })
+          );
+        }
+        const { data, cachedInfo: _cachedInfo } =
+          await getTargetWavForPluginProcessedSample(
+            finalSampleContainer,
+            pluginProcessedAudioBuffer,
+            true
+          );
+        await SampleCache.cachePreviewAudioData(finalSampleContainer.id, data);
         cachedInfo = _cachedInfo;
       } catch (err) {
         cachedInfo = {
@@ -108,7 +143,7 @@ export class SampleCache {
         };
       }
       const newSampleCache = new SampleCache.Mutable({
-        sampleContainer,
+        sampleContainer: finalSampleContainer,
         cachedInfo,
       });
       await newSampleCache.persist();
@@ -251,6 +286,7 @@ export class SampleCache {
       const { pitchAdjustment } = sampleContainer.metadata;
       cachedInfo = {
         waveformPeaks,
+        postPluginFrameCount: audioBuffer.length,
         duration:
           (audioBuffer.duration - (frames[0] + frames[1]) / SAMPLE_RATE) /
           pitchAdjustment,

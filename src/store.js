@@ -269,7 +269,7 @@ const metadataUpgrades = {
       false
     );
     /**
-     * @type {Omit<CachedInfo, 'failedPluginIndex'> & {
+     * @type {Omit<CachedInfo, 'postPluginFrameCount' | 'failedPluginIndex'> & {
      *   srcDuration: number
      * }}
      */
@@ -303,6 +303,7 @@ const metadataUpgrades = {
       // render incorrectly in the list if normalization wasn't 'selection'.
       // probably not a huge deal though.
       waveformPeaks: cachedInfo.waveformPeaks,
+      postPluginFrameCount: Math.round(cachedInfo.srcDuration * SAMPLE_RATE),
       duration: cachedInfo.duration,
       failedPluginIndex: -1,
     };
@@ -394,6 +395,7 @@ const exportMetadataToOldMetadata = {
      */
     const cachedInfo = {
       waveformPeaks,
+      postPluginFrameCount: audioBuffer.length,
       duration:
         audioBuffer.duration -
         (exportedMetadata.trim.frames[0] + exportedMetadata.trim.frames[1]) /
@@ -849,6 +851,7 @@ export async function getFactorySamples() {
               decodeBase64(params.cachedInfo.waveformPeaks.negative)
             ),
           },
+          postPluginFrameCount: params.cachedInfo.postPluginFrameCount,
           duration: params.cachedInfo.duration,
           failedPluginIndex: params.cachedInfo.failedPluginIndex,
         },

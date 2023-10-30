@@ -207,6 +207,7 @@ function App() {
       sampleContainer: sample,
       cachedInfo: {
         waveformPeaks,
+        postPluginFrameCount: audioBuffer.length,
         duration: audioBuffer.duration,
         failedPluginIndex: -1,
       },
@@ -234,16 +235,32 @@ function App() {
         const updated = sample.update(updater, () => {
           sendTabUpdateEvent('sample', [sample.id], 'edit');
         });
-        Promise.resolve().then(async () => {
-          const sampleCache = userSampleCachesRef.current.get(id);
-          if (!(sampleCache && sampleCache instanceof SampleCache.Mutable))
-            return;
-          const newSampleCache = await sampleCache.update(updated);
-          setUserSampleCaches((caches) =>
-            new Map(caches).set(id, newSampleCache)
-          );
-        });
         if (updated !== sample) {
+          Promise.resolve().then(async () => {
+            const sampleCache = userSampleCachesRef.current.get(id);
+            if (!(sampleCache && sampleCache instanceof SampleCache.Mutable))
+              return;
+            const newSampleCache = await sampleCache.update(updated);
+            if (newSampleCache === sampleCache) {
+              return;
+            }
+            if (newSampleCache.sampleContainer !== updated) {
+              setUserSamples((samples) => {
+                const newSamples = new Map(samples);
+                newSamples.delete(sample.id);
+                return new Map([
+                  [sample.id, newSampleCache.sampleContainer],
+                  ...newSamples,
+                ]);
+              });
+              sendTabUpdateEvent('sample', [sample.id], 'edit');
+            }
+            setUserSampleCaches((caches) =>
+              new Map(caches).set(id, newSampleCache)
+            );
+            sendTabUpdateEvent('cache', [sample.id], 'edit');
+          });
+
           const newSamples = new Map(samples);
           newSamples.delete(sample.id);
           return new Map([[sample.id, updated], ...newSamples]);

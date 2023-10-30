@@ -51,6 +51,7 @@ const factorySamplesDirLocalPath = path.join(__dirname, 'public', pathPrefix);
                 positive: encodeBase64(waveformPeaks.positive.buffer),
                 negative: encodeBase64(waveformPeaks.negative.buffer),
               },
+              postPluginFrameCount: float32Data.length,
               duration: float32Data.length / SAMPLE_RATE,
               failedPluginIndex: -1,
             },

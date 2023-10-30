@@ -90,7 +90,7 @@ const WaveformEdit = React.memo(
     const selectedSampleId = useRef(_sample.id);
     selectedSampleId.current = _sample.id;
     const commitTrimFrames = useCallback(() => {
-      if (!sourceAudioBuffer || loadedSampleId !== selectedSampleId.current) {
+      if (loadedSampleId !== selectedSampleId.current) {
         return;
       }
       const { trimFrames } = trimFramesLocalRef.current;
@@ -102,7 +102,7 @@ const WaveformEdit = React.memo(
           trim: { frames: trimFrames },
         };
       });
-    }, [loadedSampleId, sourceAudioBuffer, onSampleUpdate]);
+    }, [loadedSampleId, onSampleUpdate]);
 
     const awaitingCommit = useRef(false);
     useEffect(() => {

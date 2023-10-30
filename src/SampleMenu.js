@@ -19,13 +19,31 @@ import { ReactComponent as WarningIcon } from '@material-design-icons/svg/filled
 
 import SampleList from './SampleList.js';
 
-import classes from './SampleMenu.module.scss';
 import VolcaTransferControl from './VolcaTransferControl.js';
 import { exportSampleContainersToZip } from './utils/zipExport.js';
 import { downloadBlob } from './utils/download.js';
 
+import classes from './SampleMenu.module.scss';
+import sampleListClasses from './SampleList.module.scss';
+
 /** @typedef {import('./store').SampleContainer} SampleContainer */
 /** @typedef {import('./sampleCacheStore.js').SampleCache} SampleCache */
+
+/**
+ * @param {SampleContainer[]} samples
+ * @param {string[]} searchWords
+ */
+function searchSamples(samples, searchWords) {
+  if (!searchWords.length) return samples;
+  return samples.filter(({ metadata: { name, slotNumber } }) => {
+    const nameLowerCase = name.toLowerCase();
+    return searchWords.every(
+      (word) =>
+        slotNumber === Number(word.replace(/^S\./i, '')) ||
+        nameLowerCase.includes(word)
+    );
+  });
+}
 
 const SampleMenu = React.memo(
   /**
@@ -103,24 +121,72 @@ const SampleMenu = React.memo(
         }
       }
     }, []);
-    const userSamplesFiltered = useMemo(
+
+    const searchWords = useMemo(
       () =>
-        [...userSamples.values()].filter(
-          (sample) =>
-            !searchTerm ||
-            sample.metadata.name.toLowerCase().includes(searchTerm)
-        ),
-      [userSamples, searchTerm]
+        searchTerm
+          ? [...new Set(searchTerm.split(/\s+/).filter(Boolean))]
+          : [],
+      [searchTerm]
+    );
+    const userSamplesFiltered = useMemo(
+      () => searchSamples([...userSamples.values()], searchWords),
+      [userSamples, searchWords]
     );
     const factorySamplesFiltered = useMemo(
-      () =>
-        [...factorySamples.values()].filter(
-          (sample) =>
-            !searchTerm ||
-            sample.metadata.name.toLowerCase().includes(searchTerm)
-        ),
-      [factorySamples, searchTerm]
+      () => searchSamples([...factorySamples.values()], searchWords),
+      [factorySamples, searchWords]
     );
+
+    // Highlight matching text and slot numbers while searching
+    /** @type {React.RefObject<HTMLDivElement>} */
+    const listGroupRef = useRef(null);
+    useEffect(() => {
+      const listGroup = listGroupRef.current;
+      if (!listGroup) return;
+      const sampleNameElements = listGroup.getElementsByClassName(
+        sampleListClasses.name
+      );
+      const sampleSlotElements = listGroup.getElementsByClassName(
+        sampleListClasses.slot
+      );
+      if (!searchWords.length) {
+        for (let i = 0; i < sampleNameElements.length; i++) {
+          sampleNameElements[i].innerHTML =
+            sampleNameElements[i].textContent || '';
+          sampleSlotElements[i].innerHTML =
+            sampleSlotElements[i].textContent || '';
+        }
+        return;
+      }
+      for (let i = 0; i < sampleNameElements.length; i++) {
+        let nameHTML = sampleNameElements[i].textContent || '';
+        const sampleSlotTextContent = sampleSlotElements[i].textContent || '';
+        const slotNumber = Number(sampleSlotTextContent.slice(2));
+        let foundSlotNumber = false;
+        for (const word of searchWords) {
+          const nameIndex = nameHTML.toLowerCase().indexOf(word);
+          if (nameIndex !== -1) {
+            nameHTML =
+              nameHTML.slice(0, nameIndex) +
+              '<mark>' +
+              nameHTML.slice(nameIndex, nameIndex + word.length) +
+              '</mark>' +
+              nameHTML.slice(nameIndex + word.length);
+          }
+          if (
+            !foundSlotNumber &&
+            Number(word.replace(/^S\./i, '')) === slotNumber
+          ) {
+            foundSlotNumber = true;
+            sampleSlotElements[i].innerHTML =
+              '<mark>' + sampleSlotTextContent + '</mark>';
+          }
+        }
+        sampleNameElements[i].innerHTML = nameHTML;
+      }
+    }, [searchWords]);
+
     /** @type {React.RefObject<HTMLHeadingElement>} */
     const userSamplesHeader = useRef(null);
     /** @type {React.RefObject<HTMLHeadingElement>} */
@@ -353,7 +419,7 @@ const SampleMenu = React.memo(
             onClick={() => setSearch('')}
           />
         </InputGroup>
-        <ListGroup className={classes.listGroup}>
+        <ListGroup className={classes.listGroup} ref={listGroupRef}>
           {!loading &&
             /**
              * @type {{

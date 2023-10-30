@@ -32,6 +32,11 @@ input:checked {
   accent-color: var(--bs-primary);
 }
 
+mark {
+  padding: 0 !important;
+  background-color: var(--bs-primary-bg-subtle);
+}
+
 :root {
   --bs-primary-darkened: #{darken($primary, 20%)};
 }

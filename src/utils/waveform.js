@@ -3,7 +3,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   getMonoSamplesFromAudioBuffer,
   getSourceAudioBuffer,
-  findSamplePeak,
   useAudioPlaybackContext,
 } from './audioData.js';
 import { formatShortTime } from './datetime.js';
@@ -53,21 +52,6 @@ export function getPeaksForSamples(samples, containerPixelWidth) {
     positive[i] = Math.min(1, max);
     negative[i] = Math.max(-1, min);
   }
-  const ignoredSamplesCount = samples.length % groupSize;
-  const peakSearchArray = new Float32Array(
-    positive.length + negative.length + ignoredSamplesCount
-  );
-  peakSearchArray.set(positive, 0);
-  peakSearchArray.set(negative, positive.length);
-  peakSearchArray.set(
-    new Float32Array(
-      samples.buffer,
-      samples.byteOffset + (samples.length - ignoredSamplesCount) * 4,
-      ignoredSamplesCount
-    ),
-    positive.length + negative.length
-  );
-  const samplePeak = findSamplePeak(peakSearchArray);
   return {
     positive,
     negative,

@@ -9,7 +9,9 @@ const PluginConfirmModal = React.memo(
    *   pluginName: string;
    *   variant: 'confirm-name' | 'replace'
    *   onConfirmName: (name: string) => void;
-   *   onConfirmReplace: (shouldReplace: boolean) => void;
+   *   onConfirmReplace: (
+   *     replaceResponse: 'replace' | 'use-existing' | 'change-name'
+   *   ) => void;
    * }} props
    */
   function PluginConfirmModal({
@@ -75,14 +77,21 @@ const PluginConfirmModal = React.memo(
               <Button
                 type="button"
                 variant="light"
-                onClick={() => onConfirmReplace(false)}
+                onClick={() => onConfirmReplace('change-name')}
               >
-                Keep existing
+                Choose new name
+              </Button>
+              <Button
+                type="button"
+                variant="light"
+                onClick={() => onConfirmReplace('use-existing')}
+              >
+                Use existing
               </Button>
               <Button
                 type="button"
                 variant="primary"
-                onClick={() => onConfirmReplace(true)}
+                onClick={() => onConfirmReplace('replace')}
               >
                 Replace
               </Button>

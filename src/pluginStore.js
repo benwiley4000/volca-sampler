@@ -17,8 +17,10 @@ const pluginStore = localforage.createInstance({
  * Always use this when a user is uploading a new plugin.
  * @param {File} file
  * @param {(name: string) => Promise<string>} onConfirmName
- * @param {(name: string) => Promise<boolean>} onConfirmReplace
- * @returns {Promise<'added' | 'replaced' | 'exists'>}
+ * @param {(name: string) => Promise<
+ *   'replace' | 'use-existing' | 'change-name'
+ * >} onConfirmReplace
+ * @returns {Promise<'added' | 'replaced' | 'used-existing' | 'exists'>}
  */
 export async function addPluginFromFile(file, onConfirmName, onConfirmReplace) {
   if (file.size > 5_000_000) {
@@ -42,8 +44,10 @@ export async function addPluginFromFile(file, onConfirmName, onConfirmReplace) {
  * @param {string} pluginName
  * @param {string} pluginSource
  * @param {(name: string) => Promise<string>} onConfirmName
- * @param {(name: string) => Promise<boolean>} onConfirmReplace
- * @returns {Promise<'added' | 'replaced' | 'exists'>}
+ * @param {(name: string) => Promise<
+ *   'replace' | 'use-existing' | 'change-name'
+ * >} onConfirmReplace
+ * @returns {Promise<'added' | 'replaced' | 'used-existing' | 'exists'>}
  */
 export async function addPlugin(
   pluginName,
@@ -55,39 +59,51 @@ export async function addPlugin(
 
   const existingNames = await pluginStore.keys();
 
+  let finalPluginName = pluginName;
   let shouldReplace = false;
 
   do {
-    if (existingNames.includes(pluginName)) {
+    if (existingNames.includes(finalPluginName)) {
       const existingContent = /** @type {string} */ (
-        await pluginStore.getItem(pluginName)
+        await pluginStore.getItem(finalPluginName)
       );
       const existingContentId = await getPluginContentId(existingContent);
       if (existingContentId === contentId) {
         return 'exists';
       }
-      shouldReplace = await onConfirmReplace(pluginName);
+      const replaceResponse = await onConfirmReplace(finalPluginName);
+      if (replaceResponse === 'use-existing') {
+        return 'used-existing';
+      }
+      shouldReplace = replaceResponse === 'replace';
       if (shouldReplace) {
         break;
       }
-      const pluginNameWithoutExtension = pluginName.replace(/\.js$/, '');
+      const pluginNameWithoutExtension = finalPluginName.replace(/\.js$/, '');
       let increment = 2;
       do {
-        pluginName = `${pluginNameWithoutExtension} ${increment++}.js`;
-      } while (!existingNames.includes(pluginName));
+        finalPluginName = `${pluginNameWithoutExtension} ${increment++}.js`;
+      } while (existingNames.includes(finalPluginName));
     }
-    pluginName = await onConfirmName(pluginName);
-  } while (existingNames.includes(pluginName));
+    // only ask for name confirmation if the original filename was taken
+    if (finalPluginName !== pluginName) {
+      finalPluginName = await onConfirmName(finalPluginName);
+    }
+  } while (existingNames.includes(finalPluginName));
 
   if (shouldReplace) {
-    const plugin = getPlugin(pluginName);
+    const plugin = getPlugin(finalPluginName);
     await plugin.replaceSource(pluginSource);
   } else {
-    await installPlugin(pluginName, pluginSource);
+    await installPlugin(finalPluginName, pluginSource);
   }
 
-  await pluginStore.setItem(pluginName, pluginSource);
-  sendTabUpdateEvent('plugin', [pluginName], shouldReplace ? 'edit' : 'create');
+  await pluginStore.setItem(finalPluginName, pluginSource);
+  sendTabUpdateEvent(
+    'plugin',
+    [finalPluginName],
+    shouldReplace ? 'edit' : 'create'
+  );
 
   return shouldReplace ? 'replaced' : 'added';
 }

@@ -152,7 +152,9 @@ export async function readSampleMetadataFromZip(zipFile) {
  * @param {string[]} params.idsToImport
  * @param {(progress: number) => void} params.onProgress
  * @param {(name: string) => Promise<string>} params.onConfirmPluginName
- * @param {(name: string) => Promise<boolean>} params.onConfirmPluginReplace
+ * @param {(name: string) => Promise<
+ *   'replace' | 'use-existing' | 'change-name'
+ * >} params.onConfirmPluginReplace
  * @returns {Promise<{
  *   sampleContainers: SampleContainer[];
  *   sampleCaches: SampleCache[];

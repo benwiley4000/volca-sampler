@@ -102,7 +102,9 @@ const ImportFromZip = React.memo(
        *   pluginName: string;
        *   variant: 'confirm-name' | 'replace';
        *   onConfirmName: (name: string) => void;
-       *   onConfirmReplace: (shouldReplace: boolean) => void;
+       *   onConfirmReplace: (
+       *     replaceResponse: 'replace' | 'use-existing' | 'change-name'
+       *   ) => void;
        * } | null}
        */
       (null)
@@ -137,19 +139,18 @@ const ImportFromZip = React.memo(
             );
           },
           onConfirmPluginReplace(name) {
-            return /** @type {Promise<boolean>} */ (
-              new Promise((resolve) => {
-                setPluginConfirmationState({
-                  pluginName: name,
-                  variant: 'replace',
-                  onConfirmReplace(shouldReplace) {
-                    resolve(shouldReplace);
-                    setPluginConfirmationState(null);
-                  },
-                  onConfirmName() {},
-                });
-              })
-            );
+            /** @type {Promise<'replace' | 'use-existing' | 'change-name'>} */
+            return new Promise((resolve) => {
+              setPluginConfirmationState({
+                pluginName: name,
+                variant: 'replace',
+                onConfirmReplace(replaceResponse) {
+                  resolve(replaceResponse);
+                  setPluginConfirmationState(null);
+                },
+                onConfirmName() {},
+              });
+            });
           },
         })
           .then(async ({ sampleContainers, sampleCaches, failedImports }) => {

@@ -170,6 +170,7 @@ export async function renamePlugin({
   }
   const newAffectedSamples = affectedSamples.map(
     (sample) =>
+      // create new to avoid changing date modified and to defer persist
       new SampleContainer.Mutable({
         id: sample.id,
         ...sample.metadata,

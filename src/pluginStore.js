@@ -1,6 +1,11 @@
 import localforage from 'localforage';
 
-import { getPlugin, getPluginContentId, installPlugin } from './utils/plugins';
+import {
+  getPlugin,
+  getPluginContentId,
+  installPlugin,
+  isPluginInstalled,
+} from './utils/plugins';
 import { onTabUpdateEvent, sendTabUpdateEvent } from './utils/tabSync';
 
 const pluginStore = localforage.createInstance({
@@ -133,4 +138,13 @@ async function updatePluginFromStorage(pluginName) {
   const pluginSource = await pluginStore.getItem(pluginName);
   const plugin = getPlugin(pluginName);
   await plugin.replaceSource(pluginSource);
+}
+
+/** @param {string} pluginName */
+export async function getPluginStatus(pluginName) {
+  const isInstalled = isPluginInstalled(pluginName);
+  if (isInstalled) return 'installed';
+  const existingNames = await pluginStore.keys();
+  if (existingNames.includes(pluginName)) return 'broken';
+  return 'missing';
 }

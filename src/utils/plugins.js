@@ -285,3 +285,11 @@ export async function getPluginContentId(pluginSource) {
     .join('');
   return hex;
 }
+
+/**
+ * @param {string} pluginName
+ */
+export function isPluginInstalled(pluginName) {
+  const iframe = document.getElementById(pluginName);
+  return Boolean(iframe && iframe instanceof HTMLIFrameElement);
+}

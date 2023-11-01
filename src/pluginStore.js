@@ -16,14 +16,19 @@ const pluginStore = localforage.createInstance({
 
 /**
  * Always use this when a user is uploading a new plugin.
- * @param {File} file
- * @param {(name: string) => Promise<string>} onConfirmName
+ * @param {object} params
+ * @param {File} params.file
+ * @param {(name: string) => Promise<string>} params.onConfirmName
  * @param {(name: string) => Promise<
  *   'replace' | 'use-existing' | 'change-name'
- * >} onConfirmReplace
+ * >} params.onConfirmReplace
  * @returns {Promise<'added' | 'replaced' | 'used-existing' | 'exists'>}
  */
-export async function addPluginFromFile(file, onConfirmName, onConfirmReplace) {
+export async function addPluginFromFile({
+  file,
+  onConfirmName,
+  onConfirmReplace,
+}) {
   if (file.size > 5_000_000) {
     throw new Error('Plugin is too big.');
   }
@@ -32,30 +37,31 @@ export async function addPluginFromFile(file, onConfirmName, onConfirmReplace) {
     throw new Error('Expecting JavaScript file.');
   }
   const pluginSource = await file.text();
-  return await addPlugin(
+  return await addPlugin({
     pluginName,
     pluginSource,
     onConfirmName,
-    onConfirmReplace
-  );
+    onConfirmReplace,
+  });
 }
 
 /**
  * This can be called directly when importing plugins from an export file.
- * @param {string} pluginName
- * @param {string} pluginSource
- * @param {(name: string) => Promise<string>} onConfirmName
+ * @param {object} params
+ * @param {string} params.pluginName
+ * @param {string} params.pluginSource
+ * @param {(name: string) => Promise<string>} params.onConfirmName
  * @param {(name: string) => Promise<
  *   'replace' | 'use-existing' | 'change-name'
- * >} onConfirmReplace
+ * >} params.onConfirmReplace
  * @returns {Promise<'added' | 'replaced' | 'used-existing' | 'exists'>}
  */
-export async function addPlugin(
+export async function addPlugin({
   pluginName,
   pluginSource,
   onConfirmName,
-  onConfirmReplace
-) {
+  onConfirmReplace,
+}) {
   const contentId = await getPluginContentId(pluginSource);
 
   const existingNames = await pluginStore.keys();
@@ -149,7 +155,12 @@ export async function renamePlugin({
   if (!pluginSource) {
     throw new Error('Expected plugin to be installed');
   }
-  await addPlugin(newPluginName, pluginSource, onConfirmName, onConfirmReplace);
+  await addPlugin({
+    pluginName: newPluginName,
+    pluginSource,
+    onConfirmName,
+    onConfirmReplace,
+  });
   const affectedSamples = [...userSamples.values()].filter((sample) =>
     sample.metadata.plugins.some((p) => p.pluginName === oldPluginName)
   );

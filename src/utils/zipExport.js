@@ -243,12 +243,12 @@ export async function importSampleContainersFromZip({
                 const pluginSource = await pluginFileHandle.async('string');
                 const unlock = await pluginMutex.lock();
                 try {
-                  await addPlugin(
+                  await addPlugin({
                     pluginName,
                     pluginSource,
-                    onConfirmPluginName,
-                    onConfirmPluginReplace
-                  );
+                    onConfirmName: onConfirmPluginName,
+                    onConfirmReplace: onConfirmPluginReplace,
+                  });
                   unlock();
                 } catch (err) {
                   unlock();

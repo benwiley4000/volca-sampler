@@ -7,6 +7,7 @@ import {
   isPluginInstalled,
 } from './utils/plugins';
 import { onTabUpdateEvent, sendTabUpdateEvent } from './utils/tabSync';
+import { SampleContainer } from './store';
 
 const pluginStore = localforage.createInstance({
   name: 'plugin_store',
@@ -122,6 +123,55 @@ export async function getPluginSource(pluginName) {
   /** @type {string | null} */
   const pluginSource = await pluginStore.getItem(pluginName);
   return pluginSource;
+}
+
+// TODO: code that calls this needs to update userSamples in App.js and
+// send a tab event for updated samples
+/**
+ * @param {object} params
+ * @param {string} params.oldPluginName
+ * @param {string} params.newPluginName
+ * @param {(name: string) => Promise<string>} params.onConfirmName
+ * @param {(name: string) => Promise<
+ *   'replace' | 'use-existing' | 'change-name'
+ * >} params.onConfirmReplace
+ * @param {Map<string, SampleContainer>} params.userSamples
+ * @returns {Promise<SampleContainer[]>}
+ */
+export async function renamePlugin({
+  oldPluginName,
+  newPluginName,
+  onConfirmName,
+  onConfirmReplace,
+  userSamples,
+}) {
+  const pluginSource = await getPluginSource(oldPluginName);
+  if (!pluginSource) {
+    throw new Error('Expected plugin to be installed');
+  }
+  await addPlugin(newPluginName, pluginSource, onConfirmName, onConfirmReplace);
+  const affectedSamples = [...userSamples.values()].filter((sample) =>
+    sample.metadata.plugins.some((p) => p.pluginName === oldPluginName)
+  );
+  if (!affectedSamples.length) {
+    await removePlugin(oldPluginName);
+    return [];
+  }
+  const newAffectedSamples = affectedSamples.map(
+    (sample) =>
+      new SampleContainer.Mutable({
+        id: sample.id,
+        ...sample.metadata,
+        plugins: sample.metadata.plugins.map((p) => ({
+          ...p,
+          pluginName:
+            p.pluginName === oldPluginName ? newPluginName : p.pluginName,
+        })),
+      })
+  );
+  await Promise.all(newAffectedSamples.map((s) => s.persist()));
+  await removePlugin(oldPluginName);
+  return newAffectedSamples;
 }
 
 export async function initPlugins() {

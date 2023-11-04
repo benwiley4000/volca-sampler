@@ -226,20 +226,36 @@ function App() {
   userSampleCachesRef.current = userSampleCaches;
 
   /**
-   * @type {(id: string, update: import('./store').SampleMetadataUpdateArg) => void}
+   * @type {(id: string | string[], update: import('./store').SampleMetadataUpdateArg) => void}
    */
   const handleSampleUpdate = useCallback((id, updater) => {
+    const ids = id instanceof Array ? id : [id];
     setUserSamples((samples) => {
-      const sample = samples.get(id);
-      if (sample && sample instanceof SampleContainer.Mutable) {
-        const updated = sample.update(updater, () => {
-          sendTabUpdateEvent('sample', [sample.id], 'edit');
-        });
+      const sampleList = /** @type {SampleContainer[]} */ (
+        ids
+          .map((id) => {
+            const s = samples.get(id);
+            return (s && s instanceof SampleContainer.Mutable && s) || null;
+          })
+          .filter(Boolean)
+      );
+      if (!sampleList.length) return samples;
+
+      /** @type {Promise<void>[]} */
+      const persistPromises = [];
+      const updatedSampleList = sampleList.map((sample) => {
+        if (!(sample instanceof SampleContainer.Mutable)) {
+          return sample;
+        }
+        let onPersisted = () => {};
+        persistPromises.push(new Promise((resolve) => (onPersisted = resolve)));
+        const updated = sample.update(updater, onPersisted);
         if (updated !== sample) {
           Promise.resolve().then(async () => {
-            const sampleCache = userSampleCachesRef.current.get(id);
+            const sampleCache = userSampleCachesRef.current.get(sample.id);
             if (!(sampleCache && sampleCache instanceof SampleCache.Mutable))
               return;
+            await Promise.all(persistPromises);
             const newSampleCache = await sampleCache.update(updated);
             if (newSampleCache === sampleCache) {
               return;
@@ -256,17 +272,34 @@ function App() {
               sendTabUpdateEvent('sample', [sample.id], 'edit');
             }
             setUserSampleCaches((caches) =>
-              new Map(caches).set(id, newSampleCache)
+              new Map(caches).set(sample.id, newSampleCache)
             );
             sendTabUpdateEvent('cache', [sample.id], 'edit');
           });
-
-          const newSamples = new Map(samples);
-          newSamples.delete(sample.id);
-          return new Map([[sample.id, updated], ...newSamples]);
         }
+        return updated;
+      });
+      if (updatedSampleList.every((s, i) => sampleList[i] === s)) {
+        return samples;
       }
-      return samples;
+      Promise.all(persistPromises).then(() => {
+        sendTabUpdateEvent(
+          'sample',
+          updatedSampleList.map((s) => s.id),
+          'edit'
+        );
+      });
+      const newSamples = new Map(samples);
+      for (const { id } of updatedSampleList) {
+        newSamples.delete(id);
+      }
+      return new Map([
+        ...updatedSampleList
+          .slice()
+          .sort(sampleContainerDateCompare)
+          .map((s) => /** @type {[string, SampleContainer]} */ ([s.id, s])),
+        ...newSamples,
+      ]);
     });
   }, []);
   /**

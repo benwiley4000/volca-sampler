@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button, Modal, InputGroup, FormControl } from 'react-bootstrap';
 
 import classes from './PluginConfirmModal.module.scss';
@@ -7,11 +7,12 @@ const PluginConfirmModal = React.memo(
   /**
    * @param {{
    *   pluginName: string;
-   *   variant: 'confirm-name' | 'replace'
+   *   variant: 'confirm-name' | 'replace' | 'rename';
    *   onConfirmName: (name: string) => void;
    *   onConfirmReplace: (
    *     replaceResponse: 'replace' | 'use-existing' | 'change-name'
    *   ) => void;
+   *   onCancelRename: () => void;
    * }} props
    */
   function PluginConfirmModal({
@@ -19,32 +20,41 @@ const PluginConfirmModal = React.memo(
     variant,
     onConfirmName,
     onConfirmReplace,
+    onCancelRename,
   }) {
-    /** @type {React.RefObject<HTMLInputElement>} */
-    const confirmNameRef = useRef(null);
+    const [nameValue, setNameValue] = useState(
+      pluginName.replace(/\.js$/, '').toLowerCase()
+    );
+    useEffect(() => {
+      setNameValue(pluginName.replace(/\.js$/, '').toLowerCase());
+    }, [pluginName]);
     return (
       <Modal
         className={classes.pluginConfirmModal}
         aria-labelledby="plugin-confirm-modal"
+        show
+        centered
+        onHide={onCancelRename}
       >
         <Modal.Header>
           <Modal.Title id="plugin-confirm-modal">
             {variant === 'confirm-name' && 'Confirm name of new plugin'}
             {variant === 'replace' && 'A plugin with this name exists'}
+            {variant === 'rename' && 'Rename plugin'}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {variant === 'confirm-name' && (
+          {(variant === 'confirm-name' || variant === 'rename') && (
             <InputGroup>
               <FormControl
-                ref={confirmNameRef}
-                defaultValue={pluginName.replace(/\.js$/, '').toLowerCase()}
-                onChange={(e) =>
-                  (e.target.value = e.target.value.toLowerCase())
-                }
+                defaultValue={nameValue}
+                onChange={(e) => {
+                  setNameValue((e.target.value = e.target.value.toLowerCase()));
+                }}
                 placeholder="Plugin name"
                 aria-label="Plugin name"
                 aria-describedby=".js"
+                autoFocus
               />
               <InputGroup.Text id=".js">.js</InputGroup.Text>
             </InputGroup>
@@ -60,12 +70,10 @@ const PluginConfirmModal = React.memo(
             <Button
               type="button"
               variant="primary"
-              disabled={
-                !confirmNameRef.current || !confirmNameRef.current.value
-              }
+              disabled={!nameValue}
               onClick={() => {
-                if (confirmNameRef.current && confirmNameRef.current.value) {
-                  onConfirmName(`${confirmNameRef.current.value}.js`);
+                if (nameValue) {
+                  onConfirmName(`${nameValue}.js`);
                 }
               }}
             >
@@ -94,6 +102,29 @@ const PluginConfirmModal = React.memo(
                 onClick={() => onConfirmReplace('replace')}
               >
                 Replace
+              </Button>
+            </>
+          )}
+          {variant === 'rename' && (
+            <>
+              <Button
+                type="button"
+                variant="light"
+                onClick={() => onCancelRename()}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                disabled={
+                  !nameValue || pluginName.replace(/\.js$/, '') === nameValue
+                }
+                onClick={() => {
+                  onConfirmName(`${nameValue}.js`);
+                }}
+              >
+                Rename
               </Button>
             </>
           )}

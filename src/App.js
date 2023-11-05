@@ -24,10 +24,13 @@ import { getSamplePeaksForAudioBuffer } from './utils/waveform.js';
 import { getAudioBufferForAudioFileData } from './utils/audioData.js';
 import { newSampleName } from './utils/words.js';
 import { onTabUpdateEvent, sendTabUpdateEvent } from './utils/tabSync.js';
+import PluginManager from './PluginManager.js';
 
 import classes from './App.module.scss';
 
 const sessionStorageKey = 'focused_sample_id';
+
+/** @typedef {import('./sampleCacheStore.js').CachedInfo} CachedInfo */
 
 function App() {
   const [userSamples, setUserSamples] = useState(
@@ -347,6 +350,30 @@ function App() {
     []
   );
 
+  /**
+   * This is limited to rare use cases replacing data that doesn't
+   * need to change the sample modified date and doesn't need to
+   * update the sample cache. For now the only use case is for
+   * renaming a plugin.
+   * @type {(samples: SampleContainer[]) => void}
+   */
+  const handleSampleBulkReplace = useCallback((samples) => {
+    setUserSamples((samples) => {
+      const newSamples = new Map(samples);
+      for (const [id, sample] of samples) {
+        if (newSamples.has(id)) {
+          newSamples.set(id, sample);
+        }
+      }
+      return newSamples;
+    });
+    sendTabUpdateEvent(
+      'sample',
+      samples.map((s) => s.id),
+      'edit'
+    );
+  }, []);
+
   const allSamplesRef = useRef(allSamples);
   allSamplesRef.current = allSamples;
   const handleSampleDuplicate = useCallback(
@@ -547,6 +574,13 @@ function App() {
         factorySampleCaches.get(sample.id))) ||
     null;
 
+  const [isPluginManagerOpen, setIsPluginManagerOpen] = useState(false);
+  const openPluginManager = useCallback(() => setIsPluginManagerOpen(true), []);
+  const closePluginManager = useCallback(
+    () => setIsPluginManagerOpen(false),
+    []
+  );
+
   return (
     <div className={classes.app}>
       <Header onHeaderClick={handleHeaderClick} />
@@ -563,6 +597,7 @@ function App() {
             factorySampleCaches={factorySampleCaches}
             onSampleSelect={handleSampleSelect}
             onSampleDelete={handleSampleDelete}
+            onOpenPluginManager={openPluginManager}
           />
         </div>
         <div className={classes.mainLayout}>
@@ -616,6 +651,13 @@ function App() {
           <Nav.Link eventKey="about">About</Nav.Link>
         </Nav.Item>
       </Nav>
+      <PluginManager
+        isOpen={isPluginManagerOpen}
+        userSamples={userSamples}
+        onSampleUpdate={handleSampleUpdate}
+        onSampleBulkReplace={handleSampleBulkReplace}
+        onClose={closePluginManager}
+      />
     </div>
   );
 }

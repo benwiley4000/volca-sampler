@@ -105,6 +105,7 @@ const ImportFromZip = React.memo(
        *   onConfirmReplace: (
        *     replaceResponse: 'replace' | 'use-existing' | 'change-name'
        *   ) => void;
+       *   onCancelRename: () => void;
        * } | null}
        */
       (null)
@@ -134,6 +135,7 @@ const ImportFromZip = React.memo(
                     setPluginConfirmationState(null);
                   },
                   onConfirmReplace() {},
+                  onCancelRename() {},
                 });
               })
             );
@@ -149,6 +151,7 @@ const ImportFromZip = React.memo(
                   setPluginConfirmationState(null);
                 },
                 onConfirmName() {},
+                onCancelRename() {},
               });
             });
           },

@@ -15,6 +15,7 @@ const iframeParent =
     : document.createElement('div');
 
 if (typeof window !== 'undefined') {
+  iframeParent.id = 'plugins';
   document.body.appendChild(iframeParent);
 }
 

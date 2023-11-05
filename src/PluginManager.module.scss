@@ -1,0 +1,139 @@
+@import 'bootstrap_custom_variables';
+@import '~bootstrap/scss/functions';
+@import '~bootstrap/scss/variables';
+@import '~bootstrap/scss/mixins';
+
+.pluginListTitle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+
+  h5 {
+    margin: 0;
+  }
+}
+
+.installPlugin {
+  display: flex;
+  gap: 0.5rem;
+
+  svg {
+    fill: #fff;
+  }
+}
+
+.noneInstalled {
+  color: var(--bs-secondary);
+}
+
+.pluginItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+
+  .suggestedPlugins & {
+    align-items: center;
+  }
+
+  .nameAndInfo {
+    min-width: 0;
+  }
+
+  .name {
+    display: flex;
+    gap: 0.5rem;
+    min-width: 0;
+
+    span {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-weight: bold;
+    }
+
+    .rename {
+      cursor: pointer;
+      flex-shrink: 0;
+      display: inline-flex;
+    }
+
+    svg {
+      scale: 0.8;
+      fill: var(--bs-secondary);
+
+      &:hover {
+        fill: unset;
+      }
+    }
+  }
+
+  .info {
+    color: var(--bs-secondary);
+  }
+
+  .actions {
+    display: flex;
+    gap: 1rem;
+    flex-shrink: 0;
+
+    .suggestedPlugins & {
+      align-items: center;
+    }
+
+    & > * {
+      display: inline-flex;
+      cursor: pointer;
+    }
+
+    .reloadPlugin {
+      display: flex;
+      gap: 0.5rem;
+      color: var(--bs-primary);
+      fill: var(--bs-primary);
+
+      &:hover {
+        color: var(--bs-primary-darkened);
+        fill: var(--bs-primary-darkened);
+      }
+    }
+
+    .uninstallButton {
+      fill: var(--bs-secondary);
+
+      &:hover {
+        fill: var(--bs-primary);
+      }
+    }
+  }
+}
+
+.uninstallModal {
+  background-color: rgba(0, 0, 0, 0.35);
+
+  & > * {
+    flex-direction: row;
+  }
+}
+
+.pluginListTitle,
+.suggestedPluginsTitle {
+  margin-top: 1.5rem;
+}
+
+.installSuggestedPlugin svg {
+  fill: #fff;
+}
+
+.viewSource {
+  svg {
+    fill: var(--bs-secondary);
+  }
+
+  &:hover svg {
+    fill: unset;
+  }
+}

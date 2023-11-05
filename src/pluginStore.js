@@ -14,6 +14,10 @@ const pluginStore = localforage.createInstance({
   driver: localforage.INDEXEDDB,
 });
 
+export function listPlugins() {
+  return pluginStore.keys();
+}
+
 /**
  * Always use this when a user is uploading a new plugin.
  * @param {object} params
@@ -115,13 +119,17 @@ export async function addPlugin({
   return shouldReplace ? 'replaced' : 'added';
 }
 
-// TODO: code that calls this needs to handle samples using this plugin first
-/** @param {string} pluginName */
-export async function removePlugin(pluginName) {
+/**
+ * @param {string} pluginName
+ * @param {boolean} [noPersist]
+ */
+export async function removePlugin(pluginName, noPersist = false) {
   const plugin = getPlugin(pluginName);
   plugin.remove();
-  await pluginStore.removeItem(pluginName);
-  sendTabUpdateEvent('plugin', [pluginName], 'delete');
+  if (!noPersist) {
+    await pluginStore.removeItem(pluginName);
+    sendTabUpdateEvent('plugin', [pluginName], 'delete');
+  }
 }
 
 /** @param {string} pluginName */
@@ -131,8 +139,6 @@ export async function getPluginSource(pluginName) {
   return pluginSource;
 }
 
-// TODO: code that calls this needs to update userSamples in App.js and
-// send a tab event for updated samples
 /**
  * @param {object} params
  * @param {string} params.oldPluginName
@@ -186,23 +192,39 @@ export async function renamePlugin({
   return newAffectedSamples;
 }
 
+/** @type {Promise<void> | null} */
+let pluginInitPromise = null;
 export async function initPlugins() {
-  await pluginStore.iterate(async (pluginSource, pluginName) => {
-    await installPlugin(pluginName, pluginSource);
-  });
-  onTabUpdateEvent('plugin', async ({ action, ids }) => {
-    for (const pluginName of ids) {
-      if (action === 'create') {
-        await addPluginFromStorage(pluginName);
-      }
-      if (action === 'edit') {
-        await updatePluginFromStorage(pluginName);
-      }
-      if (action === 'delete') {
-        await removePlugin(pluginName);
-      }
-    }
-  });
+  pluginInitPromise =
+    pluginInitPromise ||
+    (async () => {
+      onTabUpdateEvent('plugin', async ({ action, ids }) => {
+        for (const pluginName of ids) {
+          if (action === 'create') {
+            await addPluginFromStorage(pluginName);
+          }
+          if (action === 'edit') {
+            await updatePluginFromStorage(pluginName);
+          }
+          if (action === 'delete') {
+            await removePlugin(pluginName, true);
+          }
+        }
+      });
+      /** @type {Promise<void>[]} */
+      const installPromises = [];
+      await pluginStore.iterate((pluginSource, pluginName) => {
+        installPromises.push(installPlugin(pluginName, pluginSource));
+      });
+      await Promise.all(installPromises);
+    })();
+  await pluginInitPromise;
+}
+
+/** @param {string} pluginName */
+export async function reinitPlugin(pluginName) {
+  const pluginSource = await pluginStore.getItem(pluginName);
+  await installPlugin(pluginName, pluginSource);
 }
 
 /** @param {string} pluginName */
@@ -218,11 +240,17 @@ async function updatePluginFromStorage(pluginName) {
   await plugin.replaceSource(pluginSource);
 }
 
-/** @param {string} pluginName */
-export async function getPluginStatus(pluginName) {
-  const isInstalled = isPluginInstalled(pluginName);
-  if (isInstalled) return 'installed';
+/**
+ * @param {...string} pluginNames
+ * @returns {Promise<('installed' | 'broken' | 'missing')[]>}
+ */
+export async function getPluginStatus(...pluginNames) {
+  await pluginInitPromise;
   const existingNames = await pluginStore.keys();
-  if (existingNames.includes(pluginName)) return 'broken';
-  return 'missing';
+  return pluginNames.map((pluginName) => {
+    const isInstalled = isPluginInstalled(pluginName);
+    if (isInstalled) return 'installed';
+    if (existingNames.includes(pluginName)) return 'broken';
+    return 'missing';
+  });
 }

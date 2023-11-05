@@ -5,6 +5,7 @@ import './bootstrap.scss';
 import App from './App.js';
 import reportWebVitals from './reportWebVitals.js';
 import { AudioPlaybackContextProvider } from './utils/audioData.js';
+import { initPlugins } from './pluginStore';
 
 // polyfills
 if (!Blob.prototype.arrayBuffer) {
@@ -30,6 +31,8 @@ ReactDOM.render(
   </React.StrictMode>,
   document.getElementById('root')
 );
+
+initPlugins();
 
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))

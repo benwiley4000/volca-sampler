@@ -136,7 +136,8 @@
   fill: #fff;
 }
 
-.viewSource {
+.viewSource,
+.downloadPlugin {
   svg {
     fill: var(--bs-secondary);
   }

@@ -3,10 +3,12 @@ import { Button, ListGroup, Modal } from 'react-bootstrap';
 import { ReactComponent as EditIcon } from '@material-design-icons/svg/filled/edit.svg';
 import { ReactComponent as SyncProblemIcon } from '@material-design-icons/svg/filled/sync_problem.svg';
 import { ReactComponent as CodeIcon } from '@material-design-icons/svg/filled/code.svg';
+import { ReactComponent as DownloadIcon } from '@material-design-icons/svg/filled/download.svg';
 
 import {
   addPlugin,
   addPluginFromFile,
+  getPluginSource,
   getPluginStatus,
   listPlugins,
   reinitPlugin,
@@ -20,6 +22,7 @@ import { ReactComponent as ToyBrickRemove } from './icons/toy-brick-remove.svg';
 
 import classes from './PluginManager.module.scss';
 import { getExamplePlugins, getPluginSourceLink } from './utils/github';
+import { downloadBlob } from './utils/download';
 
 /** @typedef {import('./store').SampleContainer} SampleContainer */
 
@@ -353,6 +356,20 @@ const PluginManager = React.memo(
                         Reload plugin
                       </div>
                     )}
+                    <div
+                      title="Download plugin"
+                      className={classes.downloadPlugin}
+                      onClick={async () => {
+                        const pluginSource = await getPluginSource(pluginName);
+                        if (!pluginSource) return;
+                        const blob = new Blob([pluginSource], {
+                          type: 'text/javascript',
+                        });
+                        downloadBlob(blob, pluginName);
+                      }}
+                    >
+                      <DownloadIcon />
+                    </div>
                     <div
                       title="Uninstall plugin"
                       className={classes.uninstallButton}

@@ -187,7 +187,6 @@ function VolcaTransferControl({
         };
         setDataStartPoints(dataStartPoints.map((p) => p / syroBuffer.length));
         const audioBuffer = await getAudioBufferForAudioFileData(syroBuffer);
-        console.log(audioBuffer);
         if (!cancelled) {
           setSyroAudioBuffer(audioBuffer);
         }

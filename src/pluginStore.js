@@ -9,10 +9,42 @@ import {
 import { onTabUpdateEvent, sendTabUpdateEvent } from './utils/tabSync';
 import { SampleContainer } from './store';
 
+/** @typedef {import('./utils/plugins').PluginParamsDef} PluginParamsDef */
+
+/**
+ * @typedef {object} PluginStorageFormat
+ * @property {string} pluginSource
+ * @property {PluginParamsDef} params
+ */
+
 const pluginStore = localforage.createInstance({
   name: 'plugin_store',
   driver: localforage.INDEXEDDB,
 });
+
+/**
+ * @param {string} pluginName
+ * @returns {Promise<PluginStorageFormat | null>}
+ */
+function pluginStoreGet(pluginName) {
+  return pluginStore.getItem(pluginName);
+}
+
+/**
+ * @param {string} pluginName
+ * @param {PluginStorageFormat} data
+ */
+function pluginStoreSet(pluginName, data) {
+  return pluginStore.setItem(pluginName, data);
+}
+
+/**
+ * @param {(data: PluginStorageFormat, pluginName: string) => void} callback
+ * @returns {ReturnType<typeof pluginStore.iterate>}
+ */
+function pluginStoreIterate(callback) {
+  return pluginStore.iterate(callback);
+}
 
 export function listPlugins() {
   return pluginStore.keys();
@@ -109,7 +141,13 @@ export async function addPlugin({
     await installPlugin(finalPluginName, pluginSource);
   }
 
-  await pluginStore.setItem(finalPluginName, pluginSource);
+  const params = await getPlugin(finalPluginName).getParams();
+
+  await pluginStoreSet(finalPluginName, {
+    pluginSource,
+    params
+  });
+
   sendTabUpdateEvent(
     'plugin',
     [finalPluginName],
@@ -134,8 +172,7 @@ export async function removePlugin(pluginName, noPersist = false) {
 
 /** @param {string} pluginName */
 export async function getPluginSource(pluginName) {
-  /** @type {string | null} */
-  const pluginSource = await pluginStore.getItem(pluginName);
+  const { pluginSource = null } = (await pluginStoreGet(pluginName)) || {};
   return pluginSource;
 }
 
@@ -213,7 +250,7 @@ export async function initPlugins() {
       });
       /** @type {Promise<void>[]} */
       const installPromises = [];
-      await pluginStore.iterate((pluginSource, pluginName) => {
+      await pluginStoreIterate(({ pluginSource }, pluginName) => {
         installPromises.push(installPlugin(pluginName, pluginSource));
       });
       await Promise.all(installPromises);
@@ -223,19 +260,28 @@ export async function initPlugins() {
 
 /** @param {string} pluginName */
 export async function reinitPlugin(pluginName) {
-  const pluginSource = await pluginStore.getItem(pluginName);
+  const { pluginSource = null } = (await pluginStoreGet(pluginName)) || {};
+  if (!pluginSource) {
+    throw new Error('Expected plugin to be stored');
+  }
   await installPlugin(pluginName, pluginSource);
 }
 
 /** @param {string} pluginName */
 async function addPluginFromStorage(pluginName) {
-  const pluginSource = await pluginStore.getItem(pluginName);
+  const { pluginSource = null } = (await pluginStoreGet(pluginName)) || {};
+  if (!pluginSource) {
+    throw new Error('Expected plugin to be stored');
+  }
   await installPlugin(pluginName, pluginSource);
 }
 
 /** @param {string} pluginName */
 async function updatePluginFromStorage(pluginName) {
-  const pluginSource = await pluginStore.getItem(pluginName);
+  const { pluginSource = null } = (await pluginStoreGet(pluginName)) || {};
+  if (!pluginSource) {
+    throw new Error('Expected plugin to be stored');
+  }
   const plugin = getPlugin(pluginName);
   await plugin.replaceSource(pluginSource);
 }
@@ -253,4 +299,13 @@ export async function getPluginStatus(...pluginNames) {
     if (existingNames.includes(pluginName)) return 'broken';
     return 'missing';
   });
+}
+
+export async function getAllStoredPluginParams() {
+  /** @type {Map<string, PluginParamsDef>} */
+  const allParams = new Map();
+  await pluginStoreIterate(({ params }, pluginName) => {
+    allParams.set(pluginName, params);
+  });
+  return allParams;
 }

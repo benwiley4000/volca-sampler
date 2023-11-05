@@ -35,6 +35,10 @@ button.exporting {
 .search {
   margin-bottom: 1rem;
 
+  input {
+    border-radius: var(--bs-border-radius) !important;
+  }
+
   .clearSearch {
     position: absolute;
     z-index: 5;

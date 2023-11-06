@@ -280,8 +280,9 @@ const PluginManager = React.memo(
           </Modal.Header>
           <Modal.Body>
             <p>
-              Plugins extend Volca Sampler's sample pre-processing capabilities.
-              You only need <strong>basic programming knowledge</strong> to{' '}
+              Plugins use custom JavaScript to extend Volca Sampler's sample
+              pre-processing capabilities. You only need{' '}
+              <strong>basic programming knowledge</strong> to{' '}
               <a
                 href="https://github.com/benwiley4000/volca-sampler-plugins"
                 target="_blank"

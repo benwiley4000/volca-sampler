@@ -426,8 +426,9 @@ const PluginsControl = React.memo(
               </span>
             </span>
             <span
-              hidden={!expanded}
-              className={classes.pluginsInfoIcon}
+              className={[classes.pluginsInfoIcon, classes.showOnExpanded].join(
+                ' '
+              )}
               onClick={(e) => {
                 e.stopPropagation();
                 onOpenPluginManager();

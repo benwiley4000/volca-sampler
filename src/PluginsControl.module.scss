@@ -70,6 +70,16 @@
   margin-left: 0.5rem;
   font-weight: bold;
   cursor: pointer;
+
+  &.showOnExpanded {
+    display: none;
+    .expanded & {
+      display: unset;
+    }
+    @include media-breakpoint-up(md) {
+      display: unset;
+    }
+  }
 }
 
 .pluginsControl {

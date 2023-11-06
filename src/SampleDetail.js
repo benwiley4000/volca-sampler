@@ -20,6 +20,7 @@ import { ReactComponent as WarningIcon } from '@material-design-icons/svg/filled
 import WaveformEdit from './WaveformEdit.js';
 import VolcaTransferControl from './VolcaTransferControl.js';
 import { SampleContainer } from './store.js';
+import PluginsControl from './PluginsControl.js';
 import QualityBitDepthControl from './QualityBitDepthControl.js';
 import PitchControl from './PitchControl.js';
 import { downloadBlob } from './utils/download.js';
@@ -32,17 +33,21 @@ const SampleDetail = React.memo(
    * @param {{
    *   sample: import('./store').SampleContainer;
    *   sampleCache: import('./sampleCacheStore.js').SampleCache | null;
+   *   pluginParamsDefs: Map<string, import('./utils/plugins').PluginParamsDef>;
    *   onSampleUpdate: (id: string, update: import('./store').SampleMetadataUpdateArg) => void;
    *   onSampleDuplicate: (id: string) => void;
-   *   onSampleDelete: (id: string | string[]) => void;
+   *   onSampleDelete: (id: string | string[]) => void;
+   *   onOpenPluginManager: () => void;
    * }} props
    */
   function SampleDetail({
     sample,
     sampleCache,
+    pluginParamsDefs,
     onSampleUpdate,
     onSampleDuplicate,
     onSampleDelete,
+    onOpenPluginManager,
   }) {
     /**
      * @type {(update: number | ((slotNumber: number) => number)) => void}
@@ -91,6 +96,13 @@ const SampleDetail = React.memo(
           {formatDate(new Date(sample.metadata.dateModified))}
         </p>
         <h4>Configure</h4>
+        <PluginsControl
+          sampleId={sample.id}
+          plugins={sample.metadata.plugins}
+          pluginParamsDefs={pluginParamsDefs}
+          onSampleUpdate={onSampleUpdate}
+          onOpenPluginManager={onOpenPluginManager}
+        />
         <QualityBitDepthControl
           sampleId={sample.id}
           qualityBitDepth={sample.metadata.qualityBitDepth}

@@ -23,7 +23,12 @@ if (typeof window !== 'undefined') {
 export class PluginError extends Error {}
 
 /**
- * @typedef {{ value: number; min: number; max: number }} PluginParamDef
+ * @typedef {{
+ *   value: number;
+ *   min: number;
+ *   max: number;
+ *   label: string;
+ * }} PluginParamDef
  * @typedef {Record<string, PluginParamDef>} PluginParamsDef
  * @typedef {Record<string, number>} PluginParams
  */
@@ -293,4 +298,17 @@ export async function getPluginContentId(pluginSource) {
 export function isPluginInstalled(pluginName) {
   const iframe = document.getElementById(pluginName);
   return Boolean(iframe && iframe instanceof HTMLIFrameElement);
+}
+
+/**
+ * @param {PluginParamsDef} pluginParamsDef
+ * @returns {PluginParams}
+ */
+export function getDefaultParams(pluginParamsDef) {
+  /** @type {PluginParams} */
+  const params = {};
+  for (const [key, paramDef] of Object.entries(pluginParamsDef)) {
+    params[key] = paramDef.value;
+  }
+  return params;
 }

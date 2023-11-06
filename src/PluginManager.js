@@ -10,12 +10,10 @@ import {
   addPluginFromFile,
   getPluginSource,
   getPluginStatus,
-  listPlugins,
   reinitPlugin,
   removePlugin,
   renamePlugin,
 } from './pluginStore';
-import { onTabUpdateEvent } from './utils/tabSync';
 import PluginConfirmModal from './PluginConfirmModal';
 import { ReactComponent as ToyBrickPlus } from './icons/toy-brick-plus.svg';
 import { ReactComponent as ToyBrickRemove } from './icons/toy-brick-remove.svg';
@@ -30,7 +28,9 @@ const PluginManager = React.memo(
   /**
    * @param {{
    *   isOpen: boolean;
+   *   pluginList: string[];
    *   userSamples: Map<string, SampleContainer>;
+   *   onUpdatePluginList: () => void;
    *   onSampleUpdate: (
    *     id: string[],
    *     update: import('./store').SampleMetadataUpdateArg
@@ -41,35 +41,33 @@ const PluginManager = React.memo(
    */
   function PluginManager({
     isOpen,
+    pluginList,
     userSamples,
+    onUpdatePluginList,
     onSampleUpdate,
     onSampleBulkReplace,
     onClose,
   }) {
-    const [pluginList, setPluginList] = useState(/** @type {string[]} */ ([]));
     const [pluginStatusMap, setPluginStatusMap] = useState(
       /** @type {Map<string, Awaited<ReturnType<typeof getPluginStatus>>[number]>} */ (
         new Map()
       )
     );
-
-    const updatePluginList = useCallback(async () => {
-      const list = await listPlugins();
-      list.sort((a, b) => (a > b ? 1 : a < b ? -1 : 1));
-      setPluginList(list);
+    useEffect(() => {
       /** @type {typeof pluginStatusMap} */
       const newStatusMap = new Map();
-      const statuses = await getPluginStatus(...list);
-      list.forEach((pluginName, i) => {
-        newStatusMap.set(pluginName, statuses[i]);
+      let cancelled = false;
+      getPluginStatus(...pluginList).then((statuses) => {
+        if (cancelled) return;
+        pluginList.forEach((pluginName, i) => {
+          newStatusMap.set(pluginName, statuses[i]);
+        });
+        setPluginStatusMap(newStatusMap);
       });
-      setPluginStatusMap(newStatusMap);
-    }, []);
-
-    useEffect(() => {
-      updatePluginList();
-      return onTabUpdateEvent('plugin', updatePluginList);
-    }, [updatePluginList]);
+      return () => {
+        cancelled = true;
+      };
+    }, [pluginList]);
 
     const pluginUsageCounts = useMemo(() => {
       /** @type {Record<string, number>} */
@@ -142,12 +140,12 @@ const PluginManager = React.memo(
               });
             });
           },
-        }).then(updatePluginList);
+        }).then(onUpdatePluginList);
         // this removes the file from the input so it can be selected again if
         // needed.
         e.target.value = '';
       },
-      [updatePluginList]
+      [onUpdatePluginList]
     );
 
     const handleAddPluginFromSource = useCallback(
@@ -191,9 +189,9 @@ const PluginManager = React.memo(
             });
           },
         });
-        updatePluginList();
+        onUpdatePluginList();
       },
-      [updatePluginList]
+      [onUpdatePluginList]
     );
 
     /** @param {string} pluginName */
@@ -253,7 +251,7 @@ const PluginManager = React.memo(
         userSamples,
       });
       onSampleBulkReplace(updatedSamples);
-      updatePluginList();
+      onUpdatePluginList();
     };
 
     const [maybeRemovingPluginName, setMaybeRemovingPluginName] = useState('');
@@ -349,7 +347,7 @@ const PluginManager = React.memo(
                         className={classes.reloadPlugin}
                         onClick={async () => {
                           await reinitPlugin(pluginName);
-                          updatePluginList();
+                          onUpdatePluginList();
                         }}
                       >
                         <SyncProblemIcon />
@@ -483,7 +481,7 @@ const PluginManager = React.memo(
                     };
                   });
                 }
-                removePlugin(maybeRemovingPluginName).then(updatePluginList);
+                removePlugin(maybeRemovingPluginName).then(onUpdatePluginList);
                 setMaybeRemovingPluginName('');
               }}
             >

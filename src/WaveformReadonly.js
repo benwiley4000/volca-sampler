@@ -33,19 +33,20 @@ function WaveformReadonly({ sample: _sample, sampleCache }) {
         trim: { frames: trimFrames },
       },
     },
-    sourceAudioBuffer,
+    pluginProcessedAudioBuffer,
   } = useLoadedSample(_sample);
-  const { monoSamples, waveformRef, peaks, onResize } =
-    useWaveformInfo(sourceAudioBuffer);
+  const { monoSamples, waveformRef, peaks, onResize } = useWaveformInfo(
+    pluginProcessedAudioBuffer
+  );
 
   const trimmedSamplePeak = useMemo(() => {
-    if (!sourceAudioBuffer) {
+    if (!pluginProcessedAudioBuffer) {
       return 0;
     }
     const trimmedView = getTrimmedView(monoSamples, trimFrames);
     const samplePeak = findSamplePeak(trimmedView);
     return samplePeak;
-  }, [sourceAudioBuffer, monoSamples, trimFrames]);
+  }, [pluginProcessedAudioBuffer, monoSamples, trimFrames]);
 
   const normalizationCoefficient = 1 / trimmedSamplePeak;
 

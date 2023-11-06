@@ -13,6 +13,7 @@ import SampleDetailReadonly from './SampleDetailReadonly.js';
 import SampleRecord from './SampleRecord.js';
 import SampleMenu from './SampleMenu.js';
 import Footer from './Footer.js';
+import PluginManager from './PluginManager.js';
 import {
   getFactorySamples,
   SampleContainer,
@@ -24,7 +25,7 @@ import { getSamplePeaksForAudioBuffer } from './utils/waveform.js';
 import { getAudioBufferForAudioFileData } from './utils/audioData.js';
 import { newSampleName } from './utils/words.js';
 import { onTabUpdateEvent, sendTabUpdateEvent } from './utils/tabSync.js';
-import PluginManager from './PluginManager.js';
+import { listPluginParams } from './pluginStore.js';
 
 import classes from './App.module.scss';
 
@@ -581,6 +582,23 @@ function App() {
     []
   );
 
+  const [pluginParamsDefs, setPluginParamsDefs] = useState(
+    /** @type {Awaited<ReturnType<typeof listPluginParams>>} */ (new Map())
+  );
+  const updatePluginParamsDefs = useCallback(async () => {
+    const pluginParamDefs = await listPluginParams();
+    setPluginParamsDefs(pluginParamDefs);
+  }, []);
+  useEffect(() => {
+    updatePluginParamsDefs();
+    return onTabUpdateEvent('plugin', updatePluginParamsDefs);
+  }, [updatePluginParamsDefs]);
+
+  const pluginNameList = useMemo(
+    () => [...pluginParamsDefs.keys()],
+    [pluginParamsDefs]
+  );
+
   return (
     <div className={classes.app}>
       <Header onHeaderClick={handleHeaderClick} />
@@ -605,9 +623,11 @@ function App() {
             <SampleDetail
               sample={sample}
               sampleCache={sampleCache}
+              pluginParamsDefs={pluginParamsDefs}
               onSampleUpdate={handleSampleUpdate}
               onSampleDuplicate={handleSampleDuplicate}
               onSampleDelete={handleSampleDelete}
+              onOpenPluginManager={openPluginManager}
             />
           ) : (
             <SampleDetailReadonly
@@ -653,7 +673,9 @@ function App() {
       </Nav>
       <PluginManager
         isOpen={isPluginManagerOpen}
+        pluginList={pluginNameList}
         userSamples={userSamples}
+        onUpdatePluginList={updatePluginParamsDefs}
         onSampleUpdate={handleSampleUpdate}
         onSampleBulkReplace={handleSampleBulkReplace}
         onClose={closePluginManager}

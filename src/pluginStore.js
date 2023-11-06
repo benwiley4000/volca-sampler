@@ -46,8 +46,16 @@ function pluginStoreIterate(callback) {
   return pluginStore.iterate(callback);
 }
 
-export function listPlugins() {
-  return pluginStore.keys();
+export async function listPluginParams() {
+  /** @type {Map<string, PluginParamsDef>} */
+  const allParams = new Map();
+  await pluginStoreIterate(({ params }, pluginName) => {
+    allParams.set(pluginName, params);
+  });
+  // Sort alphabetically by pluginName
+  return new Map(
+    [...allParams].sort(([a], [b]) => (a > b ? 1 : a < b ? -1 : 1))
+  );
 }
 
 /**
@@ -145,7 +153,7 @@ export async function addPlugin({
 
   await pluginStoreSet(finalPluginName, {
     pluginSource,
-    params
+    params,
   });
 
   sendTabUpdateEvent(
@@ -299,13 +307,4 @@ export async function getPluginStatus(...pluginNames) {
     if (existingNames.includes(pluginName)) return 'broken';
     return 'missing';
   });
-}
-
-export async function getAllStoredPluginParams() {
-  /** @type {Map<string, PluginParamsDef>} */
-  const allParams = new Map();
-  await pluginStoreIterate(({ params }, pluginName) => {
-    allParams.set(pluginName, params);
-  });
-  return allParams;
 }

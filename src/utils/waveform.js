@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   getMonoSamplesFromAudioBuffer,
   getSourceAudioBuffer,
+  processPluginsForSample,
   useAudioPlaybackContext,
 } from './audioData.js';
 import { formatShortTime } from './datetime.js';
@@ -72,43 +73,56 @@ export async function getSamplePeaksForAudioBuffer(audioBuffer, trimFrames) {
  * @param {import('../store').SampleContainer} sample
  * @returns {{
  *   sample: import('../store').SampleContainer;
- *   sourceAudioBuffer: AudioBuffer | null;
+ *   pluginProcessedAudioBuffer: AudioBuffer | null;
  * }}
  */
 export function useLoadedSample(sample) {
-  const [loadedAudioBuffer, setSourceAudioBuffer] = useState(
+  const [loadedAudioBuffer, setLoadedAudioBuffer] = useState(
+    // [sample.id, AudioBuffer]
     /** @type {[string, AudioBuffer] | null} */ (null)
   );
+  const sampleRef = useRef(sample);
+  sampleRef.current = sample;
   useEffect(() => {
     let cancelled = false;
     (async () => {
       if (cancelled) return;
-      const audioBuffer = await getSourceAudioBuffer(
-        sample.metadata.sourceFileId,
-        Boolean(sample.metadata.userFileInfo)
-      );
-      if (cancelled) return;
-      setSourceAudioBuffer([sample.metadata.sourceFileId, audioBuffer]);
+      try {
+        const pluginProcessedAudioBuffer = await processPluginsForSample(
+          sampleRef.current
+        );
+        if (cancelled) return;
+        setLoadedAudioBuffer([sample.id, pluginProcessedAudioBuffer]);
+      } catch (err) {
+        const audioBuffer = await getSourceAudioBuffer(
+          sample.metadata.sourceFileId,
+          Boolean(sample.metadata.userFileInfo)
+        );
+        if (cancelled) return;
+        setLoadedAudioBuffer([sample.id, audioBuffer]);
+      }
     })();
     return () => {
       cancelled = true;
     };
-  }, [sample.metadata.sourceFileId, sample.metadata.userFileInfo]);
+  }, [
+    sample.id,
+    sample.metadata.plugins,
+    sample.metadata.sourceFileId,
+    sample.metadata.userFileInfo,
+  ]);
 
   // We need to hold onto an internal state because when the sample changes,
   // the sourceAudioBuffer loads asynchronously and we want to avoid trying
   // to apply the new sample's metadata to the old sample's audio.
   const displayedSample = useRef(sample);
-  if (
-    loadedAudioBuffer &&
-    sample.metadata.sourceFileId === loadedAudioBuffer[0]
-  ) {
+  if (loadedAudioBuffer && sample.id === loadedAudioBuffer[0]) {
     displayedSample.current = sample;
   }
 
   return {
     sample: displayedSample.current,
-    sourceAudioBuffer: loadedAudioBuffer && loadedAudioBuffer[1],
+    pluginProcessedAudioBuffer: loadedAudioBuffer && loadedAudioBuffer[1],
   };
 }
 

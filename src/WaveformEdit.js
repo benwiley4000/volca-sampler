@@ -42,11 +42,11 @@ const WaveformEdit = React.memo(
           normalize,
         },
       },
-      sourceAudioBuffer,
+      pluginProcessedAudioBuffer,
     } = useLoadedSample(_sample);
 
     const { monoSamples, waveformRef, pixelWidth, peaks, onResize } =
-      useWaveformInfo(sourceAudioBuffer);
+      useWaveformInfo(pluginProcessedAudioBuffer);
 
     const absoluteSamplePeak = useMemo(() => {
       return Math.max(
@@ -56,13 +56,13 @@ const WaveformEdit = React.memo(
     }, [peaks]);
 
     const trimmedSamplePeak = useMemo(() => {
-      if (!sourceAudioBuffer) {
+      if (!pluginProcessedAudioBuffer) {
         return 0;
       }
       const trimmedView = getTrimmedView(monoSamples, trimFrames);
       const samplePeak = findSamplePeak(trimmedView);
       return samplePeak;
-    }, [sourceAudioBuffer, monoSamples, trimFrames]);
+    }, [pluginProcessedAudioBuffer, monoSamples, trimFrames]);
 
     const normalizationCoefficient =
       normalize === 'selection'

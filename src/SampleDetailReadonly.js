@@ -61,8 +61,8 @@ function SampleDetailReadonly({
       <Alert variant="secondary">
         <Alert.Heading>This is a factory sample.</Alert.Heading>
         <p>
-          If you want to trim the audio, adjust quality or change the pitch
-          before transferring to the volca sample,{' '}
+          If you want to trim the audio, adjust quality, change the pitch or use
+          plugins before transferring to the volca sample,{' '}
           <span className={classes.buttonLink}>
             <Button variant="link" onClick={() => onSampleDuplicate(sample.id)}>
               make a duplicate

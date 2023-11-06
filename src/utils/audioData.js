@@ -226,62 +226,92 @@ export class PluginRunError extends Error {
   }
 }
 
+/** @type {WeakMap<import('../store').SampleContainer, Promise<AudioBuffer>>} */
+const pluginProcessingPromises = new WeakMap();
+
 /**
  * Given sample container, returns a mono audio buffer with plugins applied
  * @param {import('../store').SampleContainer} sampleContainer
  * @returns {Promise<AudioBuffer>}
  */
 export async function processPluginsForSample(sampleContainer) {
-  const { sourceFileId, userFileInfo, plugins } = sampleContainer.metadata;
-  const sourceAudioBuffer = await getSourceAudioBuffer(
-    sourceFileId,
-    Boolean(userFileInfo)
-  );
-  /** @type {AudioBuffer} */
-  let monoAudioBuffer;
-  if (sourceAudioBuffer.numberOfChannels === 1) {
-    monoAudioBuffer = sourceAudioBuffer;
-  } else {
-    monoAudioBuffer = new AudioBuffer({
-      length: sourceAudioBuffer.length,
-      sampleRate: sourceAudioBuffer.sampleRate,
-      numberOfChannels: 1,
-    });
-    getMonoSamplesFromAudioBuffer(
-      sourceAudioBuffer,
-      [0, 0],
-      monoAudioBuffer.getChannelData(0)
-    );
+  {
+    const promise = pluginProcessingPromises.get(sampleContainer);
+    if (promise) return promise;
   }
+  const promise = (async () => {
+    const { sourceFileId, userFileInfo, plugins } = sampleContainer.metadata;
+    const sourceAudioBuffer = await getSourceAudioBuffer(
+      sourceFileId,
+      Boolean(userFileInfo)
+    );
+    /** @type {AudioBuffer} */
+    let monoAudioBuffer;
+    if (sourceAudioBuffer.numberOfChannels === 1) {
+      monoAudioBuffer = sourceAudioBuffer;
+    } else {
+      monoAudioBuffer = new AudioBuffer({
+        length: sourceAudioBuffer.length,
+        sampleRate: sourceAudioBuffer.sampleRate,
+        numberOfChannels: 1,
+      });
+      getMonoSamplesFromAudioBuffer(
+        sourceAudioBuffer,
+        [0, 0],
+        monoAudioBuffer.getChannelData(0)
+      );
+    }
 
-  let postPluginBuffer = monoAudioBuffer;
-  let i = 0;
-  for (const { pluginName, pluginParams, isBypassed } of plugins) {
-    if (!isBypassed) {
-      const plugin = getPlugin(pluginName);
-      try {
-        postPluginBuffer = await plugin.sampleTransform(
-          postPluginBuffer,
-          pluginParams
-        );
-      } catch (err) {
-        if (err instanceof PluginError) {
-          throw new PluginRunError(
-            err && err instanceof Error && err.message
-              ? err.message
-              : 'Plugin failed',
-            i
+    let postPluginBuffer = monoAudioBuffer;
+    let i = 0;
+    for (const { pluginName, pluginParams, isBypassed } of plugins) {
+      if (!isBypassed) {
+        const plugin = getPlugin(pluginName);
+        try {
+          postPluginBuffer = await plugin.sampleTransform(
+            postPluginBuffer,
+            pluginParams
           );
-        } else {
-          throw err;
+        } catch (err) {
+          if (err instanceof PluginError) {
+            throw new PluginRunError(
+              err && err instanceof Error && err.message
+                ? err.message
+                : 'Plugin failed',
+              i
+            );
+          } else {
+            throw err;
+          }
         }
       }
+      i++;
     }
-    i++;
-  }
 
+    return postPluginBuffer;
+  })();
+  pluginProcessingPromises.set(sampleContainer, promise);
+  /** @type {AudioBuffer} */
+  let postPluginBuffer;
+  try {
+    postPluginBuffer = await promise;
+  } finally {
+    // release promise after reasonable timeout to free the data from memory
+    setTimeout(() => {
+      pluginProcessingPromises.delete(sampleContainer);
+    }, 100);
+  }
   return postPluginBuffer;
 }
+
+/**
+ * @type {WeakMap<
+ *   import('../store').SampleContainer,
+ *   ReturnType<typeof getTargetWavForPluginProcessedSample>
+ * >}
+ */
+const targetWavProcessingPromises = new WeakMap();
+
 /**
  * Given sample container, returns a 16-bit mono wav file with the sample's
  * metadata parameters applied
@@ -299,86 +329,110 @@ export async function getTargetWavForPluginProcessedSample(
   pluginProcessedAudioBuffer,
   forPreview
 ) {
-  const {
-    qualityBitDepth,
-    normalize,
-    trim: { frames: trimFrames },
-    pitchAdjustment,
-  } = sampleContainer.metadata;
-  if (
-    qualityBitDepth < 8 ||
-    qualityBitDepth > 16 ||
-    !Number.isInteger(qualityBitDepth)
-  ) {
-    throw new Error(
-      `Expected bit depth between 8 and 16. Received: ${qualityBitDepth}`
-    );
+  if (forPreview) {
+    const promise = targetWavProcessingPromises.get(sampleContainer);
+    if (promise) return promise;
   }
+  const promise = (async () => {
+    const {
+      qualityBitDepth,
+      normalize,
+      trim: { frames: trimFrames },
+      pitchAdjustment,
+    } = sampleContainer.metadata;
+    if (
+      qualityBitDepth < 8 ||
+      qualityBitDepth > 16 ||
+      !Number.isInteger(qualityBitDepth)
+    ) {
+      throw new Error(
+        `Expected bit depth between 8 and 16. Received: ${qualityBitDepth}`
+      );
+    }
 
-  const samplesPreNormalize =
-    normalize === 'all'
-      ? pluginProcessedAudioBuffer.getChannelData(0)
-      : getTrimmedView(
-          pluginProcessedAudioBuffer.getChannelData(0),
-          trimFrames
-        );
-  if (normalize === 'all') {
-    normalizeSamples(samplesPreNormalize);
-  }
-  const samples =
-    normalize === 'all'
-      ? getTrimmedView(samplesPreNormalize, trimFrames)
-      : samplesPreNormalize;
-  if (normalize === 'selection') {
-    normalizeSamples(samples);
-  }
+    const samplesPreNormalize =
+      normalize === 'all'
+        ? pluginProcessedAudioBuffer.getChannelData(0)
+        : getTrimmedView(
+            pluginProcessedAudioBuffer.getChannelData(0),
+            trimFrames
+          );
+    if (normalize === 'all') {
+      normalizeSamples(samplesPreNormalize);
+    }
+    const samples =
+      normalize === 'all'
+        ? getTrimmedView(samplesPreNormalize, trimFrames)
+        : samplesPreNormalize;
+    if (normalize === 'selection') {
+      normalizeSamples(samples);
+    }
 
-  const waveformPeaks = getPeaksForSamples(samples, WAVEFORM_CACHED_WIDTH);
+    const waveformPeaks = getPeaksForSamples(samples, WAVEFORM_CACHED_WIDTH);
 
-  // for now we don't support pitch adjustments out of these bounds
-  const hasValidPitchAdjustment =
-    !isNaN(pitchAdjustment) &&
-    pitchAdjustment !== 1 &&
-    pitchAdjustment >= 0.5 &&
-    pitchAdjustment <= 2;
-  const pitchAdjustedSamples = hasValidPitchAdjustment
-    ? new Float32Array(
-        resample(
-          samples,
-          SAMPLE_RATE,
-          Math.round(SAMPLE_RATE / pitchAdjustment)
+    // for now we don't support pitch adjustments out of these bounds
+    const hasValidPitchAdjustment =
+      !isNaN(pitchAdjustment) &&
+      pitchAdjustment !== 1 &&
+      pitchAdjustment >= 0.5 &&
+      pitchAdjustment <= 2;
+    const pitchAdjustedSamples = hasValidPitchAdjustment
+      ? new Float32Array(
+          resample(
+            samples,
+            SAMPLE_RATE,
+            Math.round(SAMPLE_RATE / pitchAdjustment)
+          )
         )
-      )
-    : samples;
+      : samples;
 
-  if (forPreview && qualityBitDepth < 16) {
-    applyQualityBitDepthToSamples(pitchAdjustedSamples, qualityBitDepth);
+    if (forPreview && qualityBitDepth < 16) {
+      applyQualityBitDepthToSamples(pitchAdjustedSamples, qualityBitDepth);
+    }
+
+    const samples16 = convertSamplesTo16Bit(pitchAdjustedSamples);
+    const samplesByteLength = samples16.length * 2;
+    /**
+     * @type {Uint8Array}
+     */
+    const wavHeader = getWavFileHeaders({
+      channels: 1,
+      sampleRate: pluginProcessedAudioBuffer.sampleRate,
+      bitDepth: 16,
+      dataLength: samplesByteLength,
+    });
+    const wavBuffer = new Uint8Array(wavHeader.length + samplesByteLength);
+    wavBuffer.set(wavHeader);
+    wavBuffer.set(new Uint8Array(samples16.buffer), wavHeader.length);
+    return {
+      data: wavBuffer,
+      sampleRate: 16,
+      cachedInfo: {
+        waveformPeaks,
+        postPluginFrameCount: pluginProcessedAudioBuffer.length,
+        duration: samples16.length / pluginProcessedAudioBuffer.sampleRate,
+        failedPluginIndex: -1,
+      },
+    };
+  })();
+  if (forPreview) {
+    targetWavProcessingPromises.set(sampleContainer, promise);
   }
-
-  const samples16 = convertSamplesTo16Bit(pitchAdjustedSamples);
-  const samplesByteLength = samples16.length * 2;
   /**
-   * @type {Uint8Array}
+   * @type {Awaited<ReturnType<typeof getTargetWavForPluginProcessedSample>>}
    */
-  const wavHeader = getWavFileHeaders({
-    channels: 1,
-    sampleRate: pluginProcessedAudioBuffer.sampleRate,
-    bitDepth: 16,
-    dataLength: samplesByteLength,
-  });
-  const wavBuffer = new Uint8Array(wavHeader.length + samplesByteLength);
-  wavBuffer.set(wavHeader);
-  wavBuffer.set(new Uint8Array(samples16.buffer), wavHeader.length);
-  return {
-    data: wavBuffer,
-    sampleRate: 16,
-    cachedInfo: {
-      waveformPeaks,
-      postPluginFrameCount: pluginProcessedAudioBuffer.length,
-      duration: samples16.length / pluginProcessedAudioBuffer.sampleRate,
-      failedPluginIndex: -1,
-    },
-  };
+  let result;
+  try {
+    result = await promise;
+  } finally {
+    if (forPreview) {
+      // release promise after reasonable timeout to free the data from memory
+      setTimeout(() => {
+        targetWavProcessingPromises.delete(sampleContainer);
+      }, 100);
+    }
+  }
+  return result;
 }
 
 /**

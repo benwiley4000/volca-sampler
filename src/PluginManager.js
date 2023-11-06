@@ -447,9 +447,12 @@ const PluginManager = React.memo(
             </p>
             {pluginUsageCounts[maybeRemovingPluginName] ? (
               <p>
-                The plugin will be removed from{' '}
-                {pluginUsageCounts[maybeRemovingPluginName]} sample(s). This
-                can't be undone.
+                The plugin will be{' '}
+                <strong>
+                  removed from {pluginUsageCounts[maybeRemovingPluginName]}{' '}
+                  sample(s)
+                </strong>
+                . This can't be undone.
               </p>
             ) : null}
           </Modal.Body>

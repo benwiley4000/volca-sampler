@@ -1,0 +1,23 @@
+<!--
+    Created by Michael Richins
+    https://pictogrammers.com/contributor/MrGrigri/
+
+    Pictogrammers Free License
+
+    Last Updated: February 1st, 2023
+
+    This package is released as free, open-source, and GPL friendly by
+    the [Pictogrammers](https://pictogrammers.com/). You may use it
+    for commercial projects, open-source projects, or anything really.
+
+    # Icons: Apache 2.0 (https://www.apache.org/licenses/LICENSE-2.0)
+    Some of the icons are redistributed under the Apache 2.0 license. All other
+    icons are either redistributed under their respective licenses or are
+    distributed under the Apache 2.0 license.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24">
+  <title>toy-brick</title>
+  <path
+    d="M19 6V5A2 2 0 0 0 17 3H15A2 2 0 0 0 13 5V6H11V5A2 2 0 0 0 9 3H7A2 2 0 0 0 5 5V6H3V20H21V6Z"
+  />
+</svg>

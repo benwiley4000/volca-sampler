@@ -2,6 +2,7 @@ import React, { useLayoutEffect, useMemo, useRef } from 'react';
 import { Table } from 'react-bootstrap';
 
 import { SampleContainer } from './store.js';
+import { ReactComponent as ToyBrick } from './icons/toy-brick.svg';
 
 import classes from './SampleSelectionTable.module.scss';
 
@@ -89,7 +90,9 @@ const SampleSelectionTable = React.memo(
             <th className={classes.slotNumber}>Slot</th>
             <th className={classes.updated}>Updated</th>
             {sampleIdsWithPluginFails && (
-              <th className={classes.pluginsOk}>Plugins ok?</th>
+              <th className={classes.pluginsOk} title="Plugin status">
+                <ToyBrick />
+              </th>
             )}
           </tr>
         </thead>
@@ -148,7 +151,7 @@ const SampleSelectionTable = React.memo(
                       ? '❌'
                       : s instanceof SampleContainer &&
                         s.metadata.plugins.length
-                      ? '✅'
+                      ? 'OK'
                       : null}
                   </td>
                 )}

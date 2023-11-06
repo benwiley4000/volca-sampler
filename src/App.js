@@ -615,7 +615,6 @@ function App() {
             factorySampleCaches={factorySampleCaches}
             onSampleSelect={handleSampleSelect}
             onSampleDelete={handleSampleDelete}
-            onOpenPluginManager={openPluginManager}
           />
         </div>
         <div className={classes.mainLayout}>

@@ -56,7 +56,6 @@ const SampleMenu = React.memo(
    *   factorySampleCaches: Map<string, SampleCache>;
    *   onSampleSelect: (id: string | null) => void;
    *   onSampleDelete: (id: string | string[]) => void;
-   *   onOpenPluginManager: () => void;
    * }} props
    */
   function SampleMenu({
@@ -68,7 +67,6 @@ const SampleMenu = React.memo(
     factorySampleCaches,
     onSampleSelect,
     onSampleDelete,
-    onOpenPluginManager,
   }) {
     const [search, setSearch] = useState('');
     const searchTrimmed = search.trim().toLowerCase();
@@ -514,13 +512,6 @@ const SampleMenu = React.memo(
               )
             )}
         </ListGroup>
-        <Button
-          type="button"
-          variant="outline-secondary"
-          onClick={onOpenPluginManager}
-        >
-          Manage plugins
-        </Button>
         <Modal
           onHide={() => setDeleting(false)}
           show={deleting}

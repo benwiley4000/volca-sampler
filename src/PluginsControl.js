@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { Dropdown, DropdownButton, Form } from 'react-bootstrap';
 import RangeSlider from 'react-bootstrap-range-slider';
 
-import classes from './PluginsControl.module.scss';
 import { getDefaultParams } from './utils/plugins';
 
 /**

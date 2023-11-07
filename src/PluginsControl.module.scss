@@ -82,7 +82,6 @@
 }
 
 .pluginItem {
-  border-bottom: 0;
   &:not(:last-child) {
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
@@ -99,6 +98,13 @@
     justify-content: space-between;
     flex-wrap: wrap;
     gap: 0.5rem;
+
+    // putting the border on the collapse content instead of the
+    // header makes the border collapse more cleanly
+    border-bottom: 0;
+    & + * {
+      border-top: var(--bs-card-border-width) solid var(--bs-card-border-color);
+    }
 
     @media screen and (min-width: 400px) {
       flex-wrap: unset;

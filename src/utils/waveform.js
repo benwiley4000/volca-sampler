@@ -21,7 +21,7 @@ export const WAVEFORM_CACHED_WIDTH = GROUP_PIXEL_WIDTH * 44; // 264
  */
 
 /**
- * @param {Float32Array} samples an array of floats from -1 to 1
+ * @param {Float32Array} samples an array of floats from -1 to 1 (supposedly)
  * @param {number} containerPixelWidth the size of the waveform container
  * @returns {SamplePeaks} arrays of peak positive and negative values
  */
@@ -49,9 +49,8 @@ export function getPeaksForSamples(samples, containerPixelWidth) {
         min = sample;
       }
     }
-    // clamp in case there are out-of-bounds values
-    positive[i] = Math.min(1, max);
-    negative[i] = Math.max(-1, min);
+    positive[i] = max;
+    negative[i] = min;
   }
   return {
     positive,

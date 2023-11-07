@@ -40,7 +40,9 @@ const PitchControl = React.memo(
         };
       }
     }, [sampleId, onSampleUpdate]);
-    const [expanded, setExpanded] = useState(false);
+    const [expanded, setExpanded] = useState(
+      () => window.matchMedia('(min-width: 768px)').matches
+    );
     return (
       <Form.Group
         className={[

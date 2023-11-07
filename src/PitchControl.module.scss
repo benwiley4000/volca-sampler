@@ -17,10 +17,6 @@
       left: 2px;
       width: 0;
       display: inline-flex;
-
-      @include media-breakpoint-up(md) {
-        display: none;
-      }
     }
 
     &::before {
@@ -34,10 +30,6 @@
       vertical-align: 0.2em;
       transform: rotate(-90deg);
       transition: transform 0.35s ease;
-
-      @include media-breakpoint-up(md) {
-        display: none;
-      }
     }
   }
 
@@ -56,12 +48,6 @@
     padding-right: var(--collapse-buffer-x);
     margin-left: calc(0px - var(--collapse-buffer-x));
     margin-right: calc(0px - var(--collapse-buffer-x));
-
-    @include media-breakpoint-up(md) {
-      display: block;
-      height: auto !important;
-      visibility: visible;
-    }
   }
 
   .ticks {

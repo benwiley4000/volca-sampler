@@ -390,7 +390,9 @@ const PluginsControl = React.memo(
         activeCount++;
       }
     }
-    const [expanded, setExpanded] = useState(false);
+    const [expanded, setExpanded] = useState(
+      () => window.matchMedia('(min-width: 768px)').matches
+    );
     return (
       <Form.Group
         className={[

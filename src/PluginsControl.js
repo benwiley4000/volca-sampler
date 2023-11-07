@@ -24,8 +24,9 @@ import { ReactComponent as ArrowUpwardIcon } from '@material-design-icons/svg/fi
 import { ReactComponent as ArrowDownwardIcon } from '@material-design-icons/svg/filled/arrow_downward.svg';
 import { ReactComponent as TuneIcon } from '@material-design-icons/svg/filled/tune.svg';
 import { ReactComponent as MoreVertIcon } from '@material-design-icons/svg/filled/more_vert.svg';
-import { ReactComponent as ErrorIcon } from '@material-design-icons/svg/filled/error.svg';
+import { ReactComponent as InfoIcon } from '@material-design-icons/svg/outlined/info.svg';
 import { ReactComponent as SyncProblemIcon } from '@material-design-icons/svg/filled/sync_problem.svg';
+import { ReactComponent as PriorityHighIcon } from '@material-design-icons/svg/filled/priority_high.svg';
 import { ReactComponent as QuestionMarkIcon } from '@material-design-icons/svg/filled/question_mark.svg';
 
 import { getDefaultParams } from './utils/plugins';
@@ -230,8 +231,6 @@ const RemoveMenuToggle = React.forwardRef(
  *     update: import('./store').SampleMetadataUpdateArg
  *   ) => void;
  *   onOpenPluginManager: () => void;
- *   onRecheckPlugins: () => void;
- *   onRegenerateSampleCache: (sampleId: string) => void;
  * }} props
  */
 function PluginControl({
@@ -245,42 +244,32 @@ function PluginControl({
   isLast,
   onSampleUpdate,
   onOpenPluginManager,
-  onRecheckPlugins,
-  onRegenerateSampleCache,
 }) {
   const isActive = !plugin.isBypassed && status === 'ok';
+  const effectiveStatus = plugin.isBypassed ? 'ok' : status;
   return (
     <Card className={classes.pluginItem}>
-      <Card.Header
-        className={classes.header}
-        title={status !== 'ok' ? 'There was a problem running the plugin' : ''}
-      >
+      <Card.Header className={classes.header}>
         <div className={classes.pluginName} title={plugin.pluginName}>
           {isActive ? (
             <strong>{plugin.pluginName}</strong>
-          ) : status !== 'ok' ? (
-            <i>{plugin.pluginName}</i>
+          ) : effectiveStatus !== 'ok' ? (
+            <span className={classes.pluginHasError}>{plugin.pluginName}</span>
           ) : (
-            plugin.pluginName
+            <span>{plugin.pluginName}</span>
           )}
         </div>
         <div className={classes.actions}>
           <div
             title={
-              status !== 'ok'
-                ? 'There was a problem running the plugin'
-                : plugin.isBypassed
-                ? 'Plugin is bypassed'
-                : 'Plugin is active'
+              plugin.isBypassed ? 'Plugin is bypassed' : 'Plugin is active'
             }
             className={[
               classes.actionIcon,
               classes.toggle,
               plugin.isBypassed ? classes.off : classes.on,
-              status !== 'ok' ? classes.disabled : '',
             ].join(' ')}
             onClick={() => {
-              if (status !== 'ok') return;
               onSampleUpdate(sampleId, (metadata) => {
                 return {
                   ...metadata,
@@ -366,22 +355,16 @@ function PluginControl({
             </Dropdown.Menu>
           </Dropdown>
         </div>
-        {(status === 'broken' || status === 'failed-previously') && (
+        {(effectiveStatus === 'broken' ||
+          effectiveStatus === 'failed-previously') && (
           <div
-            title="Retry plugin"
+            title="There was a problem running the plugin"
             className={classes.errorIcon}
-            onClick={async () => {
-              if (status === 'broken') {
-                await reinitPlugin(plugin.pluginName);
-                onRecheckPlugins();
-              }
-              onRegenerateSampleCache(sampleId);
-            }}
           >
-            <SyncProblemIcon />
+            <PriorityHighIcon />
           </div>
         )}
-        {status === 'missing' && (
+        {effectiveStatus === 'missing' && (
           <div
             title="Plugin not found"
             className={classes.errorIcon}
@@ -455,7 +438,9 @@ const PluginsControl = React.memo(
         return 'ok';
       });
     }, [plugins, pluginStatusMap, sampleCache]);
-    const arePluginsOk = pluginStatuses.every((status) => status === 'ok');
+    const arePluginsOk = pluginStatuses
+      .filter((_, i) => !plugins[i].isBypassed)
+      .every((status) => status === 'ok');
 
     /** @type {Record<string, number>} */
     const pluginNameCounts = {};
@@ -472,6 +457,7 @@ const PluginsControl = React.memo(
     const [expanded, setExpanded] = useState(
       () => window.matchMedia('(min-width: 768px)').matches
     );
+
     return (
       <Form.Group
         className={[
@@ -494,37 +480,40 @@ const PluginsControl = React.memo(
             aria-expanded={expanded}
           >
             Plugins
-            <span className={classes.previewValue}>
-              &nbsp;{activeCount} active, {bypassedCount} bypassed
-              <span
-                className={classes.pluginsInfoIcon}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onOpenPluginManager();
-                }}
-              >
-                ⓘ
-              </span>
-              {!arePluginsOk && (
-                <span
-                  title="Some plugins have issues"
-                  className={classes.pluginsErrorIcon}
-                >
-                  <ErrorIcon />
-                </span>
-              )}
-            </span>
             <span
-              className={[classes.pluginsInfoIcon, classes.showOnExpanded].join(
-                ' '
-              )}
+              className={classes.pluginsInfoIcon}
               onClick={(e) => {
                 e.stopPropagation();
                 onOpenPluginManager();
               }}
             >
-              ⓘ
+              <InfoIcon />
             </span>
+            {arePluginsOk && (
+              <span className={classes.previewValue}>
+                &nbsp;{activeCount} active, {bypassedCount} bypassed
+              </span>
+            )}
+            {!arePluginsOk && (
+              <span
+                className={classes.reloadPlugins}
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  await Promise.allSettled(
+                    plugins
+                      .filter(
+                        (p) => pluginStatusMap.get(p.pluginName) === 'broken'
+                      )
+                      .map((p) => reinitPlugin(p.pluginName))
+                  );
+                  onRecheckPlugins();
+                  onRegenerateSampleCache(sampleId);
+                }}
+              >
+                <SyncProblemIcon />
+                <span>Reload</span>
+              </span>
+            )}
           </Form.Label>
         </OverlayTrigger>
         <Collapse in={expanded}>
@@ -547,8 +536,6 @@ const PluginsControl = React.memo(
                     isLast={i === plugins.length - 1}
                     onSampleUpdate={onSampleUpdate}
                     onOpenPluginManager={onOpenPluginManager}
-                    onRecheckPlugins={onRecheckPlugins}
-                    onRegenerateSampleCache={onRegenerateSampleCache}
                   />
                 );
               })}

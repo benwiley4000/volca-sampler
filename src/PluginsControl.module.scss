@@ -4,7 +4,7 @@
 @import '~bootstrap/scss/mixins';
 
 .pluginsControlWrapper {
-  --collapse-buffer-x: 1rem;
+  --collapse-buffer-x: 2rem;
   max-width: calc(400px + var(--collapse-buffer-x) * 2);
   margin-bottom: 1rem;
 
@@ -14,7 +14,6 @@
     .previewValue {
       font-weight: bold;
       position: relative;
-      left: 2px;
       width: 0;
       display: inline-flex;
       white-space: nowrap;
@@ -52,17 +51,34 @@
   }
 }
 
-.pluginsInfoIcon,
-.pluginsErrorIcon {
-  margin-left: 0.5rem;
-  font-weight: bold;
+.pluginsInfoIcon {
   cursor: pointer;
+  scale: 0.9;
+  display: inline-block;
+  margin-left: 0.25rem;
 
   &.showOnExpanded {
     display: none;
     .expanded & {
       display: unset;
     }
+  }
+}
+
+.reloadPlugins {
+  fill: var(--bs-primary);
+  color: var(--bs-primary);
+  cursor: pointer;
+  margin-left: 0.5rem;
+
+  & > * + * {
+    margin-left: 0.25rem;
+  }
+
+  &:hover,
+  &:active {
+    fill: var(--bs-primary-darkened);
+    color: var(--bs-primary-darkened);
   }
 }
 
@@ -116,8 +132,11 @@
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
+  
+    .pluginHasError {
+      color: var(--bs-primary);
+    }  
   }
-
   .actions {
     flex-shrink: 0;
     display: flex;

@@ -600,6 +600,7 @@ const WaveformEdit = React.memo(
             waveformRef={waveformRef}
             peaks={peaks}
             scaleCoefficient={normalize ? normalizationCoefficient : 1}
+            opaque
             onResize={onResize}
           />
           <WaveformPlayback

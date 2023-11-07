@@ -14,6 +14,7 @@ const WaveformCanvas = styled.canvas({
   height: '100%',
   display: 'block',
   imageRendering: 'pixelated',
+  backgroundColor: ({ $opaque }) => ($opaque ? 'white' : 'unset'),
 });
 
 /**
@@ -88,6 +89,7 @@ function drawWaveform(canvas, peaks, scaleCoefficient) {
  *   peaks: import('./utils/waveform').SamplePeaks;
  *   scaleCoefficient: number;
  *   waveformRef?: React.Ref<HTMLElement | null>;
+ *   opaque?: boolean;
  *   onResize?: (size: { width: number; height: number }) => void;
  * }} WaveformProps
  */
@@ -99,6 +101,7 @@ function WaveformDisplayCanvas({
   peaks,
   scaleCoefficient,
   waveformRef,
+  opaque,
   onResize,
 }) {
   /**
@@ -144,16 +147,12 @@ function WaveformDisplayCanvas({
       frame = requestAnimationFrame(() => {
         // after animation frame..
         // for some reason the draw doesn't reliably show up before this
-        drawWaveform(
-          canvas,
-          peaks,
-          scaleCoefficient
-        );
+        drawWaveform(canvas, peaks, scaleCoefficient);
       });
     });
     return () => cancelAnimationFrame(frame);
   }, [peaks, scaleCoefficient, lastResize]);
-  return <WaveformCanvas ref={canvasRef} />;
+  return <WaveformCanvas ref={canvasRef} $opaque={opaque} />;
 }
 
 export default WaveformDisplayCanvas;

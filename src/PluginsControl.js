@@ -444,7 +444,7 @@ const PluginsControl = React.memo(
     const pluginStatuses = useMemo(() => {
       return plugins.map((p, index) => {
         const pluginStatus = pluginStatusMap.get(p.pluginName);
-        if (pluginStatus !== 'installed') return pluginStatus || 'missing';
+        if (pluginStatus !== 'installed') return pluginStatus || 'ok';
         if (
           !p.isBypassed &&
           sampleCache &&

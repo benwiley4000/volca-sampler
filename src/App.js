@@ -378,6 +378,8 @@ function App() {
 
   const allSamplesRef = useRef(allSamples);
   allSamplesRef.current = allSamples;
+  const factorySampleCachesRef = useRef(factorySampleCaches);
+  factorySampleCachesRef.current = factorySampleCaches;
   const handleSampleDuplicate = useCallback(
     /**
      * @param {string} id
@@ -391,7 +393,9 @@ function App() {
         setUserSamples(
           (samples) => new Map([[newSample.id, newSample], ...samples])
         );
-        const oldSampleCache = userSampleCachesRef.current.get(id);
+        const oldSampleCache =
+          userSampleCachesRef.current.get(id) ||
+          factorySampleCachesRef.current.get(id);
         if (oldSampleCache) {
           const newSampleCache = new SampleCache.Mutable({
             sampleContainer: newSample,

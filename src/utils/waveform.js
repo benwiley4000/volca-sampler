@@ -30,6 +30,12 @@ export function getPeaksForSamples(samples, containerPixelWidth) {
   const groupSize = Math.floor(
     (GROUP_PIXEL_WIDTH * samples.length) / containerPixelWidth
   );
+  if (groupSize === 0) {
+    return {
+      positive: new Float32Array(),
+      negative: new Float32Array(),
+    };
+  }
   // Cut off whatever's left after dividing into blocks of length [groupSize]
   const positive = new Float32Array(Math.floor(samples.length / groupSize));
   const negative = new Float32Array(Math.floor(samples.length / groupSize));

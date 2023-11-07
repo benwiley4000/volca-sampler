@@ -21,6 +21,10 @@ import { WAVEFORM_CACHED_WIDTH, getPeaksForSamples } from './waveform.js';
  * @param {[number, number]} trimFrames
  */
 export function getTrimmedView(array, trimFrames) {
+  if (trimFrames[0] + trimFrames[1] >= array.length) {
+    // return array of length 1 if there won't be any audio left
+    return new Float32Array(1);
+  }
   const frameSizeInBytes = 4;
   const byteOffset = array.byteOffset + trimFrames[0] * frameSizeInBytes;
   const viewLength = array.length - trimFrames[0] - trimFrames[1];

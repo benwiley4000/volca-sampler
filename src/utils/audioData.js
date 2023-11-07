@@ -157,7 +157,10 @@ export function convertSamplesTo16Bit(samples) {
   const samples16 = new Int16Array(samples.length);
   const signedMax = 2 ** 15;
   for (let i = 0; i < samples.length; i++) {
-    samples16[i] = samples[i] === 1 ? signedMax - 1 : signedMax * samples[i];
+    samples16[i] = Math.max(
+      Math.min(signedMax - 1, signedMax * samples[i]),
+      -signedMax
+    );
   }
   return samples16;
 }

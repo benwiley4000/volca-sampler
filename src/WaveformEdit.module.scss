@@ -44,6 +44,14 @@
     will-change: clip-path;
     clip-path: inset(0 var(--trim-pixels-right) 0 var(--trim-pixels-left));
   }
+
+  // this mainly mimics the outline we already have around
+  // the whole container, but it also prevents a weird visual
+  // glitch that occurs for some resolutions (bleeding from bg canvas)
+  canvas:nth-child(2) {
+    box-sizing: content-box;
+    border-bottom: 1px solid #ddd;
+  }
 }
 
 .cursor {

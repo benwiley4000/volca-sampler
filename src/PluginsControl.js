@@ -173,7 +173,13 @@ function PluginParamsToggle({ eventKey, disabled, callback }) {
 
   return (
     <div
-      title={isCurrentEventKey ? 'Hide params' : 'Edit params'}
+      title={
+        disabled
+          ? 'No params'
+          : isCurrentEventKey
+          ? 'Hide params'
+          : 'Edit params'
+      }
       className={[classes.actionIcon, disabled ? classes.disabled : ''].join(
         ' '
       )}

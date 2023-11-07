@@ -175,3 +175,11 @@
   right: 0;
   cursor: text;
 }
+
+.clippingAlert {
+  fill: var(--bs-primary-darkened);
+  position: absolute;
+  top: 3px;
+  left: -0.5rem;
+  transform: translate(-100%, -100%);
+}

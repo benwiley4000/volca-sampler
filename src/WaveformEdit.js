@@ -6,7 +6,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Button, Form } from 'react-bootstrap';
+import { Button, Form, OverlayTrigger, Tooltip } from 'react-bootstrap';
 
 import { findSamplePeak, getTrimmedView } from './utils/audioData.js';
 import {
@@ -19,6 +19,7 @@ import WaveformDisplay from './WaveformDisplay.js';
 import WaveformPlayback from './WaveformPlayback.js';
 import NormalizeControl from './NomalizeControl.js';
 import { usePreviewAudio } from './sampleCacheStore.js';
+import { ReactComponent as ScissorsCuttingIcon } from './icons/scissors-cutting.svg';
 
 import classes from './WaveformEdit.module.scss';
 
@@ -560,6 +561,9 @@ const WaveformEdit = React.memo(
 
     const allAudioSelected = _sample.metadata.trim.frames.every((f) => f === 0);
 
+    const isClipping =
+      trimmedSamplePeak * (normalize ? normalizationCoefficient : 1) > 1;
+
     return (
       <>
         <Form.Group className={classes.waveformAdjacentControls}>
@@ -649,6 +653,18 @@ const WaveformEdit = React.memo(
             )}
           </div>
           <div ref={waveformOverlayRef} className={classes.waveformOverlay} />
+          {isClipping && (
+            <OverlayTrigger
+              delay={{ show: 400, hide: 0 }}
+              overlay={
+                <Tooltip>Audio is clipping - consider normalizing</Tooltip>
+              }
+            >
+              <div className={classes.clippingAlert}>
+                <ScissorsCuttingIcon />
+              </div>
+            </OverlayTrigger>
+          )}
         </div>
       </>
     );

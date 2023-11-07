@@ -4,6 +4,7 @@ import React, {
   useState,
   useRef,
   useContext,
+  useMemo,
 } from 'react';
 import {
   Accordion,
@@ -23,17 +24,21 @@ import { ReactComponent as ArrowUpwardIcon } from '@material-design-icons/svg/fi
 import { ReactComponent as ArrowDownwardIcon } from '@material-design-icons/svg/filled/arrow_downward.svg';
 import { ReactComponent as TuneIcon } from '@material-design-icons/svg/filled/tune.svg';
 import { ReactComponent as MoreVertIcon } from '@material-design-icons/svg/filled/more_vert.svg';
+import { ReactComponent as ErrorIcon } from '@material-design-icons/svg/filled/error.svg';
+import { ReactComponent as SyncProblemIcon } from '@material-design-icons/svg/filled/sync_problem.svg';
+import { ReactComponent as QuestionMarkIcon } from '@material-design-icons/svg/filled/question_mark.svg';
 
 import { getDefaultParams } from './utils/plugins';
 import { ReactComponent as ToyBrickPlus } from './icons/toy-brick-plus.svg';
 
 import classes from './PluginsControl.module.scss';
+import { reinitPlugin } from './pluginStore';
 
 /**
  * @param {{
  *   sampleId: string;
  *   pluginIndex: number;
- *   isBypassed: boolean;
+ *   isOff: boolean;
  *   paramName: string;
  *   paramValue: number;
  *   paramDef: import('./utils/plugins').PluginParamDef | null;
@@ -46,7 +51,7 @@ import classes from './PluginsControl.module.scss';
 function PluginParamControl({
   sampleId,
   pluginIndex,
-  isBypassed,
+  isOff,
   paramName,
   paramValue,
   paramDef,
@@ -126,7 +131,7 @@ function PluginParamControl({
         <div>
           <Form.Label>{paramDef ? paramDef.label : paramName}</Form.Label>
           <RangeSlider
-            variant={isBypassed ? 'secondary' : 'primary'}
+            variant={isOff ? 'secondary' : 'primary'}
             disabled={!paramDef}
             value={localValue}
             min={paramDef ? paramDef.min : 0}
@@ -216,6 +221,7 @@ const RemoveMenuToggle = React.forwardRef(
  *   sampleId: string;
  *   pluginIndex: number;
  *   plugin: import('./store').PluginClientSpec;
+ *   status: 'broken' | 'missing' | 'failed-previously' | 'ok';
  *   paramsDef: import('./utils/plugins').PluginParamsDef | null;
  *   isFirst: boolean;
  *   isLast: boolean;
@@ -223,6 +229,9 @@ const RemoveMenuToggle = React.forwardRef(
  *     id: string,
  *     update: import('./store').SampleMetadataUpdateArg
  *   ) => void;
+ *   onOpenPluginManager: () => void;
+ *   onRecheckPlugins: () => void;
+ *   onRegenerateSampleCache: (sampleId: string) => void;
  * }} props
  */
 function PluginControl({
@@ -230,32 +239,48 @@ function PluginControl({
   sampleId,
   pluginIndex,
   plugin,
+  status,
   paramsDef,
   isFirst,
   isLast,
   onSampleUpdate,
+  onOpenPluginManager,
+  onRecheckPlugins,
+  onRegenerateSampleCache,
 }) {
+  const isActive = !plugin.isBypassed && status === 'ok';
   return (
     <Card className={classes.pluginItem}>
-      <Card.Header className={classes.header}>
+      <Card.Header
+        className={classes.header}
+        title={status !== 'ok' ? 'There was a problem running the plugin' : ''}
+      >
         <div className={classes.pluginName} title={plugin.pluginName}>
-          {plugin.isBypassed ? (
-            plugin.pluginName
-          ) : (
+          {isActive ? (
             <strong>{plugin.pluginName}</strong>
+          ) : status !== 'ok' ? (
+            <i>{plugin.pluginName}</i>
+          ) : (
+            plugin.pluginName
           )}
         </div>
         <div className={classes.actions}>
           <div
             title={
-              plugin.isBypassed ? 'Plugin is bypassed' : 'Plugin is active'
+              status !== 'ok'
+                ? 'There was a problem running the plugin'
+                : plugin.isBypassed
+                ? 'Plugin is bypassed'
+                : 'Plugin is active'
             }
             className={[
               classes.actionIcon,
               classes.toggle,
               plugin.isBypassed ? classes.off : classes.on,
+              status !== 'ok' ? classes.disabled : '',
             ].join(' ')}
             onClick={() => {
+              if (status !== 'ok') return;
               onSampleUpdate(sampleId, (metadata) => {
                 return {
                   ...metadata,
@@ -341,6 +366,30 @@ function PluginControl({
             </Dropdown.Menu>
           </Dropdown>
         </div>
+        {(status === 'broken' || status === 'failed-previously') && (
+          <div
+            title="Retry plugin"
+            className={classes.errorIcon}
+            onClick={async () => {
+              if (status === 'broken') {
+                await reinitPlugin(plugin.pluginName);
+                onRecheckPlugins();
+              }
+              onRegenerateSampleCache(sampleId);
+            }}
+          >
+            <SyncProblemIcon />
+          </div>
+        )}
+        {status === 'missing' && (
+          <div
+            title="Plugin not found"
+            className={classes.errorIcon}
+            onClick={onOpenPluginManager}
+          >
+            <QuestionMarkIcon />
+          </div>
+        )}
       </Card.Header>
       <Accordion.Collapse eventKey={eventKey}>
         <Card.Body className={classes.paramsList}>
@@ -350,7 +399,7 @@ function PluginControl({
                 key={paramName}
                 sampleId={sampleId}
                 pluginIndex={pluginIndex}
-                isBypassed={plugin.isBypassed}
+                isOff={!isActive}
                 paramName={paramName}
                 paramValue={paramValue}
                 paramDef={(paramsDef && paramsDef[paramName]) || null}
@@ -368,22 +417,46 @@ const PluginsControl = React.memo(
   /**
    * @param {{
    *   sampleId: string;
+   *   sampleCache: import('./sampleCacheStore').SampleCache | null;
    *   plugins: import('./store').PluginClientSpec[];
    *   pluginParamsDefs: Map<string, import('./utils/plugins').PluginParamsDef>;
+   *   pluginStatusMap: Map<string, import('./pluginStore').PluginStatus>;
    *   onSampleUpdate: (
    *     id: string,
    *     update: import('./store').SampleMetadataUpdateArg
    *   ) => void;
    *   onOpenPluginManager: () => void;
+   *   onRecheckPlugins: () => void;
+   *   onRegenerateSampleCache: (sampleId: string) => void;
    * }} props
    */
   function PluginsControl({
     sampleId,
+    sampleCache,
     plugins,
     pluginParamsDefs,
+    pluginStatusMap,
     onSampleUpdate,
     onOpenPluginManager,
+    onRecheckPlugins,
+    onRegenerateSampleCache,
   }) {
+    const pluginStatuses = useMemo(() => {
+      return plugins.map((p, index) => {
+        const pluginStatus = pluginStatusMap.get(p.pluginName);
+        if (pluginStatus !== 'installed') return pluginStatus || 'missing';
+        if (
+          !p.isBypassed &&
+          sampleCache &&
+          sampleCache.cachedInfo.failedPluginIndex === index
+        ) {
+          return 'failed-previously';
+        }
+        return 'ok';
+      });
+    }, [plugins, pluginStatusMap, sampleCache]);
+    const arePluginsOk = pluginStatuses.every((status) => status === 'ok');
+
     /** @type {Record<string, number>} */
     const pluginNameCounts = {};
     let activeCount = 0;
@@ -432,6 +505,14 @@ const PluginsControl = React.memo(
               >
                 ⓘ
               </span>
+              {!arePluginsOk && (
+                <span
+                  title="Some plugins have issues"
+                  className={classes.pluginsErrorIcon}
+                >
+                  <ErrorIcon />
+                </span>
+              )}
             </span>
             <span
               className={[classes.pluginsInfoIcon, classes.showOnExpanded].join(
@@ -460,10 +541,14 @@ const PluginsControl = React.memo(
                     sampleId={sampleId}
                     pluginIndex={i}
                     plugin={p}
+                    status={pluginStatuses[i]}
                     paramsDef={pluginParamsDefs.get(p.pluginName) || null}
                     isFirst={i === 0}
                     isLast={i === plugins.length - 1}
                     onSampleUpdate={onSampleUpdate}
+                    onOpenPluginManager={onOpenPluginManager}
+                    onRecheckPlugins={onRecheckPlugins}
+                    onRegenerateSampleCache={onRegenerateSampleCache}
                   />
                 );
               })}

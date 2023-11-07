@@ -52,7 +52,8 @@
   }
 }
 
-.pluginsInfoIcon {
+.pluginsInfoIcon,
+.pluginsErrorIcon {
   margin-left: 0.5rem;
   font-weight: bold;
   cursor: pointer;
@@ -63,6 +64,12 @@
       display: unset;
     }
   }
+}
+
+.pluginsErrorIcon {
+  fill: var(--bs-primary);
+  position: relative;
+  top: -2px;
 }
 
 .pluginsControl {
@@ -87,6 +94,7 @@
   }
 
   .header {
+    position: relative;
     display: flex;
     justify-content: space-between;
     flex-wrap: wrap;
@@ -130,6 +138,20 @@
     &:hover {
       fill: unset;
     }
+
+    &.disabled {
+      fill: rgba(var(--bs-primary-rgb), 0.5);
+    }
+  }
+
+  .errorIcon {
+    fill: var(--bs-primary);
+    position: absolute;
+    top: 50%;
+    left: 100%;
+    transform: translateY(-50%);
+    margin-left: 0.5rem;
+    cursor: pointer;
   }
 }
 

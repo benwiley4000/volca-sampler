@@ -34,20 +34,26 @@ const SampleDetail = React.memo(
    *   sample: import('./store').SampleContainer;
    *   sampleCache: import('./sampleCacheStore.js').SampleCache | null;
    *   pluginParamsDefs: Map<string, import('./utils/plugins').PluginParamsDef>;
+   *   pluginStatusMap: Map<string, import('./pluginStore.js').PluginStatus>;
    *   onSampleUpdate: (id: string, update: import('./store').SampleMetadataUpdateArg) => void;
    *   onSampleDuplicate: (id: string) => void;
    *   onSampleDelete: (id: string | string[]) => void;
    *   onOpenPluginManager: () => void;
+   *   onRecheckPlugins: () => void;
+   *   onRegenerateSampleCache: (sampleId: string) => void;
    * }} props
    */
   function SampleDetail({
     sample,
     sampleCache,
     pluginParamsDefs,
+    pluginStatusMap,
     onSampleUpdate,
     onSampleDuplicate,
     onSampleDelete,
     onOpenPluginManager,
+    onRecheckPlugins,
+    onRegenerateSampleCache,
   }) {
     /**
      * @type {(update: number | ((slotNumber: number) => number)) => void}
@@ -98,10 +104,14 @@ const SampleDetail = React.memo(
         <h4>Configure</h4>
         <PluginsControl
           sampleId={sample.id}
+          sampleCache={sampleCache}
           plugins={sample.metadata.plugins}
           pluginParamsDefs={pluginParamsDefs}
+          pluginStatusMap={pluginStatusMap}
           onSampleUpdate={onSampleUpdate}
           onOpenPluginManager={onOpenPluginManager}
+          onRecheckPlugins={onRecheckPlugins}
+          onRegenerateSampleCache={onRegenerateSampleCache}
         />
         <QualityBitDepthControl
           sampleId={sample.id}

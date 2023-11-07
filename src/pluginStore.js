@@ -294,9 +294,11 @@ async function updatePluginFromStorage(pluginName) {
   await plugin.replaceSource(pluginSource);
 }
 
+/** @typedef {'installed' | 'broken' | 'missing'} PluginStatus */
+
 /**
  * @param {...string} pluginNames
- * @returns {Promise<('installed' | 'broken' | 'missing')[]>}
+ * @returns {Promise<PluginStatus[]>}
  */
 export async function getPluginStatus(...pluginNames) {
   await pluginInitPromise;

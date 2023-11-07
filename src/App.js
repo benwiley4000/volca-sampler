@@ -25,9 +25,10 @@ import { getSamplePeaksForAudioBuffer } from './utils/waveform.js';
 import { getAudioBufferForAudioFileData } from './utils/audioData.js';
 import { newSampleName } from './utils/words.js';
 import { onTabUpdateEvent, sendTabUpdateEvent } from './utils/tabSync.js';
-import { listPluginParams } from './pluginStore.js';
+import { getPluginStatus, listPluginParams } from './pluginStore.js';
 
 import classes from './App.module.scss';
+import { getPlugin } from './utils/plugins.js';
 
 const sessionStorageKey = 'focused_sample_id';
 
@@ -482,6 +483,20 @@ function App() {
     []
   );
 
+  const handleRegenerateSampleCache = useCallback(
+    /** @param {string} sampleId */
+    (sampleId) => {
+      const sampleContainer = userSamplesRef.current.get(sampleId);
+      if (!sampleContainer) return;
+      SampleCache.importToStorage(sampleContainer).then((sampleCache) => {
+        setUserSampleCaches((sampleCaches) =>
+          new Map(sampleCaches).set(sampleId, sampleCache)
+        );
+      });
+    },
+    []
+  );
+
   useEffect(() => {
     return onTabUpdateEvent('sample', async (event) => {
       if (event.action === 'delete') {
@@ -599,6 +614,35 @@ function App() {
     [pluginParamsDefs]
   );
 
+  const [pluginStatusMap, setPluginStatusMap] = useState(
+    /** @type {Map<string, import('./pluginStore').PluginStatus>} */ (new Map())
+  );
+  useEffect(() => {
+    /** @type {typeof pluginStatusMap} */
+    const newStatusMap = new Map();
+    let cancelled = false;
+    getPluginStatus(...pluginNameList).then((statuses) => {
+      if (cancelled) return;
+      pluginNameList.forEach((pluginName, i) => {
+        newStatusMap.set(pluginName, statuses[i]);
+      });
+      setPluginStatusMap(newStatusMap);
+    });
+    const pluginErrorUnsubscribeCallbacks = pluginNameList.map((pluginName) =>
+      getPlugin(pluginName).onPluginError(() =>
+        setPluginStatusMap((pluginStatusMap) =>
+          new Map(pluginStatusMap).set(pluginName, 'broken')
+        )
+      )
+    );
+    return () => {
+      cancelled = true;
+      for (const callback of pluginErrorUnsubscribeCallbacks) {
+        callback();
+      }
+    };
+  }, [pluginNameList]);
+
   return (
     <div className={classes.app}>
       <Header onHeaderClick={handleHeaderClick} />
@@ -623,10 +667,13 @@ function App() {
               sample={sample}
               sampleCache={sampleCache}
               pluginParamsDefs={pluginParamsDefs}
+              pluginStatusMap={pluginStatusMap}
               onSampleUpdate={handleSampleUpdate}
               onSampleDuplicate={handleSampleDuplicate}
               onSampleDelete={handleSampleDelete}
               onOpenPluginManager={openPluginManager}
+              onRecheckPlugins={updatePluginParamsDefs}
+              onRegenerateSampleCache={handleRegenerateSampleCache}
             />
           ) : (
             <SampleDetailReadonly
@@ -673,6 +720,7 @@ function App() {
       <PluginManager
         isOpen={isPluginManagerOpen}
         pluginList={pluginNameList}
+        pluginStatusMap={pluginStatusMap}
         userSamples={userSamples}
         onUpdatePluginList={updatePluginParamsDefs}
         onSampleUpdate={handleSampleUpdate}

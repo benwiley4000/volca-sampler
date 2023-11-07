@@ -189,7 +189,7 @@ async function sampleTransformPlugin(iframe, audioBuffer, params) {
     );
   } catch (err) {
     if (!(err instanceof Error && err.message === 'Invalid plugin input')) {
-      iframe.dispatchEvent(new Event('uninstall', { bubbles: true }));
+      iframe.dispatchEvent(new Event('plugin-error', { bubbles: true }));
       iframeParent.removeChild(iframe);
     }
     throw err;
@@ -226,26 +226,20 @@ export function getPlugin(pluginName) {
       }
     },
     /** @param {() => void} callback */
-    onUpdate(callback) {
-      iframeParent.addEventListener('sourceUpdate', (e) => {
+    onPluginError(callback) {
+      /** @param {Event} e */
+      const handleUninstall = (e) => {
         if (
           e.target instanceof HTMLIFrameElement &&
           e.target.id === pluginName
         ) {
           callback();
         }
-      });
-    },
-    /** @param {() => void} callback */
-    onUninstall(callback) {
-      iframeParent.addEventListener('uninstall', (e) => {
-        if (
-          e.target instanceof HTMLIFrameElement &&
-          e.target.id === pluginName
-        ) {
-          callback();
-        }
-      });
+      };
+      iframeParent.addEventListener('plugin-error', handleUninstall);
+      return () => {
+        iframeParent.removeEventListener('plugin-error', handleUninstall);
+      };
     },
     /** @param {string} newPluginSource */
     async replaceSource(newPluginSource) {
@@ -272,7 +266,6 @@ export function getPlugin(pluginName) {
     remove() {
       let iframe = document.getElementById(pluginName);
       if (iframe && iframe instanceof HTMLIFrameElement) {
-        iframe.dispatchEvent(new Event('uninstall', { bubbles: true }));
         iframeParent.removeChild(iframe);
         delete pluginInstallPromises[pluginName];
       } else {

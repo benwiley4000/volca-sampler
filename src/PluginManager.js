@@ -9,7 +9,6 @@ import {
   addPlugin,
   addPluginFromFile,
   getPluginSource,
-  getPluginStatus,
   reinitPlugin,
   removePlugin,
   renamePlugin,
@@ -29,6 +28,7 @@ const PluginManager = React.memo(
    * @param {{
    *   isOpen: boolean;
    *   pluginList: string[];
+   *   pluginStatusMap: Map<string, import('./pluginStore').PluginStatus>;
    *   userSamples: Map<string, SampleContainer>;
    *   onUpdatePluginList: () => void;
    *   onSampleUpdate: (
@@ -42,33 +42,13 @@ const PluginManager = React.memo(
   function PluginManager({
     isOpen,
     pluginList,
+    pluginStatusMap,
     userSamples,
     onUpdatePluginList,
     onSampleUpdate,
     onSampleBulkReplace,
     onClose,
   }) {
-    const [pluginStatusMap, setPluginStatusMap] = useState(
-      /** @type {Map<string, Awaited<ReturnType<typeof getPluginStatus>>[number]>} */ (
-        new Map()
-      )
-    );
-    useEffect(() => {
-      /** @type {typeof pluginStatusMap} */
-      const newStatusMap = new Map();
-      let cancelled = false;
-      getPluginStatus(...pluginList).then((statuses) => {
-        if (cancelled) return;
-        pluginList.forEach((pluginName, i) => {
-          newStatusMap.set(pluginName, statuses[i]);
-        });
-        setPluginStatusMap(newStatusMap);
-      });
-      return () => {
-        cancelled = true;
-      };
-    }, [pluginList]);
-
     const pluginUsageCounts = useMemo(() => {
       /** @type {Record<string, number>} */
       const counts = {};

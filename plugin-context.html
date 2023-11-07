@@ -146,6 +146,9 @@
                 );
               }
               newAudioData = newAudioBuffer.getChannelData(0);
+              if (!newAudioData.length) {
+                newAudioData = new Float32Array(1);
+              }
             } catch (err) {
               console.error(err);
               respond({

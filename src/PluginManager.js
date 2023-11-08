@@ -92,6 +92,9 @@ const PluginManager = React.memo(
     const [showAlreadyInstalledModal, setShowAlreadyInstalledModal] =
       useState(false);
 
+    const [showFailedToInstallModal, setShowFailedToInstallModal] =
+      useState(false);
+
     const userSamplesRef = useRef(userSamples);
     userSamplesRef.current = userSamples;
 
@@ -150,15 +153,17 @@ const PluginManager = React.memo(
               });
             });
           },
-        }).then((result) => {
-          onUpdatePluginList();
-          if (result === 'exists') {
-            setShowAlreadyInstalledModal(true);
-          }
-          if (result === 'replaced') {
-            regenerateSampleCacheForSamples(chosenName);
-          }
-        });
+        })
+          .then((result) => {
+            onUpdatePluginList();
+            if (result === 'exists') {
+              setShowAlreadyInstalledModal(true);
+            }
+            if (result === 'replaced') {
+              regenerateSampleCacheForSamples(chosenName);
+            }
+          })
+          .catch(() => setShowFailedToInstallModal(true));
         // this removes the file from the input so it can be selected again if
         // needed.
         e.target.value = '';
@@ -173,48 +178,52 @@ const PluginManager = React.memo(
        */
       async (pluginName, pluginSource) => {
         let chosenName = pluginName;
-        const result = await addPlugin({
-          pluginName,
-          pluginSource,
-          onConfirmName(name) {
-            return /** @type {Promise<string>} */ (
-              new Promise((resolve) => {
+        try {
+          const result = await addPlugin({
+            pluginName,
+            pluginSource,
+            onConfirmName(name) {
+              return /** @type {Promise<string>} */ (
+                new Promise((resolve) => {
+                  setPluginConfirmationState({
+                    pluginName: name,
+                    variant: 'confirm-name',
+                    onConfirmName(newName) {
+                      chosenName = newName;
+                      resolve(newName);
+                      setPluginConfirmationState(null);
+                    },
+                    onConfirmReplace() {},
+                    onCancelRename() {},
+                  });
+                })
+              );
+            },
+            onConfirmReplace(name) {
+              /** @type {Promise<'replace' | 'use-existing' | 'change-name'>} */
+              return new Promise((resolve) => {
                 setPluginConfirmationState({
                   pluginName: name,
-                  variant: 'confirm-name',
-                  onConfirmName(newName) {
-                    chosenName = newName;
-                    resolve(newName);
+                  variant: 'replace',
+                  onConfirmReplace(replaceResponse) {
+                    resolve(replaceResponse);
                     setPluginConfirmationState(null);
                   },
-                  onConfirmReplace() {},
+                  onConfirmName() {},
                   onCancelRename() {},
                 });
-              })
-            );
-          },
-          onConfirmReplace(name) {
-            /** @type {Promise<'replace' | 'use-existing' | 'change-name'>} */
-            return new Promise((resolve) => {
-              setPluginConfirmationState({
-                pluginName: name,
-                variant: 'replace',
-                onConfirmReplace(replaceResponse) {
-                  resolve(replaceResponse);
-                  setPluginConfirmationState(null);
-                },
-                onConfirmName() {},
-                onCancelRename() {},
               });
-            });
-          },
-        });
-        onUpdatePluginList();
-        if (result === 'exists') {
-          setShowAlreadyInstalledModal(true);
-        }
-        if (result === 'replaced') {
-          regenerateSampleCacheForSamples(chosenName);
+            },
+          });
+          onUpdatePluginList();
+          if (result === 'exists') {
+            setShowAlreadyInstalledModal(true);
+          }
+          if (result === 'replaced') {
+            regenerateSampleCacheForSamples(chosenName);
+          }
+        } catch (err) {
+          setShowFailedToInstallModal(true);
         }
       },
       [onUpdatePluginList, onRegenerateSampleCache]
@@ -549,6 +558,40 @@ const PluginManager = React.memo(
               type="button"
               variant="primary"
               onClick={() => setShowAlreadyInstalledModal(false)}
+            >
+              OK
+            </Button>
+          </Modal.Footer>
+        </Modal>
+        <Modal
+          className={classes.failedToInstallModal}
+          onHide={() => setShowFailedToInstallModal(false)}
+          show={showFailedToInstallModal}
+          aria-labelledby="failed-to-install-plugin-modal"
+          centered
+        >
+          <Modal.Header>
+            <Modal.Title id="failed-to-install-plugin-modal">
+              Failed to install plugin
+            </Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <p>Check the plugin source code for issues.</p>
+            <p>
+              You might find helpful stack traces and error logs in the browser
+              JavaScript console (Win/Linux: <code>Ctrl+Shift+J</code>, Mac:{' '}
+              <code>Cmd+Option+J</code>).
+            </p>
+            <p>
+              If you're not the plugin author, you can share this info with the
+              author to help resolve the issue.
+            </p>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button
+              type="button"
+              variant="primary"
+              onClick={() => setShowFailedToInstallModal(false)}
             >
               OK
             </Button>

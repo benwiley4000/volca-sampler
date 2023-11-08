@@ -89,7 +89,7 @@ export async function installPlugin(pluginName, pluginSource) {
         const onMessage = ({ source, data }) => {
           if (source !== iframe.contentWindow) return;
           if (data.messageId !== messageId) return;
-          if (data.messageType === 'receivedMessage') {
+          if (data.messageType === 'messageReceived') {
             timeout = setTimeout(() => {
               console.error('Plugin took too long to install:', pluginName);
               reject();

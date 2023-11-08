@@ -693,6 +693,8 @@ function App() {
           {!focusedSampleId && (
             <SampleRecord
               userSamples={userSamples}
+              onUpdatePluginList={updatePluginParamsDefs}
+              onRegenerateSampleCache={handleRegenerateSampleCache}
               onBulkImport={handleSampleBulkAdd}
               onRecordFinish={handleRecordFinish}
             />

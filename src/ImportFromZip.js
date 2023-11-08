@@ -1,4 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { Button, Modal, ProgressBar } from 'react-bootstrap';
 
 import SampleSelectionTable from './SampleSelectionTable.js';
@@ -18,13 +24,20 @@ const ImportFromZip = React.memo(
   /**
    * @param {{
    *   userSamples: Map<string, SampleContainer>;
+   *   onUpdatePluginList: () => void;
+   *   onRegenerateSampleCache: (sampleId: string) => void;
    *   onImport: (
    *     samples: SampleContainer[],
    *     sampleCaches: SampleCache[]
    *   ) => void;
    * }} props
    */
-  function ImportFromZip({ userSamples, onImport }) {
+  function ImportFromZip({
+    userSamples,
+    onUpdatePluginList,
+    onRegenerateSampleCache,
+    onImport,
+  }) {
     /** @type {React.RefObject<HTMLInputElement>} */
     const inputRef = useRef(null);
     const fileRef = useRef(/** @type {File | null} */ (null));
@@ -111,6 +124,23 @@ const ImportFromZip = React.memo(
       (null)
     );
 
+    const userSamplesRef = useRef(userSamples);
+    userSamplesRef.current = userSamples;
+
+    const regenerateSampleCacheForSamples = useCallback(
+      /** @param {string} pluginName */
+      (pluginName) => {
+        const affectedSamples = [...userSamplesRef.current.values()].filter(
+          (sample) =>
+            sample.metadata.plugins.some((p) => p.pluginName === pluginName)
+        );
+        for (const { id } of affectedSamples) {
+          onRegenerateSampleCache(id);
+        }
+      },
+      [onRegenerateSampleCache]
+    );
+
     {
       const isImporting = uiState === 'import';
       const sampleIdsToImportRef = useRef(sampleIdsToImport);
@@ -156,11 +186,22 @@ const ImportFromZip = React.memo(
             });
           },
         })
-          .then(async ({ sampleContainers, sampleCaches, failedImports }) => {
-            onImport(sampleContainers, sampleCaches);
-            setFailedImports(failedImports);
-            setUiState('report');
-          })
+          .then(
+            async ({
+              sampleContainers,
+              sampleCaches,
+              replacedPluginNames,
+              failedImports,
+            }) => {
+              onUpdatePluginList();
+              for (const pluginName of replacedPluginNames) {
+                regenerateSampleCacheForSamples(pluginName);
+              }
+              onImport(sampleContainers, sampleCaches);
+              setFailedImports(failedImports);
+              setUiState('report');
+            }
+          )
           .catch((error) => {
             console.error(error);
             setUnexpectedError(error);

@@ -358,6 +358,8 @@ function drawRecordingPeaks({ canvas, peaks, drawUntil, scaleCoefficient }) {
 /**
  * @param {{
  *   userSamples: Map<string, import('./store.js').SampleContainer>;
+ *   onUpdatePluginList: () => void;
+ *   onRegenerateSampleCache: (sampleId: string) => void;
  *   onBulkImport: (
  *     samples: import('./store.js').SampleContainer[],
  *     sampleCaches: import('./sampleCacheStore.js').SampleCache[]
@@ -365,7 +367,13 @@ function drawRecordingPeaks({ canvas, peaks, drawUntil, scaleCoefficient }) {
  *   onRecordFinish: RecordingCallback;
  * }} props
  */
-function SampleRecord({ userSamples, onBulkImport, onRecordFinish }) {
+function SampleRecord({
+  userSamples,
+  onUpdatePluginList,
+  onRegenerateSampleCache,
+  onBulkImport,
+  onRecordFinish,
+}) {
   /**
    * @type {React.RefObject<HTMLCanvasElement>}
    */
@@ -727,7 +735,12 @@ function SampleRecord({ userSamples, onBulkImport, onRecordFinish }) {
               onChange={importFile}
             />
           </Button>
-          <ImportFromZip userSamples={userSamples} onImport={onBulkImport} />
+          <ImportFromZip
+            userSamples={userSamples}
+            onUpdatePluginList={onUpdatePluginList}
+            onRegenerateSampleCache={onRegenerateSampleCache}
+            onImport={onBulkImport}
+          />
         </>
       )}
       <Modal

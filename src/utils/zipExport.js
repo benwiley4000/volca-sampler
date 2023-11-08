@@ -158,6 +158,7 @@ export async function readSampleMetadataFromZip(zipFile) {
  * @returns {Promise<{
  *   sampleContainers: SampleContainer[];
  *   sampleCaches: SampleCache[];
+ *   replacedPluginNames: string[];
  *   failedImports: FailedImports;
  * }>}
  */
@@ -192,6 +193,8 @@ export async function importSampleContainersFromZip({
   const sampleContainers = [];
   /** @type {SampleCache[]} */
   const sampleCaches = [];
+  /** @type {string[]} */
+  const replacedPluginNames = [];
   const progresses = /** @type {number[]} */ (Array(idsToImport.length)).fill(
     0
   );
@@ -244,12 +247,15 @@ export async function importSampleContainersFromZip({
                 const pluginSource = await pluginFileHandle.async('string');
                 const unlock = await pluginMutex.lock();
                 try {
-                  await addPlugin({
+                  const result = await addPlugin({
                     pluginName,
                     pluginSource,
                     onConfirmName: onConfirmPluginName,
                     onConfirmReplace: onConfirmPluginReplace,
                   });
+                  if (result === 'replaced') {
+                    replacedPluginNames.push(pluginName);
+                  }
                   unlock();
                 } catch (err) {
                   unlock();
@@ -286,6 +292,7 @@ export async function importSampleContainersFromZip({
   return {
     sampleContainers: sampleContainers.slice().sort(sampleContainerDateCompare),
     sampleCaches,
+    replacedPluginNames,
     failedImports,
   };
 }

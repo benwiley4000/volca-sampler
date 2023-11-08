@@ -195,7 +195,10 @@ export async function getPluginSource(pluginName) {
  *   'replace' | 'use-existing' | 'change-name'
  * >} params.onConfirmReplace
  * @param {Map<string, SampleContainer>} params.userSamples
- * @returns {Promise<SampleContainer[]>}
+ * @returns {Promise<{
+ *   updatedSamples: SampleContainer[];
+ *   result: Awaited<ReturnType<typeof addPlugin>>;
+ * }>}
  */
 export async function renamePlugin({
   oldPluginName,
@@ -216,14 +219,20 @@ export async function renamePlugin({
   });
   if (result === 'used-existing' || result === 'exists') {
     // TODO: alert user for "exists" case... but edge case
-    return [];
+    return {
+      updatedSamples: [],
+      result,
+    };
   }
   const affectedSamples = [...userSamples.values()].filter((sample) =>
     sample.metadata.plugins.some((p) => p.pluginName === oldPluginName)
   );
   if (!affectedSamples.length) {
     await removePlugin(oldPluginName);
-    return [];
+    return {
+      updatedSamples: [],
+      result,
+    };
   }
   const newAffectedSamples = affectedSamples.map(
     (sample) =>
@@ -240,7 +249,10 @@ export async function renamePlugin({
   );
   await Promise.all(newAffectedSamples.map((s) => s.persist()));
   await removePlugin(oldPluginName);
-  return newAffectedSamples;
+  return {
+    updatedSamples: newAffectedSamples,
+    result,
+  };
 }
 
 /** @type {Promise<void> | null} */

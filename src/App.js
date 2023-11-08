@@ -729,6 +729,7 @@ function App() {
         onUpdatePluginList={updatePluginParamsDefs}
         onSampleUpdate={handleSampleUpdate}
         onSampleBulkReplace={handleSampleBulkReplace}
+        onRegenerateSampleCache={handleRegenerateSampleCache}
         onClose={closePluginManager}
       />
     </div>

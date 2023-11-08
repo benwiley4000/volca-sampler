@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { Button, ListGroup, Modal } from 'react-bootstrap';
 import { ReactComponent as EditIcon } from '@material-design-icons/svg/filled/edit.svg';
 import { ReactComponent as SyncProblemIcon } from '@material-design-icons/svg/filled/sync_problem.svg';
@@ -36,6 +42,7 @@ const PluginManager = React.memo(
    *     update: import('./store').SampleMetadataUpdateArg
    *   ) => void;
    *   onSampleBulkReplace: (samples: SampleContainer[]) => void;
+   *   onRegenerateSampleCache: (sampleId: string) => void;
    *   onClose: () => void;
    * }} props
    */
@@ -47,6 +54,7 @@ const PluginManager = React.memo(
     onUpdatePluginList,
     onSampleUpdate,
     onSampleBulkReplace,
+    onRegenerateSampleCache,
     onClose,
   }) {
     const pluginUsageCounts = useMemo(() => {
@@ -84,12 +92,30 @@ const PluginManager = React.memo(
     const [showAlreadyInstalledModal, setShowAlreadyInstalledModal] =
       useState(false);
 
+    const userSamplesRef = useRef(userSamples);
+    userSamplesRef.current = userSamples;
+
+    const regenerateSampleCacheForSamples = useCallback(
+      /** @param {string} pluginName */
+      (pluginName) => {
+        const affectedSamples = [...userSamplesRef.current.values()].filter(
+          (sample) =>
+            sample.metadata.plugins.some((p) => p.pluginName === pluginName)
+        );
+        for (const { id } of affectedSamples) {
+          onRegenerateSampleCache(id);
+        }
+      },
+      [onRegenerateSampleCache]
+    );
+
     const handleAddPluginFromFile = useCallback(
       /** @param {React.ChangeEvent<HTMLInputElement>} e */
       async (e) => {
         if (!e.target.files) return;
         const file = e.target.files.item(0);
         if (!file) return;
+        let chosenName = file.name;
         void addPluginFromFile({
           file,
           onConfirmName(name) {
@@ -99,6 +125,7 @@ const PluginManager = React.memo(
                   pluginName: name,
                   variant: 'confirm-name',
                   onConfirmName(newName) {
+                    chosenName = newName;
                     resolve(newName);
                     setPluginConfirmationState(null);
                   },
@@ -124,16 +151,19 @@ const PluginManager = React.memo(
             });
           },
         }).then((result) => {
+          onUpdatePluginList();
           if (result === 'exists') {
             setShowAlreadyInstalledModal(true);
           }
-          onUpdatePluginList();
+          if (result === 'replaced') {
+            regenerateSampleCacheForSamples(chosenName);
+          }
         });
         // this removes the file from the input so it can be selected again if
         // needed.
         e.target.value = '';
       },
-      [onUpdatePluginList]
+      [onUpdatePluginList, regenerateSampleCacheForSamples]
     );
 
     const handleAddPluginFromSource = useCallback(
@@ -142,6 +172,7 @@ const PluginManager = React.memo(
        * @param {string} pluginSource
        */
       async (pluginName, pluginSource) => {
+        let chosenName = pluginName;
         const result = await addPlugin({
           pluginName,
           pluginSource,
@@ -152,6 +183,7 @@ const PluginManager = React.memo(
                   pluginName: name,
                   variant: 'confirm-name',
                   onConfirmName(newName) {
+                    chosenName = newName;
                     resolve(newName);
                     setPluginConfirmationState(null);
                   },
@@ -177,12 +209,15 @@ const PluginManager = React.memo(
             });
           },
         });
+        onUpdatePluginList();
         if (result === 'exists') {
           setShowAlreadyInstalledModal(true);
         }
-        onUpdatePluginList();
+        if (result === 'replaced') {
+          regenerateSampleCacheForSamples(chosenName);
+        }
       },
-      [onUpdatePluginList]
+      [onUpdatePluginList, onRegenerateSampleCache]
     );
 
     /** @param {string} pluginName */
@@ -205,7 +240,8 @@ const PluginManager = React.memo(
         })
       );
       if (!newPluginName) return;
-      const updatedSamples = await renamePlugin({
+      let chosenName = newPluginName;
+      const { updatedSamples, result } = await renamePlugin({
         oldPluginName: pluginName,
         newPluginName,
         onConfirmName(name) {
@@ -215,6 +251,7 @@ const PluginManager = React.memo(
                 pluginName: name,
                 variant: 'confirm-name',
                 onConfirmName(newName) {
+                  chosenName = newName;
                   resolve(newName);
                   setPluginConfirmationState(null);
                 },
@@ -241,8 +278,11 @@ const PluginManager = React.memo(
         },
         userSamples,
       });
-      onSampleBulkReplace(updatedSamples);
       onUpdatePluginList();
+      if (result === 'replaced') {
+        regenerateSampleCacheForSamples(chosenName);
+      }
+      onSampleBulkReplace(updatedSamples);
     };
 
     const [maybeRemovingPluginName, setMaybeRemovingPluginName] = useState('');

@@ -115,9 +115,11 @@ export async function addPlugin({
 
   do {
     if (existingNames.includes(finalPluginName)) {
-      const existingContent = /** @type {string} */ (
-        await pluginStore.getItem(finalPluginName)
-      );
+      const { pluginSource: existingContent } =
+        (await pluginStoreGet(finalPluginName)) || {};
+      if (!existingContent) {
+        throw new Error('Expected plugin to be installed');
+      }
       const existingContentId = await getPluginContentId(existingContent);
       if (existingContentId === contentId) {
         return 'exists';
@@ -206,12 +208,16 @@ export async function renamePlugin({
   if (!pluginSource) {
     throw new Error('Expected plugin to be installed');
   }
-  await addPlugin({
+  const result = await addPlugin({
     pluginName: newPluginName,
     pluginSource,
     onConfirmName,
     onConfirmReplace,
   });
+  if (result === 'used-existing' || result === 'exists') {
+    // TODO: alert user for "exists" case... but edge case
+    return [];
+  }
   const affectedSamples = [...userSamples.values()].filter((sample) =>
     sample.metadata.plugins.some((p) => p.pluginName === oldPluginName)
   );

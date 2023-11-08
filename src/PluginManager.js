@@ -81,6 +81,9 @@ const PluginManager = React.memo(
       (null)
     );
 
+    const [showAlreadyInstalledModal, setShowAlreadyInstalledModal] =
+      useState(false);
+
     const handleAddPluginFromFile = useCallback(
       /** @param {React.ChangeEvent<HTMLInputElement>} e */
       async (e) => {
@@ -120,7 +123,12 @@ const PluginManager = React.memo(
               });
             });
           },
-        }).then(onUpdatePluginList);
+        }).then((result) => {
+          if (result === 'exists') {
+            setShowAlreadyInstalledModal(true);
+          }
+          onUpdatePluginList();
+        });
         // this removes the file from the input so it can be selected again if
         // needed.
         e.target.value = '';
@@ -134,7 +142,7 @@ const PluginManager = React.memo(
        * @param {string} pluginSource
        */
       async (pluginName, pluginSource) => {
-        await addPlugin({
+        const result = await addPlugin({
           pluginName,
           pluginSource,
           onConfirmName(name) {
@@ -169,6 +177,9 @@ const PluginManager = React.memo(
             });
           },
         });
+        if (result === 'exists') {
+          setShowAlreadyInstalledModal(true);
+        }
         onUpdatePluginList();
       },
       [onUpdatePluginList]
@@ -256,7 +267,9 @@ const PluginManager = React.memo(
           aria-labelledby="plugin-manager-modal"
         >
           <Modal.Header>
-            <Modal.Title id="plugin-manager-modal">Plugins overview</Modal.Title>
+            <Modal.Title id="plugin-manager-modal">
+              Plugins overview
+            </Modal.Title>
           </Modal.Header>
           <Modal.Body>
             <p>
@@ -476,6 +489,31 @@ const PluginManager = React.memo(
         {pluginConfirmationState && (
           <PluginConfirmModal {...pluginConfirmationState} />
         )}
+        <Modal
+          className={classes.alreadyInstalledModal}
+          onHide={() => setShowAlreadyInstalledModal(false)}
+          show={showAlreadyInstalledModal}
+          aria-labelledby="already-installed-plugin-modal"
+          centered
+        >
+          <Modal.Header>
+            <Modal.Title id="already-installed-plugin-modal">
+              Plugin already installed
+            </Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <p>This plugin has already been installed.</p>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button
+              type="button"
+              variant="primary"
+              onClick={() => setShowAlreadyInstalledModal(false)}
+            >
+              OK
+            </Button>
+          </Modal.Footer>
+        </Modal>
       </>
     );
   }

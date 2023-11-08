@@ -116,7 +116,8 @@
   }
 }
 
-.uninstallModal {
+.uninstallModal,
+.alreadyInstalledModal {
   background-color: rgba(0, 0, 0, 0.35);
 
   & > * {
@@ -125,7 +126,8 @@
 }
 
 @include media-breakpoint-up(md) {
-  .uninstallModal > * {
+  .uninstallModal > *,
+  .alreadyInstalledModal > * {
     // We don't always have enough text content to fill up the modal space
     // but it's weird for the modal to be changing size all the time.
     width: var(--bs-modal-width);

@@ -13,8 +13,50 @@
       async function installPlugin(pluginSource) {
         try {
           eval(pluginSource);
+          if (typeof samplePlugin !== 'function') return false;
+          // validate type of params object
+          if (samplePlugin.params) {
+            let hasError = false;
+            for (const [key, param] of Object.entries(samplePlugin.params)) {
+              if (!param || typeof param !== 'object') {
+                console.error(
+                  `Unexpected type for param "${key}":`,
+                  typeof param,
+                  param
+                );
+                hasError = true;
+              } else {
+                if (typeof param.value !== 'number') {
+                  console.error(
+                    `Unexpected 'value' type for param "${key}":`,
+                    typeof param.value,
+                    param.value
+                  );
+                  hasError = true;
+                }
+                if (typeof param.min !== 'number') {
+                  console.error(
+                    `Unexpected 'min' type for param "${key}":`,
+                    typeof param.min,
+                    param.min
+                  );
+                  hasError = true;
+                }
+                if (typeof param.max !== 'number') {
+                  console.error(
+                    `Unexpected 'max' type for param "${key}":`,
+                    typeof param.max,
+                    param.max
+                  );
+                  hasError = true;
+                }
+              }
+            }
+            if (hasError) {
+              throw new Error('Invalid params declaration for plugin');
+            }
+          }
           if (
-            typeof samplePlugin !== 'function' ||
             !(
               (await samplePlugin(
                 new AudioBuffer({ length: 10, sampleRate: 31250 })

@@ -226,7 +226,7 @@ const PluginManager = React.memo(
           setShowFailedToInstallModal(true);
         }
       },
-      [onUpdatePluginList, onRegenerateSampleCache]
+      [onUpdatePluginList, regenerateSampleCacheForSamples]
     );
 
     /** @param {string} pluginName */

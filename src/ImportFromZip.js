@@ -210,7 +210,12 @@ const ImportFromZip = React.memo(
         return () => {
           cancelled = true;
         };
-      }, [isImporting, onImport]);
+      }, [
+        isImporting,
+        onImport,
+        onUpdatePluginList,
+        regenerateSampleCacheForSamples,
+      ]);
     }
 
     return (

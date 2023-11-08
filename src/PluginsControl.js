@@ -509,73 +509,81 @@ const PluginsControl = React.memo(
           </Form.Label>
         </OverlayTrigger>
         <Collapse in={expanded}>
-          <div className={classes.pluginsControl} id="expand-plugins">
-            <Accordion hidden={!plugins.length} className={classes.pluginList}>
-              {plugins.map((p, i) => {
-                const key = `${p.pluginName}-${pluginNameCounts[
-                  p.pluginName
-                ]++}`;
-                return (
-                  <PluginControl
-                    key={key}
-                    eventKey={key}
-                    sampleId={sampleId}
-                    pluginIndex={i}
-                    plugin={p}
-                    status={pluginStatuses[i]}
-                    paramsDef={pluginParamsDefs.get(p.pluginName) || null}
-                    isFirst={i === 0}
-                    isLast={i === plugins.length - 1}
-                    onSampleUpdate={onSampleUpdate}
-                    onOpenPluginManager={onOpenPluginManager}
-                  />
-                );
-              })}
-            </Accordion>
-            <div className={classes.pluginOptions}>
-              <DropdownButton
-                variant="outline-secondary"
-                title={
-                  <span className={classes.addAPlugin}>
-                    <ToyBrickPlus />
-                    <span>Add a plugin</span>
-                  </span>
-                }
+          <div id="expand-plugins">
+            <div className={classes.pluginsControl}>
+              <Accordion
+                hidden={!plugins.length}
+                className={classes.pluginList}
               >
-                {!pluginParamsDefs.size && (
-                  <Dropdown.Item disabled>No plugins installed</Dropdown.Item>
-                )}
-                {[...pluginParamsDefs].map(([pluginName, pluginParamsDef]) => (
-                  <Dropdown.Item
-                    key={pluginName}
-                    onClick={() => {
-                      onSampleUpdate(sampleId, (metadata) => {
-                        return {
-                          ...metadata,
-                          plugins: [
-                            ...metadata.plugins,
-                            {
-                              pluginName,
-                              pluginParams: getDefaultParams(pluginParamsDef),
-                              isBypassed: false,
-                            },
-                          ],
-                        };
-                      });
-                    }}
-                  >
-                    {pluginName}
-                  </Dropdown.Item>
-                ))}
-              </DropdownButton>
-              <Button
-                className={classes.managePlugins}
-                variant="outline-secondary"
-                onClick={onOpenPluginManager}
-              >
-                <InfoIcon />
-                <span>Plugins overview</span>
-              </Button>
+                {plugins.map((p, i) => {
+                  const key = `${p.pluginName}-${pluginNameCounts[
+                    p.pluginName
+                  ]++}`;
+                  return (
+                    <PluginControl
+                      key={key}
+                      eventKey={key}
+                      sampleId={sampleId}
+                      pluginIndex={i}
+                      plugin={p}
+                      status={pluginStatuses[i]}
+                      paramsDef={pluginParamsDefs.get(p.pluginName) || null}
+                      isFirst={i === 0}
+                      isLast={i === plugins.length - 1}
+                      onSampleUpdate={onSampleUpdate}
+                      onOpenPluginManager={onOpenPluginManager}
+                    />
+                  );
+                })}
+              </Accordion>
+              <div className={classes.pluginOptions}>
+                <DropdownButton
+                  variant="outline-secondary"
+                  title={
+                    <span className={classes.addAPlugin}>
+                      <ToyBrickPlus />
+                      <span>Add a plugin</span>
+                    </span>
+                  }
+                >
+                  {!pluginParamsDefs.size && (
+                    <Dropdown.Item disabled>No plugins installed</Dropdown.Item>
+                  )}
+                  {[...pluginParamsDefs].map(
+                    ([pluginName, pluginParamsDef]) => (
+                      <Dropdown.Item
+                        key={pluginName}
+                        onClick={() => {
+                          onSampleUpdate(sampleId, (metadata) => {
+                            return {
+                              ...metadata,
+                              plugins: [
+                                ...metadata.plugins,
+                                {
+                                  pluginName,
+                                  pluginParams:
+                                    getDefaultParams(pluginParamsDef),
+                                  isBypassed: false,
+                                },
+                              ],
+                            };
+                          });
+                        }}
+                      >
+                        {pluginName}
+                      </Dropdown.Item>
+                    )
+                  )}
+                </DropdownButton>
+                <Button
+                  className={classes.managePlugins}
+                  variant="outline-secondary"
+                  onClick={onOpenPluginManager}
+                >
+                  <InfoIcon />
+                  <span>Plugins overview</span>
+                </Button>
+              </div>
             </div>
           </div>
         </Collapse>

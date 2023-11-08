@@ -227,6 +227,7 @@ export function getPlugin(pluginName) {
     },
     /** @param {() => void} callback */
     onPluginError(callback) {
+      Promise.resolve(pluginInstallPromises[pluginName]).catch(callback);
       /** @param {Event} e */
       const handleUninstall = (e) => {
         if (

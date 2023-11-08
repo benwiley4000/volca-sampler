@@ -91,7 +91,10 @@ export async function installPlugin(pluginName, pluginSource) {
           if (data.messageId !== messageId) return;
           if (data.messageType === 'messageReceived') {
             timeout = setTimeout(() => {
-              console.error('Plugin took too long to install:', pluginName);
+              console.error(
+                `Plugin took too long to install (${PLUGIN_TIMEOUT}+ milliseconds):`,
+                pluginName
+              );
               reject();
               window.removeEventListener('message', onMessage);
             }, PLUGIN_TIMEOUT);
@@ -160,9 +163,12 @@ async function sampleTransformPlugin(iframe, audioBuffer, params) {
         const onMessage = ({ source, data }) => {
           if (source !== iframe.contentWindow) return;
           if (data.messageId !== messageId) return;
-          if (data.messageType === 'receivedMessage') {
+          if (data.messageType === 'messageReceived') {
             timeout = setTimeout(() => {
-              console.error('Plugin took too long to run:', iframe.id);
+              console.error(
+                `Plugin took too long to run: (${PLUGIN_TIMEOUT}+ milliseconds):`,
+                iframe.id
+              );
               reject(new PluginError('Plugin took too long to return'));
               window.removeEventListener('message', onMessage);
             }, PLUGIN_TIMEOUT);

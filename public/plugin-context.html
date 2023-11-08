@@ -126,6 +126,9 @@
               messageType: 'messageReceived',
               messageId: data.messageId,
             });
+            // yield to event loop to allow message to send to parent
+            // before beginning work that will potentially crash frame
+            await new Promise((resolve) => setTimeout(resolve, 0));
             const { pluginSource } = data;
             if (!(await installPlugin(pluginSource))) {
               respond({
@@ -170,6 +173,9 @@
                 messageType: 'messageReceived',
                 messageId: data.messageId,
               });
+              // yield to event loop to allow message to send to parent
+              // before beginning work that will potentially crash frame
+              await new Promise((resolve) => setTimeout(resolve, 0));
               const newAudioBuffer = await callPlugin(audioBuffer, params);
               if (newAudioBuffer.numberOfChannels > 1) {
                 console.warn(

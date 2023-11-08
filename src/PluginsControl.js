@@ -9,6 +9,7 @@ import React, {
 import {
   Accordion,
   AccordionContext,
+  Button,
   Card,
   Collapse,
   Dropdown,
@@ -24,7 +25,7 @@ import { ReactComponent as ArrowUpwardIcon } from '@material-design-icons/svg/fi
 import { ReactComponent as ArrowDownwardIcon } from '@material-design-icons/svg/filled/arrow_downward.svg';
 import { ReactComponent as TuneIcon } from '@material-design-icons/svg/filled/tune.svg';
 import { ReactComponent as MoreVertIcon } from '@material-design-icons/svg/filled/more_vert.svg';
-import { ReactComponent as InfoIcon } from '@material-design-icons/svg/outlined/info.svg';
+import { ReactComponent as InfoIcon } from '@material-design-icons/svg/filled/info.svg';
 import { ReactComponent as SyncProblemIcon } from '@material-design-icons/svg/filled/sync_problem.svg';
 import { ReactComponent as PriorityHighIcon } from '@material-design-icons/svg/filled/priority_high.svg';
 import { ReactComponent as QuestionMarkIcon } from '@material-design-icons/svg/filled/question_mark.svg';
@@ -480,15 +481,6 @@ const PluginsControl = React.memo(
             aria-expanded={expanded}
           >
             Plugins
-            <span
-              className={classes.pluginsInfoIcon}
-              onClick={(e) => {
-                e.stopPropagation();
-                onOpenPluginManager();
-              }}
-            >
-              <InfoIcon />
-            </span>
             {arePluginsOk && (
               <span className={classes.previewValue}>
                 &nbsp;{activeCount} active, {bypassedCount} bypassed
@@ -540,45 +532,53 @@ const PluginsControl = React.memo(
                 );
               })}
             </Accordion>
-            <DropdownButton
-              variant="outline-secondary"
-              title={
-                <span className={classes.addAPlugin}>
-                  <ToyBrickPlus />
-                  <span>Add a plugin</span>
-                </span>
-              }
-            >
-              <Dropdown.Item onClick={onOpenPluginManager}>
-                Manage plugins
-              </Dropdown.Item>
-              <Dropdown.Divider />
-              {!pluginParamsDefs.size && (
-                <Dropdown.Item disabled>No plugins installed</Dropdown.Item>
-              )}
-              {[...pluginParamsDefs].map(([pluginName, pluginParamsDef]) => (
-                <Dropdown.Item
-                  key={pluginName}
-                  onClick={() => {
-                    onSampleUpdate(sampleId, (metadata) => {
-                      return {
-                        ...metadata,
-                        plugins: [
-                          ...metadata.plugins,
-                          {
-                            pluginName,
-                            pluginParams: getDefaultParams(pluginParamsDef),
-                            isBypassed: false,
-                          },
-                        ],
-                      };
-                    });
-                  }}
-                >
-                  {pluginName}
-                </Dropdown.Item>
-              ))}
-            </DropdownButton>
+            <div className={classes.pluginOptions}>
+              <DropdownButton
+                variant="outline-secondary"
+                size="sm"
+                title={
+                  <span className={classes.addAPlugin}>
+                    <ToyBrickPlus />
+                    <span>Add a plugin</span>
+                  </span>
+                }
+              >
+                {!pluginParamsDefs.size && (
+                  <Dropdown.Item disabled>No plugins installed</Dropdown.Item>
+                )}
+                {[...pluginParamsDefs].map(([pluginName, pluginParamsDef]) => (
+                  <Dropdown.Item
+                    key={pluginName}
+                    onClick={() => {
+                      onSampleUpdate(sampleId, (metadata) => {
+                        return {
+                          ...metadata,
+                          plugins: [
+                            ...metadata.plugins,
+                            {
+                              pluginName,
+                              pluginParams: getDefaultParams(pluginParamsDef),
+                              isBypassed: false,
+                            },
+                          ],
+                        };
+                      });
+                    }}
+                  >
+                    {pluginName}
+                  </Dropdown.Item>
+                ))}
+              </DropdownButton>
+              <Button
+                className={classes.managePlugins}
+                size="sm"
+                variant="outline-secondary"
+                onClick={onOpenPluginManager}
+              >
+                <InfoIcon />
+                <span>Plugins overview</span>
+              </Button>
+            </div>
           </div>
         </Collapse>
       </Form.Group>

@@ -132,10 +132,10 @@
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
-  
+
     .pluginHasError {
       color: var(--bs-primary);
-    }  
+    }
   }
   .actions {
     flex-shrink: 0;
@@ -214,6 +214,12 @@
   }
 }
 
+.pluginOptions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
 .addAPlugin {
   svg {
     fill: var(--bs-secondary);
@@ -227,6 +233,23 @@
   }
 
   svg + * {
-    margin-left: 0.5rem;
+    margin-left: 0.25rem;
+  }
+}
+
+.managePlugins {
+  svg {
+    fill: var(--bs-secondary);
+    transition: fill 0.35s ease;
+  }
+  &:hover,
+  &:active {
+    svg {
+      fill: #fff;
+    }
+  }
+
+  svg + * {
+    margin-left: 0.25rem;
   }
 }

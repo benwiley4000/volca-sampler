@@ -144,7 +144,7 @@ export async function addPlugin({
     }
   } while (existingNames.includes(finalPluginName));
 
-  if (shouldReplace) {
+  if (shouldReplace && isPluginInstalled(finalPluginName)) {
     const plugin = getPlugin(finalPluginName);
     await plugin.replaceSource(pluginSource);
   } else {
@@ -304,6 +304,10 @@ async function addPluginFromStorage(pluginName) {
 
 /** @param {string} pluginName */
 async function updatePluginFromStorage(pluginName) {
+  if (!isPluginInstalled(pluginName)) {
+    await addPluginFromStorage(pluginName);
+    return;
+  }
   const { pluginSource = null } = (await pluginStoreGet(pluginName)) || {};
   if (!pluginSource) {
     throw new Error('Expected plugin to be stored');

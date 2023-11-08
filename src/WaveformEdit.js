@@ -663,7 +663,7 @@ const WaveformEdit = React.memo(
             <OverlayTrigger
               delay={{ show: 400, hide: 0 }}
               overlay={
-                <Tooltip>Audio is clipping - consider normalizing</Tooltip>
+                <Tooltip>Audio is clipping - maybe normalize?</Tooltip>
               }
             >
               <div className={classes.clippingAlert}>

@@ -377,8 +377,13 @@ function PluginControl({
       </Card.Header>
       <Accordion.Collapse eventKey={eventKey}>
         <Card.Body className={classes.paramsList}>
-          {Object.entries(plugin.pluginParams).map(
-            ([paramName, paramValue]) => (
+          {Object.keys(paramsDef || plugin.pluginParams).map((paramName) => {
+            const paramDef = (paramsDef && paramsDef[paramName]) || null;
+            let paramValue = plugin.pluginParams[paramName];
+            if (paramDef && typeof paramValue !== 'number') {
+              paramValue = paramDef.value;
+            }
+            return (
               <PluginParamControl
                 key={paramName}
                 sampleId={sampleId}
@@ -386,11 +391,11 @@ function PluginControl({
                 isOff={!isActive}
                 paramName={paramName}
                 paramValue={paramValue}
-                paramDef={(paramsDef && paramsDef[paramName]) || null}
+                paramDef={paramDef}
                 onSampleUpdate={onSampleUpdate}
               />
-            )
-          )}
+            );
+          })}
         </Card.Body>
       </Accordion.Collapse>
     </Card>

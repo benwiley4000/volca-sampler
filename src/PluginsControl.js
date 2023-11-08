@@ -131,7 +131,7 @@ function PluginParamControl({
     <Form.Group className={classes.paramControl}>
       <div className={classes.paramControlInputGroup}>
         <div>
-          <Form.Label>{paramDef ? paramDef.label : paramName}</Form.Label>
+          <Form.Label>{(paramDef && paramDef.label) || paramName}</Form.Label>
           <RangeSlider
             variant={isOff ? 'secondary' : 'primary'}
             disabled={!paramDef}

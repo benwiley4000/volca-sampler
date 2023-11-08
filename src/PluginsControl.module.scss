@@ -69,7 +69,10 @@
   fill: var(--bs-primary);
   color: var(--bs-primary);
   cursor: pointer;
-  margin-left: 0.5rem;
+  padding-left: 0.5rem;
+  width: 0;
+  display: inline-block;
+  white-space: nowrap;
 
   & > * + * {
     margin-left: 0.25rem;

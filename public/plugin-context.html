@@ -53,7 +53,8 @@
               }
             }
             if (hasError) {
-              throw new Error('Invalid params declaration for plugin');
+              console.error('Invalid params declaration for plugin');
+              return false;
             }
           }
           if (

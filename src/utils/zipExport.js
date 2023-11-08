@@ -94,7 +94,7 @@ export async function exportSampleContainersToZip(
         processedPluginNames.add(pluginName);
         const pluginSource = await getPluginSource(pluginName);
         if (pluginSource) {
-          samplesFolder.file(
+          pluginsFolder.file(
             pluginName,
             new Blob([pluginSource], { type: 'text/javascript' })
           );

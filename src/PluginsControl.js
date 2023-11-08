@@ -535,7 +535,6 @@ const PluginsControl = React.memo(
             <div className={classes.pluginOptions}>
               <DropdownButton
                 variant="outline-secondary"
-                size="sm"
                 title={
                   <span className={classes.addAPlugin}>
                     <ToyBrickPlus />
@@ -571,7 +570,6 @@ const PluginsControl = React.memo(
               </DropdownButton>
               <Button
                 className={classes.managePlugins}
-                size="sm"
                 variant="outline-secondary"
                 onClick={onOpenPluginManager}
               >

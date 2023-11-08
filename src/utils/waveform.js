@@ -76,12 +76,13 @@ export async function getSamplePeaksForAudioBuffer(audioBuffer, trimFrames) {
 
 /**
  * @param {import('../store').SampleContainer} sample
+ * @param {Symbol} [editCacheInvalidator]
  * @returns {{
  *   sample: import('../store').SampleContainer;
  *   pluginProcessedAudioBuffer: AudioBuffer | null;
  * }}
  */
-export function useLoadedSample(sample) {
+export function useLoadedSample(sample, editCacheInvalidator = Symbol.for('')) {
   const [loadedAudioBuffer, setLoadedAudioBuffer] = useState(
     // [sample.id, AudioBuffer]
     /** @type {[string, AudioBuffer] | null} */ (null)
@@ -115,6 +116,7 @@ export function useLoadedSample(sample) {
     sample.metadata.plugins,
     sample.metadata.sourceFileId,
     sample.metadata.userFileInfo,
+    editCacheInvalidator,
   ]);
 
   // We need to hold onto an internal state because when the sample changes,

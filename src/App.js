@@ -487,11 +487,14 @@ function App() {
     []
   );
 
+  const [editCacheInvalidator, setEditCacheInvalidator] = useState(Symbol());
+
   const handleRegenerateSampleCache = useCallback(
     /** @param {string} sampleId */
     (sampleId) => {
       const sampleContainer = userSamplesRef.current.get(sampleId);
       if (!sampleContainer) return;
+      setEditCacheInvalidator(Symbol());
       SampleCache.importToStorage(sampleContainer).then((sampleCache) => {
         setUserSampleCaches((sampleCaches) =>
           new Map(sampleCaches).set(sampleId, sampleCache)
@@ -672,6 +675,7 @@ function App() {
               sampleCache={sampleCache}
               pluginParamsDefs={pluginParamsDefs}
               pluginStatusMap={pluginStatusMap}
+              editCacheInvalidator={editCacheInvalidator}
               onSampleUpdate={handleSampleUpdate}
               onSampleDuplicate={handleSampleDuplicate}
               onSampleDelete={handleSampleDelete}

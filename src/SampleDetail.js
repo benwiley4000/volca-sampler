@@ -35,6 +35,7 @@ const SampleDetail = React.memo(
    *   sampleCache: import('./sampleCacheStore.js').SampleCache | null;
    *   pluginParamsDefs: Map<string, import('./utils/plugins').PluginParamsDef>;
    *   pluginStatusMap: Map<string, import('./pluginStore.js').PluginStatus>;
+   *   editCacheInvalidator: Symbol;
    *   onSampleUpdate: (id: string, update: import('./store').SampleMetadataUpdateArg) => void;
    *   onSampleDuplicate: (id: string) => void;
    *   onSampleDelete: (id: string | string[]) => void;
@@ -48,6 +49,7 @@ const SampleDetail = React.memo(
     sampleCache,
     pluginParamsDefs,
     pluginStatusMap,
+    editCacheInvalidator,
     onSampleUpdate,
     onSampleDuplicate,
     onSampleDelete,
@@ -126,6 +128,7 @@ const SampleDetail = React.memo(
         <WaveformEdit
           sample={sample}
           sampleCache={sampleCache}
+          editCacheInvalidator={editCacheInvalidator}
           onSampleUpdate={onSampleUpdate}
         />
         <h4>Transfer</h4>

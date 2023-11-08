@@ -28,10 +28,16 @@ const WaveformEdit = React.memo(
    * @param {{
    *   sample: import('./store').SampleContainer;
    *   sampleCache: import('./sampleCacheStore.js').SampleCache | null;
+   *   editCacheInvalidator: Symbol;
    *   onSampleUpdate: (id: string, update: import('./store').SampleMetadataUpdateArg) => void;
    * }} props
    */
-  function WaveformEdit({ sample: _sample, sampleCache, onSampleUpdate }) {
+  function WaveformEdit({
+    sample: _sample,
+    sampleCache,
+    editCacheInvalidator,
+    onSampleUpdate,
+  }) {
     const { wavData: previewWavFile, audioBuffer: previewAudioBuffer } =
       usePreviewAudio(sampleCache);
     const {
@@ -44,7 +50,7 @@ const WaveformEdit = React.memo(
         },
       },
       pluginProcessedAudioBuffer,
-    } = useLoadedSample(_sample);
+    } = useLoadedSample(_sample, editCacheInvalidator);
 
     const { monoSamples, waveformRef, pixelWidth, peaks, onResize } =
       useWaveformInfo(pluginProcessedAudioBuffer);

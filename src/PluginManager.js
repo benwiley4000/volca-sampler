@@ -256,7 +256,7 @@ const PluginManager = React.memo(
           aria-labelledby="plugin-manager-modal"
         >
           <Modal.Header>
-            <Modal.Title id="plugin-manager-modal">Manage plugins</Modal.Title>
+            <Modal.Title id="plugin-manager-modal">Plugins overview</Modal.Title>
           </Modal.Header>
           <Modal.Body>
             <p>

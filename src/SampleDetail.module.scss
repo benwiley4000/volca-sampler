@@ -16,6 +16,9 @@
     text-overflow: ellipsis;
     overflow: hidden;
     white-space: nowrap;
+    // avoid clipping text above and below due to overflow hidden
+    margin: -0.5rem 0;
+    padding: 0.5rem 0;
 
     @include media-breakpoint-up(lg) {
       width: 100%;

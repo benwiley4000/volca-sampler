@@ -209,9 +209,10 @@ export async function importSampleContainersFromZip({
           sourceDataProcessingPromises.set(
             sourceFileId,
             (async () => {
-              const needsToImportFile = !(await isAudioSourceFileInStore(
-                sourceFileId
-              ));
+              const needsToImportFile =
+                // make sure it's not a factory sample
+                !sourceFileId.includes('.') &&
+                !(await isAudioSourceFileInStore(sourceFileId));
               if (needsToImportFile) {
                 const [sourceFileHandle] = samplesFolder.file(
                   new RegExp(`${sourceFileId}\\.\\w+$`)

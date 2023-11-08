@@ -116,7 +116,18 @@
           }
         }
 
+        const expectedParentOrigin = window.location.origin.replace(
+          'plugin.',
+          ''
+        );
+        const isLocalDev = window.location.protocol === 'http:';
+
         window.addEventListener('message', async ({ data, origin }) => {
+          if (origin !== expectedParentOrigin && !isLocalDev) {
+            console.error('Unexpected parent context');
+            return;
+          }
+
           function respond(data) {
             window.top.postMessage(data, origin);
           }

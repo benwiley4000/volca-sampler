@@ -7,7 +7,7 @@ const IFRAME_ORIGIN =
     ? ''
     : window.location.protocol === 'http:'
     ? 'http://localhost:3001'
-    : `https://volca-sampler-plugin.benwiley.org`;
+    : `https://plugin.${window.location.host}`;
 
 const iframeParent =
   typeof window === 'undefined'

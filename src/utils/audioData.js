@@ -233,7 +233,12 @@ export class PluginRunError extends Error {
   }
 }
 
-/** @type {WeakMap<import('../store').SampleContainer, Promise<AudioBuffer>>} */
+/**
+ * @type {WeakMap<
+ *   import('../store.js').PluginClientSpec[],
+ *   Promise<AudioBuffer>
+ * >}
+ */
 const pluginProcessingPromises = new WeakMap();
 
 /**
@@ -243,7 +248,9 @@ const pluginProcessingPromises = new WeakMap();
  */
 export async function processPluginsForSample(sampleContainer) {
   {
-    const promise = pluginProcessingPromises.get(sampleContainer);
+    const promise = pluginProcessingPromises.get(
+      sampleContainer.metadata.plugins
+    );
     if (promise) return promise;
   }
   const promise = (async () => {
@@ -297,7 +304,7 @@ export async function processPluginsForSample(sampleContainer) {
 
     return postPluginBuffer;
   })();
-  pluginProcessingPromises.set(sampleContainer, promise);
+  pluginProcessingPromises.set(sampleContainer.metadata.plugins, promise);
   /** @type {AudioBuffer} */
   let postPluginBuffer;
   try {
@@ -305,7 +312,7 @@ export async function processPluginsForSample(sampleContainer) {
   } finally {
     // release promise after reasonable timeout to free the data from memory
     setTimeout(() => {
-      pluginProcessingPromises.delete(sampleContainer);
+      pluginProcessingPromises.delete(sampleContainer.metadata.plugins);
     }, 100);
   }
   return postPluginBuffer;

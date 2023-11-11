@@ -1,12 +1,18 @@
 import { v4 as uuidv4 } from 'uuid';
 
-const PLUGIN_TIMEOUT = 10;
+import { Mutex } from './mutex';
+
+// These limits are significantly above anything we've already seen in terms of
+// execution time, but we'll see how it goes in user land.
+const PLUGIN_INSTALL_TIMEOUT = 250;
+const PLUGIN_RUN_PER_SEC_TIMEOUT = 200;
 
 const IFRAME_ORIGIN =
   typeof window === 'undefined'
     ? ''
     : window.location.protocol === 'http:'
-    ? 'http://localhost:3001'
+    // use ip instead of localhost so the iframe gets its own thread
+    ? 'http://127.0.0.1:3000'
     : `https://volca-sampler-plugin.benwiley.org`;
 
 const iframeParent =
@@ -36,18 +42,13 @@ export class PluginError extends Error {}
 /** @type {Record<string, Promise<PluginParamsDef>>} */
 const pluginInstallPromises = {};
 
+const pluginMutex = new Mutex();
+
 /**
  * @param {string} pluginName
  * @param {string} pluginSource
  */
 export async function installPlugin(pluginName, pluginSource) {
-  const iframe = document.createElement('iframe');
-  iframe.id = pluginName;
-  iframe.hidden = true;
-  iframe.title = 'plugin-context';
-  iframe.setAttribute('sandbox', 'allow-scripts');
-  iframe.src = `${IFRAME_ORIGIN}${window.location.pathname}plugin-context.html`;
-
   /** @type {(params: PluginParamsDef) => void} */
   let onInstalled = () => {};
   let onInstallError = () => {};
@@ -55,6 +56,15 @@ export async function installPlugin(pluginName, pluginSource) {
     onInstalled = resolve;
     onInstallError = reject;
   });
+
+  const unlock = await pluginMutex.lock();
+
+  const iframe = document.createElement('iframe');
+  iframe.id = pluginName;
+  iframe.hidden = true;
+  iframe.title = 'plugin-context';
+  iframe.setAttribute('sandbox', 'allow-scripts');
+  iframe.src = `${IFRAME_ORIGIN}${window.location.pathname}plugin-context.html`;
 
   iframeParent.appendChild(iframe);
 
@@ -92,12 +102,12 @@ export async function installPlugin(pluginName, pluginSource) {
           if (data.messageType === 'messageReceived') {
             timeout = setTimeout(() => {
               console.error(
-                `Plugin took too long to install (${PLUGIN_TIMEOUT}+ milliseconds):`,
+                `Plugin took too long to install (${PLUGIN_INSTALL_TIMEOUT}+ milliseconds):`,
                 pluginName
               );
               reject();
               window.removeEventListener('message', onMessage);
-            }, PLUGIN_TIMEOUT);
+            }, PLUGIN_INSTALL_TIMEOUT);
             return;
           }
           if (data.messageType !== 'pluginInstall') return;
@@ -119,6 +129,8 @@ export async function installPlugin(pluginName, pluginSource) {
     onInstallError();
     iframeParent.removeChild(iframe);
     throw err;
+  } finally {
+    unlock();
   }
 
   onInstalled(pluginParamsDef);
@@ -135,6 +147,8 @@ async function sampleTransformPlugin(iframe, audioBuffer, params) {
   if (!iframe.contentWindow) {
     throw new Error('Expected iframe content window');
   }
+
+  const unlock = await pluginMutex.lock();
 
   const audioData = audioBuffer.getChannelData(0);
   const { sampleRate } = audioBuffer;
@@ -164,14 +178,16 @@ async function sampleTransformPlugin(iframe, audioBuffer, params) {
           if (source !== iframe.contentWindow) return;
           if (data.messageId !== messageId) return;
           if (data.messageType === 'messageReceived') {
+            const timeoutAmount =
+              PLUGIN_RUN_PER_SEC_TIMEOUT * audioBuffer.duration;
             timeout = setTimeout(() => {
               console.error(
-                `Plugin took too long to run: (${PLUGIN_TIMEOUT}+ milliseconds):`,
+                `Plugin took too long to run: (${timeoutAmount}+ milliseconds):`,
                 iframe.id
               );
               reject(new PluginError('Plugin took too long to return'));
               window.removeEventListener('message', onMessage);
-            }, PLUGIN_TIMEOUT);
+            }, timeoutAmount);
             return;
           }
           if (data.messageType !== 'sampleTransform') return;
@@ -199,6 +215,8 @@ async function sampleTransformPlugin(iframe, audioBuffer, params) {
       iframeParent.removeChild(iframe);
     }
     throw err;
+  } finally {
+    unlock();
   }
 
   const newAudioBuffer = new AudioBuffer({

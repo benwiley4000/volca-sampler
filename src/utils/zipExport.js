@@ -7,7 +7,6 @@ import {
 } from '../store';
 import { SampleCache } from '../sampleCacheStore';
 import { addPlugin, getPluginSource } from '../pluginStore';
-import { Mutex } from './mutex';
 
 /** @typedef {import('../store').SampleMetadataExport} SampleMetadataExport */
 /** @typedef {Record<string, SampleMetadataExport>} MetadataMap */
@@ -202,7 +201,6 @@ export async function importSampleContainersFromZip({
     onProgress(
       progresses.reduce((total, p) => total + p, 0) / progresses.length
     );
-  const pluginMutex = new Mutex();
   await Promise.all(
     Object.entries(metadataMap).map(async ([id, metadata], i) => {
       if (!idsToImport.includes(id)) return;
@@ -245,21 +243,14 @@ export async function importSampleContainersFromZip({
                   throw new Error('Cannot find plugin file');
                 }
                 const pluginSource = await pluginFileHandle.async('string');
-                const unlock = await pluginMutex.lock();
-                try {
-                  const result = await addPlugin({
-                    pluginName,
-                    pluginSource,
-                    onConfirmName: onConfirmPluginName,
-                    onConfirmReplace: onConfirmPluginReplace,
-                  });
-                  if (result === 'replaced') {
-                    replacedPluginNames.push(pluginName);
-                  }
-                  unlock();
-                } catch (err) {
-                  unlock();
-                  throw err;
+                const result = await addPlugin({
+                  pluginName,
+                  pluginSource,
+                  onConfirmName: onConfirmPluginName,
+                  onConfirmReplace: onConfirmPluginReplace,
+                });
+                if (result === 'replaced') {
+                  replacedPluginNames.push(pluginName);
                 }
               })()
             );

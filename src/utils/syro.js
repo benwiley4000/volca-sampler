@@ -1,5 +1,17 @@
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { getSyroBindings } from './getSyroBindings.js';
-import { getTargetWavForSample } from './audioData.js';
+import {
+  getTargetWavForSample,
+  getAudioBufferForAudioFileData,
+  useAudioPlaybackContext,
+} from './audioData.js';
 
 /**
  * @param {(import('../store').SampleContainer)[]} sampleContainers
@@ -193,4 +205,175 @@ export async function getSyroDeleteBuffer(slotNumbers) {
   ];
   freeDeleteBuffer(deleteBufferUpdatePointer);
   return { syroBuffer, dataStartPoints };
+}
+
+/**
+ * @typedef {import('../store').SampleContainer} SampleContainer
+ * @param {object} params
+ * @param {Uint8Array | Error | null} params.syroBuffer
+ * @param {number[]} params.dataStartPoints
+ * @param {Map<string, SampleContainer>} params.selectedSamples
+ */
+export function useSyroTransfer({
+  syroBuffer,
+  dataStartPoints: _dataStartPoints,
+  selectedSamples,
+}) {
+  const [dataStartPoints, setDataStartPoints] = useState(
+    /** @type {number[]} */ ([])
+  );
+  const [syroAudioBuffer, setSyroAudioBuffer] = useState(
+    /** @type {AudioBuffer | Error | null} */ (null)
+  );
+  useEffect(() => {
+    setDataStartPoints(
+      syroBuffer && syroBuffer instanceof Uint8Array
+        ? _dataStartPoints.map((p) => p / syroBuffer.length)
+        : []
+    );
+    if (syroBuffer) {
+      let cancelled = false;
+      if (syroBuffer instanceof Uint8Array) {
+        (async () => {
+          try {
+            const audioBuffer = await getAudioBufferForAudioFileData(
+              syroBuffer
+            );
+            if (!cancelled) {
+              setSyroAudioBuffer(audioBuffer);
+            }
+          } catch (err) {
+            console.error(err);
+            setSyroAudioBuffer(new Error(String(err)));
+          }
+        })();
+        return () => {
+          cancelled = true;
+        };
+      } else {
+        setSyroAudioBuffer(syroBuffer);
+      }
+    }
+  }, [syroBuffer, _dataStartPoints]);
+  const [transferProgress, setTransferProgress] = useState(0);
+  const [syroTransferState, setSyroTransferState] = useState(
+    /** @type {'idle' | 'transferring' | 'error'} */ ('idle')
+  );
+  useLayoutEffect(() => {
+    if (syroTransferState === 'transferring') {
+      return () => {
+        // reset progress for next time
+        setTimeout(() => setTransferProgress(0), 100);
+      };
+    }
+  }, [syroTransferState]);
+  useEffect(() => {
+    setSyroTransferState('idle');
+  }, [selectedSamples]);
+  const [callbackOnSyroBuffer, setCallbackOnSyroBuffer] = useState(
+    /** @type {{ fn: () => void } | null} */ (null)
+  );
+  useEffect(() => {
+    if (syroAudioBuffer instanceof AudioBuffer && callbackOnSyroBuffer) {
+      callbackOnSyroBuffer.fn();
+    }
+    if (callbackOnSyroBuffer) {
+      setCallbackOnSyroBuffer(null);
+    }
+  }, [syroAudioBuffer, callbackOnSyroBuffer]);
+  // to be set when transfer is started
+  const stop = useRef(() => {
+    setSyroTransferState('idle');
+  });
+  const { playAudioBuffer } = useAudioPlaybackContext();
+  /** @type {React.MouseEventHandler} */
+  const handleTransfer = useCallback(
+    (e) => {
+      if (!(syroAudioBuffer instanceof AudioBuffer)) {
+        if (!syroAudioBuffer) {
+          const { target, nativeEvent } = e;
+          // wait until the syro buffer is ready then simulate the event to
+          // retry this handler. it's important that we simulate another
+          // action because otherwise iOS won't let us play the audio later.
+          setCallbackOnSyroBuffer({
+            fn: () => target.dispatchEvent(nativeEvent),
+          });
+        }
+        return;
+      }
+      try {
+        setSyroTransferState('transferring');
+        const stopPlayback = playAudioBuffer(syroAudioBuffer, {
+          onTimeUpdate: (currentTime) =>
+            setTransferProgress(currentTime / syroAudioBuffer.duration),
+        });
+        stop.current = () => {
+          stopPlayback();
+          setSyroTransferState('idle');
+        };
+      } catch (err) {
+        console.error(err);
+        setSyroTransferState('error');
+      }
+    },
+    [playAudioBuffer, syroAudioBuffer]
+  );
+  const handleCancel = useCallback(() => stop.current(), []);
+  const transferInProgress =
+    syroTransferState === 'transferring' && transferProgress < 1;
+
+  const {
+    currentlyTransferringSample,
+    currentSampleProgress,
+    timeLeftUntilNextSample,
+  } = useMemo(() => {
+    const selectedSampleList = [...selectedSamples.values()];
+    if (
+      syroTransferState !== 'transferring' ||
+      !(syroAudioBuffer instanceof AudioBuffer)
+    ) {
+      return {
+        currentlyTransferringSample: selectedSampleList[0],
+        currentSampleProgress: 0,
+        timeLeftUntilNextSample: 0,
+      };
+    }
+    const foundIndex =
+      dataStartPoints.findIndex((p) => p > transferProgress) - 1;
+    const currentlyTransferringSampleIndex =
+      foundIndex >= 0 ? foundIndex : selectedSampleList.length - 1;
+    const currentlyTransferringSample =
+      selectedSampleList[currentlyTransferringSampleIndex];
+    const currentStartPoint = dataStartPoints[currentlyTransferringSampleIndex];
+    const nextStartPoint =
+      dataStartPoints[currentlyTransferringSampleIndex + 1] || 1;
+    const currentSampleProgress =
+      (transferProgress - currentStartPoint) /
+      (nextStartPoint - currentStartPoint);
+    const timeLeftUntilNextSample =
+      (nextStartPoint - transferProgress) * syroAudioBuffer.duration;
+    return {
+      currentlyTransferringSample,
+      currentSampleProgress,
+      timeLeftUntilNextSample,
+    };
+  }, [
+    selectedSamples,
+    dataStartPoints,
+    syroTransferState,
+    transferProgress,
+    syroAudioBuffer,
+  ]);
+
+  return {
+    startTransfer: handleTransfer,
+    stopTransfer: handleCancel,
+    syroTransferState,
+    transferInProgress,
+    transferProgress,
+    currentlyTransferringSample,
+    currentSampleProgress,
+    timeLeftUntilNextSample,
+    syroAudioBuffer,
+  };
 }

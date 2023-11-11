@@ -579,6 +579,13 @@ function VolcaTransferControl({
                 <strong>[FUNC]</strong> button to finish.
               </p>
               <h5>
+                If you see <strong>[Err FuLL]</strong>:
+              </h5>
+              <p>
+                Free up some memory on the volca sample (or cut down your sample
+                size), then try again.
+              </p>
+              <h5>
                 If you see <strong>[Err dcod]</strong>:
               </h5>
               <p>
@@ -588,11 +595,12 @@ function VolcaTransferControl({
                 audio cable.
               </p>
               <h5>
-                If you see <strong>[Err FuLL]</strong>:
+                If you see <strong>[Err PArA]</strong>:
               </h5>
               <p>
-                Free up some memory on the volca sample (or cut down your sample
-                size), then try again.
+                This will happen if you try to transfer to a slot above 99 on
+                the original volca sample. More slots are available on the volca
+                sample2.
               </p>
               <p>
                 For more info, check out this{' '}

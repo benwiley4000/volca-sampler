@@ -34,7 +34,7 @@ const PluginManager = React.memo(
    * @param {{
    *   isOpen: boolean;
    *   pluginList: string[];
-   *   pluginStatusMap: Map<string, import('./pluginStore').PluginStatus>;
+   *   pluginStatusMap: Map<string, import('./pluginStore').PluginStatus> | null;
    *   userSamples: Map<string, SampleContainer>;
    *   onUpdatePluginList: () => void;
    *   onSampleUpdate: (
@@ -385,18 +385,19 @@ const PluginManager = React.memo(
                     </div>
                   </div>
                   <div className={classes.actions}>
-                    {pluginStatusMap.get(pluginName) === 'broken' && (
-                      <div
-                        className={classes.reloadPlugin}
-                        onClick={async () => {
-                          await reinitPlugin(pluginName);
-                          onUpdatePluginList();
-                        }}
-                      >
-                        <SyncProblemIcon />
-                        Reload plugin
-                      </div>
-                    )}
+                    {pluginStatusMap &&
+                      pluginStatusMap.get(pluginName) === 'broken' && (
+                        <div
+                          className={classes.reloadPlugin}
+                          onClick={async () => {
+                            await reinitPlugin(pluginName);
+                            onUpdatePluginList();
+                          }}
+                        >
+                          <SyncProblemIcon />
+                          Reload plugin
+                        </div>
+                      )}
                     <div
                       title="Download plugin"
                       className={classes.downloadPlugin}

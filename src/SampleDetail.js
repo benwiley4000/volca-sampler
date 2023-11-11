@@ -34,7 +34,7 @@ const SampleDetail = React.memo(
    *   sample: import('./store').SampleContainer;
    *   sampleCache: import('./sampleCacheStore.js').SampleCache | null;
    *   pluginParamsDefs: Map<string, import('./utils/plugins').PluginParamsDef>;
-   *   pluginStatusMap: Map<string, import('./pluginStore.js').PluginStatus>;
+   *   pluginStatusMap: Map<string, import('./pluginStore.js').PluginStatus> | null;
    *   editCacheInvalidator: Symbol;
    *   onSampleUpdate: (id: string, update: import('./store').SampleMetadataUpdateArg) => void;
    *   onSampleDuplicate: (id: string) => void;

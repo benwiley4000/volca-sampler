@@ -409,7 +409,7 @@ const PluginsControl = React.memo(
    *   sampleCache: import('./sampleCacheStore').SampleCache | null;
    *   plugins: import('./store').PluginClientSpec[];
    *   pluginParamsDefs: Map<string, import('./utils/plugins').PluginParamsDef>;
-   *   pluginStatusMap: Map<string, import('./pluginStore').PluginStatus>;
+   *   pluginStatusMap: Map<string, import('./pluginStore').PluginStatus> | null;
    *   onSampleUpdate: (
    *     id: string,
    *     update: import('./store').SampleMetadataUpdateArg
@@ -432,8 +432,10 @@ const PluginsControl = React.memo(
   }) {
     const pluginStatuses = useMemo(() => {
       return plugins.map((p, index) => {
-        const pluginStatus = pluginStatusMap.get(p.pluginName);
-        if (pluginStatus !== 'installed') return pluginStatus || 'ok';
+        const pluginStatus = pluginStatusMap
+          ? pluginStatusMap.get(p.pluginName)
+          : 'ok';
+        if (pluginStatus !== 'installed') return pluginStatus || 'missing';
         if (
           !p.isBypassed &&
           sampleCache &&
@@ -499,7 +501,9 @@ const PluginsControl = React.memo(
                   await Promise.allSettled(
                     plugins
                       .filter(
-                        (p) => pluginStatusMap.get(p.pluginName) === 'broken'
+                        (p) =>
+                          pluginStatusMap &&
+                          pluginStatusMap.get(p.pluginName) === 'broken'
                       )
                       .map((p) => reinitPlugin(p.pluginName))
                   );

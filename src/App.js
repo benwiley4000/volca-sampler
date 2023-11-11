@@ -622,7 +622,9 @@ function App() {
   );
 
   const [pluginStatusMap, setPluginStatusMap] = useState(
-    /** @type {Map<string, import('./pluginStore').PluginStatus>} */ (new Map())
+    /** @type {Map<string, import('./pluginStore').PluginStatus> | null} */ (
+      null
+    )
   );
   useEffect(() => {
     /** @type {typeof pluginStatusMap} */

@@ -5,6 +5,7 @@ import React, {
   useRef,
   useContext,
   useMemo,
+  useLayoutEffect,
 } from 'react';
 import {
   Accordion,
@@ -164,22 +165,30 @@ function PluginParamControl({
  * @param {{
  *   eventKey: string;
  *   disabled?: boolean;
- *   callback?: (eventKey: string) => void;
+ *   isNew: boolean;
  * }} props
  * @returns
  */
-function PluginParamsToggle({ eventKey, disabled, callback }) {
+function PluginParamsToggle({ eventKey, disabled, isNew }) {
   const { activeEventKey } = useContext(AccordionContext);
 
-  const decoratedOnClick = useAccordionButton(
-    eventKey,
-    () => callback && callback(eventKey)
-  );
+  /** @type {React.RefObject<HTMLDivElement>} */
+  const toggleRef = useRef(null);
+
+  const isNewRef = useRef(isNew);
+  useLayoutEffect(() => {
+    if (isNewRef.current && toggleRef.current) {
+      toggleRef.current.click();
+    }
+  }, []);
+
+  const decoratedOnClick = useAccordionButton(eventKey);
 
   const isCurrentEventKey = activeEventKey === eventKey;
 
   return (
     <div
+      ref={toggleRef}
       title={
         disabled
           ? 'No params'
@@ -227,6 +236,7 @@ const RemoveMenuToggle = React.forwardRef(
  *   paramsDef: import('./utils/plugins').PluginParamsDef | null;
  *   isFirst: boolean;
  *   isLast: boolean;
+ *   isNew: boolean;
  *   onSampleUpdate: (
  *     id: string,
  *     update: import('./store').SampleMetadataUpdateArg
@@ -243,6 +253,7 @@ function PluginControl({
   paramsDef,
   isFirst,
   isLast,
+  isNew,
   onSampleUpdate,
   onOpenPluginManager,
 }) {
@@ -335,6 +346,7 @@ function PluginControl({
           <PluginParamsToggle
             eventKey={eventKey}
             disabled={!Object.keys(plugin.pluginParams).length}
+            isNew={isNew}
           />
           <Dropdown>
             <Dropdown.Toggle as={RemoveMenuToggle} />
@@ -466,6 +478,15 @@ const PluginsControl = React.memo(
       () => window.matchMedia('(min-width: 768px)').matches
     );
 
+    // Keep track of which plugins were visible when the sample was
+    // loaded, this way we can auto-expand any new plugins when added
+    const initialPluginsRef = useRef(plugins);
+    const lastSampleIdRef = useRef(sampleId);
+    if (sampleId !== lastSampleIdRef.current) {
+      initialPluginsRef.current = plugins;
+      lastSampleIdRef.current = sampleId;
+    }
+
     return (
       <Form.Group
         className={[
@@ -539,6 +560,7 @@ const PluginsControl = React.memo(
                       paramsDef={pluginParamsDefs.get(p.pluginName) || null}
                       isFirst={i === 0}
                       isLast={i === plugins.length - 1}
+                      isNew={!initialPluginsRef.current.includes(p)}
                       onSampleUpdate={onSampleUpdate}
                       onOpenPluginManager={onOpenPluginManager}
                     />

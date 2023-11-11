@@ -3,17 +3,12 @@ import React, {
   useEffect,
   useLayoutEffect,
   useMemo,
-  useRef,
   useState,
 } from 'react';
 import { Button, Modal, ProgressBar } from 'react-bootstrap';
 import byteSize from 'byte-size';
 
-import {
-  getAudioBufferForAudioFileData,
-  useAudioPlaybackContext,
-} from './utils/audioData.js';
-import { getSyroSampleBuffer } from './utils/syro.js';
+import { getSyroSampleBuffer, useSyroTransfer } from './utils/syro.js';
 import { formatLongTime, formatShortTime } from './utils/datetime';
 import { SAMPLE_RATE } from './utils/constants.js';
 
@@ -106,22 +101,43 @@ function VolcaTransferControl({
   }, [selectedSamples, sampleCaches]);
 
   const [syroProgress, setSyroProgress] = useState(1);
-  const [transferProgress, setTransferProgress] = useState(0);
   const [infoBeforeTransferModalOpen, setInfoBeforeTransferModalOpen] =
     useState(false);
   const [preTransferModalOpen, setPreTransferModalOpen] = useState(false);
-  const [syroTransferState, setSyroTransferState] = useState(
-    /** @type {'idle' | 'transferring' | 'error'} */ ('idle')
+
+  const [{ syroBuffer, dataStartPoints }, setSyroBufferAndDataStartPoints] =
+    useState({
+      syroBuffer: /** @type {Uint8Array | Error | null} */ (null),
+      dataStartPoints: /** @type {number[]} */ ([]),
+    });
+
+  const selectedSampleList = useMemo(
+    () => [...selectedSamples.values()],
+    [selectedSamples]
   );
+
+  const {
+    currentItemProgress,
+    currentlyTransferringItem,
+    syroTransferState,
+    timeLeftUntilNextItem,
+    transferInProgress,
+    transferProgress,
+    syroAudioBuffer,
+    startTransfer,
+    stopTransfer,
+  } = useSyroTransfer({
+    syroBuffer,
+    dataStartPoints,
+    selectedItems: selectedSampleList,
+  });
+
   useLayoutEffect(() => {
     if (syroTransferState === 'transferring') {
       setPreTransferModalOpen(false);
-      return () => {
-        // reset progress for next time modal is open
-        setTimeout(() => setTransferProgress(0), 100);
-      };
     }
   }, [syroTransferState]);
+
   const targetWavDataSize = useMemo(() => {
     let size = selectedSamples.size * 44;
     for (const [id] of selectedSamples) {
@@ -132,23 +148,7 @@ function VolcaTransferControl({
     }
     return size;
   }, [selectedSamples, sampleCaches]);
-  const [dataStartPoints, setDataStartPoints] = useState(
-    /** @type {number[]} */ ([])
-  );
-  const [syroAudioBuffer, setSyroAudioBuffer] = useState(
-    /** @type {AudioBuffer | Error | null} */ (null)
-  );
-  const [callbackOnSyroBuffer, setCallbackOnSyroBuffer] = useState(
-    /** @type {{ fn: () => void } | null} */ (null)
-  );
-  useEffect(() => {
-    if (syroAudioBuffer instanceof AudioBuffer && callbackOnSyroBuffer) {
-      setCallbackOnSyroBuffer(null);
-      callbackOnSyroBuffer.fn();
-    }
-  }, [syroAudioBuffer, callbackOnSyroBuffer]);
-  // to be set when transfer or playback is started
-  const stop = useRef(() => {});
+
   const canTransferSamples = Boolean(
     selectedSamples.size &&
       !duplicateSlots.length &&
@@ -159,10 +159,11 @@ function VolcaTransferControl({
     if (!canTransferSamples) return;
     let cancelled = false;
     setSyroProgress(0);
-    setSyroTransferState('idle');
-    setSyroAudioBuffer(null);
-    setCallbackOnSyroBuffer(null);
-    stop.current = () => {
+    setSyroBufferAndDataStartPoints({
+      syroBuffer: null,
+      dataStartPoints: [],
+    });
+    let stop = () => {
       cancelled = true;
     };
     try {
@@ -174,7 +175,7 @@ function VolcaTransferControl({
           }
         }
       );
-      stop.current = () => {
+      stop = () => {
         cancelWork();
         cancelled = true;
       };
@@ -182,57 +183,23 @@ function VolcaTransferControl({
         if (cancelled) {
           return;
         }
-        stop.current = () => {
+        stop = () => {
           cancelled = true;
         };
-        setDataStartPoints(dataStartPoints.map((p) => p / syroBuffer.length));
-        const audioBuffer = await getAudioBufferForAudioFileData(syroBuffer);
-        if (!cancelled) {
-          setSyroAudioBuffer(audioBuffer);
-        }
+        setSyroBufferAndDataStartPoints({
+          syroBuffer,
+          dataStartPoints,
+        });
       });
     } catch (err) {
       console.error(err);
-      setSyroAudioBuffer(new Error(String(err)));
+      setSyroBufferAndDataStartPoints({
+        syroBuffer: new Error(String(err)),
+        dataStartPoints: [],
+      });
     }
-    return () => stop.current();
+    return () => stop();
   }, [selectedSamples, canTransferSamples]);
-  const { playAudioBuffer } = useAudioPlaybackContext();
-  /** @type {React.MouseEventHandler} */
-  const handleTransfer = useCallback(
-    (e) => {
-      if (!(syroAudioBuffer instanceof AudioBuffer)) {
-        if (!syroAudioBuffer) {
-          const { target, nativeEvent } = e;
-          // wait until the syro buffer is ready then simulate the event to
-          // retry this handler. it's important that we simulate another
-          // action because otherwise iOS won't let us play the audio later.
-          setCallbackOnSyroBuffer({
-            fn: () => target.dispatchEvent(nativeEvent),
-          });
-        }
-        return;
-      }
-      try {
-        setSyroTransferState('transferring');
-        const stopPlayback = playAudioBuffer(syroAudioBuffer, {
-          onTimeUpdate: (currentTime) =>
-            setTransferProgress(currentTime / syroAudioBuffer.duration),
-        });
-        stop.current = () => {
-          stopPlayback();
-          setSyroTransferState('idle');
-        };
-      } catch (err) {
-        console.error(err);
-        setSyroTransferState('error');
-      }
-    },
-    [playAudioBuffer, syroAudioBuffer]
-  );
-  const handleCancel = useCallback(() => stop.current(), []);
-  const transferInProgress =
-    syroTransferState === 'transferring' && transferProgress < 1;
 
   const transferInfo = (
     <>
@@ -263,49 +230,6 @@ function VolcaTransferControl({
       </div>
     </>
   );
-
-  const {
-    currentlyTransferringSample,
-    currentSampleProgress,
-    timeLeftUntilNextSample,
-  } = useMemo(() => {
-    const selectedSampleList = [...selectedSamples.values()];
-    if (
-      syroTransferState !== 'transferring' ||
-      !(syroAudioBuffer instanceof AudioBuffer)
-    ) {
-      return {
-        currentlyTransferringSample: selectedSampleList[0],
-        currentSampleProgress: 0,
-        timeLeftUntilNextSample: 0,
-      };
-    }
-    const foundIndex =
-      dataStartPoints.findIndex((p) => p > transferProgress) - 1;
-    const currentlyTransferringSampleIndex =
-      foundIndex >= 0 ? foundIndex : selectedSampleList.length - 1;
-    const currentlyTransferringSample =
-      selectedSampleList[currentlyTransferringSampleIndex];
-    const currentStartPoint = dataStartPoints[currentlyTransferringSampleIndex];
-    const nextStartPoint =
-      dataStartPoints[currentlyTransferringSampleIndex + 1] || 1;
-    const currentSampleProgress =
-      (transferProgress - currentStartPoint) /
-      (nextStartPoint - currentStartPoint);
-    const timeLeftUntilNextSample =
-      (nextStartPoint - transferProgress) * syroAudioBuffer.duration;
-    return {
-      currentlyTransferringSample,
-      currentSampleProgress,
-      timeLeftUntilNextSample,
-    };
-  }, [
-    selectedSamples,
-    dataStartPoints,
-    syroTransferState,
-    transferProgress,
-    syroAudioBuffer,
-  ]);
 
   return (
     <>
@@ -463,7 +387,7 @@ function VolcaTransferControl({
             type="button"
             variant="primary"
             disabled={!(syroAudioBuffer instanceof AudioBuffer)}
-            onClick={handleTransfer}
+            onClick={startTransfer}
           >
             Transfer now
           </Button>
@@ -510,36 +434,34 @@ function VolcaTransferControl({
               <p>
                 (
                 {[...selectedSamples.values()].indexOf(
-                  currentlyTransferringSample
+                  currentlyTransferringItem
                 ) + 1}
                 /{selectedSamples.size}){' '}
                 <strong className={classes.name}>
-                  {currentlyTransferringSample.metadata.name}
+                  {currentlyTransferringItem.metadata.name}
                 </strong>{' '}
                 to slot{' '}
-                <strong>
-                  {currentlyTransferringSample.metadata.slotNumber}
-                </strong>
+                <strong>{currentlyTransferringItem.metadata.slotNumber}</strong>
               </p>
               <ProgressBar
                 className={classes.secondaryProgress}
                 variant="primary"
-                now={100 * currentSampleProgress}
+                now={100 * currentItemProgress}
               />
               <div className={classes.progressAnnotation}>
-                {formatLongTime(timeLeftUntilNextSample)} remaining
+                {formatLongTime(timeLeftUntilNextItem)} remaining
               </div>
             </div>
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button type="button" variant="primary" onClick={handleCancel}>
+          <Button type="button" variant="primary" onClick={stopTransfer}>
             Cancel
           </Button>
         </Modal.Footer>
       </Modal>
       <Modal
-        onHide={handleCancel}
+        onHide={stopTransfer}
         show={syroTransferState !== 'idle' && !transferInProgress}
         aria-labelledby="after-transfer-modal"
       >
@@ -617,7 +539,7 @@ function VolcaTransferControl({
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button type="button" variant="primary" onClick={handleCancel}>
+          <Button type="button" variant="primary" onClick={stopTransfer}>
             Done
           </Button>
         </Modal.Footer>

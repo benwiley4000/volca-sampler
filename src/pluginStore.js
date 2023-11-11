@@ -173,7 +173,12 @@ export async function addPlugin({
  */
 export async function removePlugin(pluginName, noPersist = false) {
   const plugin = getPlugin(pluginName);
-  plugin.remove();
+  try {
+    plugin.remove();
+  } catch (err) {
+    console.error(err);
+    // we don't care if this errored. maybe the iframe had already crashed.
+  }
   if (!noPersist) {
     await pluginStore.removeItem(pluginName);
     sendTabUpdateEvent('plugin', [pluginName], 'delete');

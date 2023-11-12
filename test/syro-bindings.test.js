@@ -33,6 +33,7 @@ export const useMemo = () => {};
 export const useRef = () => {};
 export const useState = () => {};
 export const useEffect = () => {};
+export const useLayoutEffect = () => {};
   `,
   uuid: 'export const v4 = () => `id-${Math.random()}`;',
   'base64-arraybuffer': `

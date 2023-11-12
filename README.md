@@ -8,9 +8,8 @@ This is an app that aims to make it easy to record a sample and transfer it to t
 - Record or import samples
 - Transfer samples to the volca sample or volca sample2 (via 3.5mm audio cable)
 - A handful of basic pre-processing features: sample trimming, peak normalization, pitch adjustment, quality bit depth
-- [Plugins system](https://github.com/benwiley4000/volca-sampler-plugins) allows users to add their own advanced pre-processing with JavaScript **(feature in development)**
+- [Plugins system](https://github.com/benwiley4000/volca-sampler-plugins) allows users to add their own advanced pre-processing with JavaScript
 - Backup and restore sample archives along with pre-processing settings and plugins (to transport across different devices)
-- Clear space on the volca sample **(feature in development)**
 - Everything runs in user's browser, no files are uploaded to external servers
 
 ## Developing locally

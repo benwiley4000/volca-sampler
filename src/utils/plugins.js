@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 
-import { Mutex } from './mutex';
+import { Mutex } from './mutex.js';
 
 // These limits are significantly above anything we've already seen in terms of
 // execution time, but we'll see how it goes in user land.

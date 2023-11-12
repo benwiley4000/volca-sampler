@@ -104,19 +104,17 @@ const SampleDetail = React.memo(
           {formatDate(new Date(sample.metadata.dateModified))}
         </p>
         <h4>Configure</h4>
-        {localStorage.getItem('enablePlugins') && (
-          <PluginsControl
-            sampleId={sample.id}
-            sampleCache={sampleCache}
-            plugins={sample.metadata.plugins}
-            pluginParamsDefs={pluginParamsDefs}
-            pluginStatusMap={pluginStatusMap}
-            onSampleUpdate={onSampleUpdate}
-            onOpenPluginManager={onOpenPluginManager}
-            onRecheckPlugins={onRecheckPlugins}
-            onRegenerateSampleCache={onRegenerateSampleCache}
-          />
-        )}
+        <PluginsControl
+          sampleId={sample.id}
+          sampleCache={sampleCache}
+          plugins={sample.metadata.plugins}
+          pluginParamsDefs={pluginParamsDefs}
+          pluginStatusMap={pluginStatusMap}
+          onSampleUpdate={onSampleUpdate}
+          onOpenPluginManager={onOpenPluginManager}
+          onRecheckPlugins={onRecheckPlugins}
+          onRegenerateSampleCache={onRegenerateSampleCache}
+        />
         <QualityBitDepthControl
           sampleId={sample.id}
           qualityBitDepth={sample.metadata.qualityBitDepth}

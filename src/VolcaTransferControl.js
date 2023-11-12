@@ -15,6 +15,7 @@ import { SAMPLE_RATE } from './utils/constants.js';
 import classes from './VolcaTransferControl.module.scss';
 import SlotNumberInput from './SlotNumberInput.js';
 import SampleSelectionTable from './SampleSelectionTable.js';
+import VolcaEraseSlotsModals from './VolcaEraseSlotsModals.js';
 
 /**
  * @typedef {import('./store').SampleContainer} SampleContainer
@@ -231,6 +232,9 @@ function VolcaTransferControl({
     </>
   );
 
+  const [isInfoBeforeEraseModalOpen, setIsInfoBeforeEraseModalOpen] =
+    useState(false);
+
   return (
     <>
       {!justTheButton && (
@@ -265,6 +269,15 @@ function VolcaTransferControl({
             }
           },
         }
+      )}
+      {!justTheButton && (
+        <Button
+          type="button"
+          variant="outline-secondary"
+          onClick={() => setIsInfoBeforeEraseModalOpen(true)}
+        >
+          Clear space on the volca
+        </Button>
       )}
       <Modal
         onHide={() => setInfoBeforeTransferModalOpen(false)}
@@ -544,6 +557,10 @@ function VolcaTransferControl({
           </Button>
         </Modal.Footer>
       </Modal>
+      <VolcaEraseSlotsModals
+        isInfoBeforeEraseModalOpen={isInfoBeforeEraseModalOpen}
+        setIsInfoBeforeEraseModalOpen={setIsInfoBeforeEraseModalOpen}
+      />
     </>
   );
 }

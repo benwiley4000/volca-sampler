@@ -172,11 +172,9 @@ EMSCRIPTEN_KEEPALIVE
 void createEmptySyroData(SyroData *syro_data, uint32_t syro_data_index,
                          uint32_t slotNumber) {
   SyroData *current_syro_data = syro_data + syro_data_index;
-  current_syro_data->DataType = DataType_Sample_Compress;
+  current_syro_data->DataType = DataType_Sample_Erase;
   current_syro_data->Number = slotNumber;
   current_syro_data->Quality = 8;
-  current_syro_data->pData = NULL;
-  current_syro_data->Size = 0;
   current_syro_data->Fs = 31250;
   current_syro_data->SampleEndian = LittleEndian;
 }

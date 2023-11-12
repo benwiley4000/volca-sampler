@@ -209,15 +209,18 @@ export async function getSyroDeleteBuffer(slotNumbers) {
 
 /**
  * @typedef {import('../store').SampleContainer} SampleContainer
+ */
+/**
+ * @template {number | SampleContainer} T
  * @param {object} params
  * @param {Uint8Array | Error | null} params.syroBuffer
  * @param {number[]} params.dataStartPoints
- * @param {Map<string, SampleContainer>} params.selectedSamples
+ * @param {T[]} params.selectedItems
  */
 export function useSyroTransfer({
   syroBuffer,
   dataStartPoints: _dataStartPoints,
-  selectedSamples,
+  selectedItems,
 }) {
   const [dataStartPoints, setDataStartPoints] = useState(
     /** @type {number[]} */ ([])
@@ -269,7 +272,7 @@ export function useSyroTransfer({
   }, [syroTransferState]);
   useEffect(() => {
     setSyroTransferState('idle');
-  }, [selectedSamples]);
+  }, [selectedItems]);
   const [callbackOnSyroBuffer, setCallbackOnSyroBuffer] = useState(
     /** @type {{ fn: () => void } | null} */ (null)
   );
@@ -323,47 +326,54 @@ export function useSyroTransfer({
     syroTransferState === 'transferring' && transferProgress < 1;
 
   const {
-    currentlyTransferringSample,
-    currentSampleProgress,
-    timeLeftUntilNextSample,
-  } = useMemo(() => {
-    const selectedSampleList = [...selectedSamples.values()];
-    if (
-      syroTransferState !== 'transferring' ||
-      !(syroAudioBuffer instanceof AudioBuffer)
-    ) {
+    currentlyTransferringItem,
+    currentItemProgress,
+    timeLeftUntilNextItem,
+  } = useMemo(
+    /**
+     * @returns {{
+     *   currentlyTransferringItem: T;
+     *   currentItemProgress: number;
+     *   timeLeftUntilNextItem: number;
+     * }}
+     */
+    () => {
+      if (
+        syroTransferState !== 'transferring' ||
+        !(syroAudioBuffer instanceof AudioBuffer)
+      ) {
+        return {
+          currentlyTransferringItem: selectedItems[0],
+          currentItemProgress: 0,
+          timeLeftUntilNextItem: 0,
+        };
+      }
+      const foundIndex =
+        dataStartPoints.findIndex((p) => p > transferProgress) - 1;
+      const currentTransferIndex =
+        foundIndex >= 0 ? foundIndex : selectedItems.length - 1;
+      const currentlyTransferringItem = selectedItems[currentTransferIndex];
+      const currentStartPoint = dataStartPoints[currentTransferIndex];
+      const nextStartPoint = dataStartPoints[currentTransferIndex + 1] || 1;
+      const currentItemProgress =
+        (transferProgress - currentStartPoint) /
+        (nextStartPoint - currentStartPoint);
+      const timeLeftUntilNextSample =
+        (nextStartPoint - transferProgress) * syroAudioBuffer.duration;
       return {
-        currentlyTransferringSample: selectedSampleList[0],
-        currentSampleProgress: 0,
-        timeLeftUntilNextSample: 0,
+        currentlyTransferringItem,
+        currentItemProgress,
+        timeLeftUntilNextItem: timeLeftUntilNextSample,
       };
-    }
-    const foundIndex =
-      dataStartPoints.findIndex((p) => p > transferProgress) - 1;
-    const currentlyTransferringSampleIndex =
-      foundIndex >= 0 ? foundIndex : selectedSampleList.length - 1;
-    const currentlyTransferringSample =
-      selectedSampleList[currentlyTransferringSampleIndex];
-    const currentStartPoint = dataStartPoints[currentlyTransferringSampleIndex];
-    const nextStartPoint =
-      dataStartPoints[currentlyTransferringSampleIndex + 1] || 1;
-    const currentSampleProgress =
-      (transferProgress - currentStartPoint) /
-      (nextStartPoint - currentStartPoint);
-    const timeLeftUntilNextSample =
-      (nextStartPoint - transferProgress) * syroAudioBuffer.duration;
-    return {
-      currentlyTransferringSample,
-      currentSampleProgress,
-      timeLeftUntilNextSample,
-    };
-  }, [
-    selectedSamples,
-    dataStartPoints,
-    syroTransferState,
-    transferProgress,
-    syroAudioBuffer,
-  ]);
+    },
+    [
+      selectedItems,
+      dataStartPoints,
+      syroTransferState,
+      transferProgress,
+      syroAudioBuffer,
+    ]
+  );
 
   return {
     startTransfer: handleTransfer,
@@ -371,9 +381,9 @@ export function useSyroTransfer({
     syroTransferState,
     transferInProgress,
     transferProgress,
-    currentlyTransferringSample,
-    currentSampleProgress,
-    timeLeftUntilNextSample,
+    currentlyTransferringItem,
+    currentItemProgress,
+    timeLeftUntilNextItem,
     syroAudioBuffer,
   };
 }

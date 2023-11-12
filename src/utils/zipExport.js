@@ -72,21 +72,20 @@ export async function exportSampleContainersToZip(
       sampleContainer.metadata;
     if (!processedSourceFileIds.has(sourceFileId)) {
       processedSourceFileIds.add(sourceFileId);
-      if (sourceFileId.includes('.')) {
-        // assume it's a url to a factory sample, don't include in zip
-        continue;
+      // assume dots mean urls to factory samples, don't include in zip
+      if (!sourceFileId.includes('.')) {
+        const filename = `${name} - ${sourceFileId}${
+          userFileInfo ? userFileInfo.ext : '.wav'
+        }`;
+        samplesFolder.file(
+          filename,
+          SampleContainer.getSourceFileData(sourceFileId, true).then((data) => {
+            return new Blob([data], {
+              type: userFileInfo ? userFileInfo.type : 'audio/x-wav',
+            });
+          })
+        );
       }
-      const filename = `${name} - ${sourceFileId}${
-        userFileInfo ? userFileInfo.ext : '.wav'
-      }`;
-      samplesFolder.file(
-        filename,
-        SampleContainer.getSourceFileData(sourceFileId, true).then((data) => {
-          return new Blob([data], {
-            type: userFileInfo ? userFileInfo.type : 'audio/x-wav',
-          });
-        })
-      );
     }
     for (const { pluginName } of plugins) {
       if (!processedPluginNames.has(pluginName)) {

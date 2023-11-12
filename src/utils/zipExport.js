@@ -269,6 +269,7 @@ export async function importSampleContainersFromZip({
         const sampleCache = await SampleCache.importToStorage(sampleContainer);
         sampleCaches.push(sampleCache);
       } catch (error) {
+        console.error(error);
         progresses[i] = 1;
         failedImports[id] = {
           metadata,

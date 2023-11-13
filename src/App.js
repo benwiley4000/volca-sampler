@@ -80,6 +80,8 @@ function App() {
         : null
     )
   );
+  const focusedSampleIdRef = useRef(focusedSampleId);
+  focusedSampleIdRef.current = focusedSampleId;
   useEffect(() => {
     if (focusedSampleId) {
       sessionStorage.setItem(sessionStorageKey, focusedSampleId);
@@ -90,7 +92,34 @@ function App() {
   const [loadingSamples, setLoadingSamples] = useState(true);
   useEffect(() => {
     // TODO: error handling
-    SampleContainer.getAllFromStorage()
+    // fetch focused cache first before the rest, so we have that
+    // info loaded as quickly as possible.
+    let initialDataLoadPromise = Promise.resolve();
+    if (focusedSampleIdRef.current) {
+      const focusedSampleId = focusedSampleIdRef.current;
+      initialDataLoadPromise = Promise.all([
+        SampleContainer.getByIdsFromStorage([focusedSampleId]),
+        SampleCache.getCachedInfoByIdsFromStorage([focusedSampleId]),
+      ])
+        .then(([[sampleContainer], [cachedInfo]]) => {
+          setUserSampleCaches((sampleCaches) =>
+            new Map(sampleCaches).set(
+              sampleContainer.id,
+              new SampleCache.Mutable({
+                sampleContainer,
+                cachedInfo,
+              })
+            )
+          );
+        })
+        // don't let this block
+        .catch((err) => {
+          console.error(err);
+        });
+    }
+    // now load everything else
+    initialDataLoadPromise
+      .then(() => SampleContainer.getAllFromStorage())
       .then(async ({ sampleContainers: storedSamples, cachedInfos }) => {
         setUserSamples((samples) => {
           const newSamples = new Map([
@@ -416,8 +445,6 @@ function App() {
 
   const userSamplesRef = useRef(userSamples);
   userSamplesRef.current = userSamples;
-  const focusedSampleIdRef = useRef(focusedSampleId);
-  focusedSampleIdRef.current = focusedSampleId;
   const handleSampleDelete = useCallback(
     /**
      * @param {string | string[]} id

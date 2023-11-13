@@ -159,12 +159,9 @@
     }
   }
 
-  .toggle.on {
+  .toggle.on,
+  .toggle.on:hover {
     fill: var(--bs-primary);
-
-    &:hover {
-      fill: var(--bs-primary-darkened);
-    }
   }
 
   .errorIcon {

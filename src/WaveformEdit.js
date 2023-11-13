@@ -85,12 +85,21 @@ const WaveformEdit = React.memo(
     }, [trimFrames]);
 
     const trimPixels = useMemo(() => {
-      if (!monoSamples.length || !pixelWidth) {
+      const sampleLength =
+        monoSamples.length ||
+        (sampleCache && sampleCache.cachedInfo.postPluginFrameCount) ||
+        0;
+      if (!sampleLength || !pixelWidth) {
         return [0, 0];
       }
-      const factor = pixelWidth / monoSamples.length;
+      const factor = pixelWidth / sampleLength;
       return trimFramesLocal.trimFrames.map((frames) => frames * factor);
-    }, [pixelWidth, monoSamples.length, trimFramesLocal.trimFrames]);
+    }, [
+      pixelWidth,
+      monoSamples.length,
+      trimFramesLocal.trimFrames,
+      sampleCache,
+    ]);
 
     const trimFramesLocalRef = useRef(trimFramesLocal);
     trimFramesLocalRef.current = trimFramesLocal;
@@ -662,9 +671,7 @@ const WaveformEdit = React.memo(
           {isClipping && (
             <OverlayTrigger
               delay={{ show: 400, hide: 0 }}
-              overlay={
-                <Tooltip>Audio is clipping - maybe normalize?</Tooltip>
-              }
+              overlay={<Tooltip>Audio is clipping - maybe normalize?</Tooltip>}
             >
               <div className={classes.clippingAlert}>
                 <ScissorsCuttingIcon />

@@ -21,13 +21,16 @@ import { WAVEFORM_CACHED_WIDTH, getPeaksForSamples } from './waveform.js';
  * @param {[number, number]} trimFrames
  */
 export function getTrimmedView(array, trimFrames) {
-  if (trimFrames[0] + trimFrames[1] >= array.length) {
+  const safeTrimFrames = /** @type {typeof trimFrames} */ (
+    trimFrames.map((t) => Math.max(t, 0))
+  );
+  if (safeTrimFrames[0] + safeTrimFrames[1] >= array.length) {
     // return array of length 1 if there won't be any audio left
     return new Float32Array(1);
   }
   const frameSizeInBytes = 4;
-  const byteOffset = array.byteOffset + trimFrames[0] * frameSizeInBytes;
-  const viewLength = array.length - trimFrames[0] - trimFrames[1];
+  const byteOffset = array.byteOffset + safeTrimFrames[0] * frameSizeInBytes;
+  const viewLength = array.length - safeTrimFrames[0] - safeTrimFrames[1];
   return new Float32Array(array.buffer, byteOffset, viewLength);
 }
 
@@ -41,11 +44,17 @@ export function getMonoSamplesFromAudioBuffer(
   trimFrames,
   suppliedSampleArray
 ) {
-  const trimmedLength = audioBuffer.length - trimFrames[0] - trimFrames[1];
+  const safeTrimFrames = /** @type {typeof trimFrames} */ (
+    trimFrames.map((t) => Math.max(t, 0))
+  );
+  const trimmedLength =
+    audioBuffer.length - safeTrimFrames[0] - safeTrimFrames[1];
   const samples = suppliedSampleArray || new Float32Array(trimmedLength);
   const channels = /** @type {void[]} */ (Array(audioBuffer.numberOfChannels))
     .fill()
-    .map((_, i) => getTrimmedView(audioBuffer.getChannelData(i), trimFrames));
+    .map((_, i) =>
+      getTrimmedView(audioBuffer.getChannelData(i), safeTrimFrames)
+    );
   for (let i = 0; i < trimmedLength; i++) {
     let monoSample = 0;
     for (let j = 0; j < channels.length; j++) {

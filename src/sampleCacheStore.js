@@ -117,8 +117,8 @@ export class SampleCache {
                 ({ trim }) => ({
                   trim: {
                     frames: [
-                      Math.round(trim.frames[0] * ratio),
-                      Math.round(trim.frames[1] * ratio),
+                      Math.max(Math.round(trim.frames[0] * ratio), 0),
+                      Math.max(Math.round(trim.frames[1] * ratio), 0),
                     ],
                   },
                 }),

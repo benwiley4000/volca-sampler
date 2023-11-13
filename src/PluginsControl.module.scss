@@ -163,11 +163,7 @@
     fill: var(--bs-primary);
 
     &:hover {
-      fill: unset;
-    }
-
-    &.disabled {
-      fill: rgba(var(--bs-primary-rgb), 0.5);
+      fill: var(--bs-primary-darkened);
     }
   }
 

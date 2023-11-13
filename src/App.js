@@ -112,10 +112,9 @@ function App() {
             )
           );
         })
-        // don't let this block
-        .catch((err) => {
-          console.error(err);
-        });
+        // don't let this block.
+        // we know it will fail for factory samples
+        .catch((err) => {});
     }
     // now load everything else
     initialDataLoadPromise

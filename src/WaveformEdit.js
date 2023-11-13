@@ -84,22 +84,18 @@ const WaveformEdit = React.memo(
       setTrimFramesLocal({ trimFrames, cursor: null });
     }, [trimFrames]);
 
+    const postPluginFrames =
+      monoSamples.length ||
+      (sampleCache && sampleCache.cachedInfo.postPluginFrameCount) ||
+      0;
+
     const trimPixels = useMemo(() => {
-      const sampleLength =
-        monoSamples.length ||
-        (sampleCache && sampleCache.cachedInfo.postPluginFrameCount) ||
-        0;
-      if (!sampleLength || !pixelWidth) {
+      if (!postPluginFrames || !pixelWidth) {
         return [0, 0];
       }
-      const factor = pixelWidth / sampleLength;
+      const factor = pixelWidth / postPluginFrames;
       return trimFramesLocal.trimFrames.map((frames) => frames * factor);
-    }, [
-      pixelWidth,
-      monoSamples.length,
-      trimFramesLocal.trimFrames,
-      sampleCache,
-    ]);
+    }, [pixelWidth, postPluginFrames, trimFramesLocal.trimFrames]);
 
     const trimFramesLocalRef = useRef(trimFramesLocal);
     trimFramesLocalRef.current = trimFramesLocal;
@@ -625,7 +621,12 @@ const WaveformEdit = React.memo(
           <WaveformPlayback
             isPlaybackActive={isPlaybackActive}
             playbackProgress={playbackProgress}
-            displayedTime={displayedTime}
+            displayedTime={
+              displayedTime ||
+              (sampleCache &&
+                formatShortTime(sampleCache.cachedInfo.duration, 1)) ||
+              ''
+            }
             downloadFilename={`${name}.volcasample.wav`}
             wavFile={previewWavFile || null}
             togglePlayback={togglePlayback}
@@ -638,12 +639,12 @@ const WaveformEdit = React.memo(
               className={classes.handle}
               tabIndex={0}
             />
-            {sampleCache && Boolean(monoSamples.length) && (
+            {sampleCache && Boolean(postPluginFrames) && (
               <span className={classes.time}>
                 {formatShortTime(
                   (sampleCache.cachedInfo.duration *
                     trimFramesLocal.trimFrames[0]) /
-                    monoSamples.length,
+                    postPluginFrames,
                   2
                 )}
               </span>
@@ -656,12 +657,12 @@ const WaveformEdit = React.memo(
               className={classes.handle}
               tabIndex={0}
             />
-            {sampleCache && Boolean(monoSamples.length) && (
+            {sampleCache && Boolean(postPluginFrames) && (
               <span className={classes.time}>
                 {formatShortTime(
                   (sampleCache.cachedInfo.duration *
-                    (monoSamples.length - 1 - trimFramesLocal.trimFrames[1])) /
-                    monoSamples.length,
+                    (postPluginFrames - 1 - trimFramesLocal.trimFrames[1])) /
+                    postPluginFrames,
                   2
                 )}
               </span>

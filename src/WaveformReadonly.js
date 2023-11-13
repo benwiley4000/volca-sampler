@@ -9,6 +9,7 @@ import {
 import WaveformDisplay from './WaveformDisplay.js';
 import WaveformPlayback from './WaveformPlayback.js';
 import { usePreviewAudio } from './sampleCacheStore.js';
+import { formatShortTime } from './utils/datetime.js';
 
 import classes from './WaveformReadonly.module.scss';
 
@@ -73,7 +74,12 @@ function WaveformReadonly({ sample: _sample, sampleCache }) {
       <WaveformPlayback
         isPlaybackActive={isPlaybackActive}
         playbackProgress={playbackProgress}
-        displayedTime={displayedTime}
+        displayedTime={
+          displayedTime ||
+          (sampleCache &&
+            formatShortTime(sampleCache.cachedInfo.duration, 1)) ||
+          ''
+        }
         downloadFilename={`${name}.volcasample.wav`}
         wavFile={previewWavFile || null}
         togglePlayback={togglePlayback}

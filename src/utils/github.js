@@ -1,3 +1,14 @@
+const backupList = [
+  '10-percent-silence-plugin.js',
+  'delay-plugin.js',
+  'gain-plugin.js',
+  'limiter-plugin.js',
+  'lowpass-filter-plugin.js',
+  'phaser-plugin.js',
+  'timestretch-plugin.js',
+  'trim-plugin.js',
+];
+
 /**
  * @param {string} owner
  * @param {string} repo
@@ -35,7 +46,9 @@ const branch = 'master';
 const folder = 'plugins';
 
 export async function getExamplePlugins() {
-  const filenames = await listRepoFolder(owner, repo, branch, folder);
+  const filenames = await listRepoFolder(owner, repo, branch, folder).catch(
+    () => backupList
+  );
   const contents = await Promise.all(
     filenames.map((filename) =>
       getFileContent(owner, repo, branch, folder, filename)

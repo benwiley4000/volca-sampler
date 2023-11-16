@@ -135,6 +135,10 @@
     overflow: hidden;
     text-overflow: ellipsis;
 
+    &.expandable {
+      cursor: pointer;
+    }
+
     .pluginHasError {
       color: var(--bs-primary);
     }

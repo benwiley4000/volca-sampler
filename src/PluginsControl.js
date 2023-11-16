@@ -6,6 +6,7 @@ import React, {
   useContext,
   useMemo,
   useLayoutEffect,
+  useImperativeHandle,
 } from 'react';
 import {
   Accordion,
@@ -166,14 +167,20 @@ function PluginParamControl({
  *   eventKey: string;
  *   disabled?: boolean;
  *   isNew: boolean;
+ *   toggleRef: React.Ref<HTMLDivElement | null>;
  * }} props
- * @returns
  */
-function PluginParamsToggle({ eventKey, disabled, isNew }) {
+function PluginParamsToggle({
+  eventKey,
+  disabled,
+  isNew,
+  toggleRef: _toggleRef,
+}) {
   const { activeEventKey } = useContext(AccordionContext);
 
   /** @type {React.RefObject<HTMLDivElement>} */
   const toggleRef = useRef(null);
+  useImperativeHandle(_toggleRef, () => toggleRef.current);
 
   const isNewRef = useRef(isNew);
   useLayoutEffect(() => {
@@ -259,10 +266,19 @@ function PluginControl({
 }) {
   const isActive = !plugin.isBypassed && status === 'ok';
   const effectiveStatus = plugin.isBypassed ? 'ok' : status;
+  /** @type {React.RefObject<HTMLDivElement>} */
+  const toggleRef = useRef(null);
   return (
     <Card className={classes.pluginItem}>
       <Card.Header className={classes.header}>
-        <div className={classes.pluginName} title={plugin.pluginName}>
+        <div
+          className={[
+            classes.pluginName,
+            Object.keys(plugin.pluginParams).length ? classes.expandable : '',
+          ].join(' ')}
+          title={plugin.pluginName}
+          onClick={() => toggleRef.current && toggleRef.current.click()}
+        >
           {isActive ? (
             <strong>{plugin.pluginName}</strong>
           ) : effectiveStatus !== 'ok' ? (
@@ -347,6 +363,7 @@ function PluginControl({
             eventKey={eventKey}
             disabled={!Object.keys(plugin.pluginParams).length}
             isNew={isNew}
+            toggleRef={toggleRef}
           />
           <Dropdown>
             <Dropdown.Toggle as={RemoveMenuToggle} />

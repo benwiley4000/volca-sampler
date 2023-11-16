@@ -422,6 +422,7 @@ const PluginsControl = React.memo(
    *   plugins: import('./store').PluginClientSpec[];
    *   pluginParamsDefs: Map<string, import('./utils/plugins').PluginParamsDef>;
    *   pluginStatusMap: Map<string, import('./pluginStore').PluginStatus> | null;
+   *   isPluginManagerOpen: boolean;
    *   onSampleUpdate: (
    *     id: string,
    *     update: import('./store').SampleMetadataUpdateArg
@@ -437,6 +438,7 @@ const PluginsControl = React.memo(
     plugins,
     pluginParamsDefs,
     pluginStatusMap,
+    isPluginManagerOpen,
     onSampleUpdate,
     onOpenPluginManager,
     onRecheckPlugins,
@@ -486,6 +488,21 @@ const PluginsControl = React.memo(
       initialPluginsRef.current = plugins;
       lastSampleIdRef.current = sampleId;
     }
+
+    const [preventAddPluginAutoClose, setPreventAddPluginAutoClose] =
+      useState(false);
+    useEffect(() => {
+      if (isPluginManagerOpen) {
+        return () => {
+          requestAnimationFrame(() => {
+            setPreventAddPluginAutoClose(false);
+          });
+        };
+      }
+    }, [isPluginManagerOpen]);
+
+    const [paramsDefsOnLastDropdownOpen, setParamsDefsOnLastDropdownOpen] =
+      useState(pluginParamsDefs);
 
     return (
       <Form.Group
@@ -576,7 +593,23 @@ const PluginsControl = React.memo(
                       <span>Add a plugin</span>
                     </span>
                   }
+                  onToggle={(show) => {
+                    if (show) {
+                      setParamsDefsOnLastDropdownOpen(pluginParamsDefs);
+                    }
+                  }}
+                  autoClose={!preventAddPluginAutoClose}
                 >
+                  <Dropdown.Item
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPreventAddPluginAutoClose(true);
+                      onOpenPluginManager();
+                    }}
+                  >
+                    Install a new plugin
+                  </Dropdown.Item>
+                  <Dropdown.Divider />
                   {!pluginParamsDefs.size && (
                     <Dropdown.Item disabled>No plugins installed</Dropdown.Item>
                   )}
@@ -584,6 +617,13 @@ const PluginsControl = React.memo(
                     ([pluginName, pluginParamsDef]) => (
                       <Dropdown.Item
                         key={pluginName}
+                        className={
+                          [...paramsDefsOnLastDropdownOpen.keys()].find(
+                            (name) => name === pluginName
+                          )
+                            ? ''
+                            : classes.justAdded
+                        }
                         onClick={() => {
                           onSampleUpdate(sampleId, (metadata) => {
                             return {

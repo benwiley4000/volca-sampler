@@ -213,6 +213,10 @@
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
+
+  .justAdded:not(:hover) {
+    background-color: var(--bs-warning-bg-subtle);
+  }
 }
 
 .addAPlugin {

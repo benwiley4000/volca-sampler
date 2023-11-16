@@ -703,6 +703,7 @@ function App() {
               sampleCache={sampleCache}
               pluginParamsDefs={pluginParamsDefs}
               pluginStatusMap={pluginStatusMap}
+              isPluginManagerOpen={isPluginManagerOpen}
               editCacheInvalidator={editCacheInvalidator}
               onSampleUpdate={handleSampleUpdate}
               onSampleDuplicate={handleSampleDuplicate}

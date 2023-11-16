@@ -35,6 +35,7 @@ const SampleDetail = React.memo(
    *   sampleCache: import('./sampleCacheStore.js').SampleCache | null;
    *   pluginParamsDefs: Map<string, import('./utils/plugins').PluginParamsDef>;
    *   pluginStatusMap: Map<string, import('./pluginStore.js').PluginStatus> | null;
+   *   isPluginManagerOpen: boolean;
    *   editCacheInvalidator: Symbol;
    *   onSampleUpdate: (id: string, update: import('./store').SampleMetadataUpdateArg) => void;
    *   onSampleDuplicate: (id: string) => void;
@@ -49,6 +50,7 @@ const SampleDetail = React.memo(
     sampleCache,
     pluginParamsDefs,
     pluginStatusMap,
+    isPluginManagerOpen,
     editCacheInvalidator,
     onSampleUpdate,
     onSampleDuplicate,
@@ -110,6 +112,7 @@ const SampleDetail = React.memo(
           plugins={sample.metadata.plugins}
           pluginParamsDefs={pluginParamsDefs}
           pluginStatusMap={pluginStatusMap}
+          isPluginManagerOpen={isPluginManagerOpen}
           onSampleUpdate={onSampleUpdate}
           onOpenPluginManager={onOpenPluginManager}
           onRecheckPlugins={onRecheckPlugins}

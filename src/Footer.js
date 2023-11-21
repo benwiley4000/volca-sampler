@@ -4,7 +4,8 @@ import { Button, Modal } from 'react-bootstrap';
 import classes from './Footer.module.scss';
 
 const Footer = React.memo(function Footer() {
-  const [showingModal, setShowingModal] = useState(false);
+  const [showingOfflineModal, setShowingOfflineModal] = useState(false);
+  const [showingFAQModal, setShowingFAQModal] = useState(false);
   return (
     <>
       <div className={classes.footer}>
@@ -30,11 +31,21 @@ const Footer = React.memo(function Footer() {
           </a>
           .
         </p>
+        <p>
+          <Button
+            type="button"
+            variant="link"
+            onClick={() => setShowingOfflineModal(true)}
+          >
+            Run this app offline
+          </Button>
+          .
+        </p>
         <Button
           className={classes.faqAndLicensesButton}
           type="button"
           variant="link"
-          onClick={() => setShowingModal(true)}
+          onClick={() => setShowingFAQModal(true)}
         >
           FAQ / Licenses
         </Button>
@@ -43,9 +54,67 @@ const Footer = React.memo(function Footer() {
         </div>
       </div>
       <Modal
-        show={showingModal}
+        show={showingOfflineModal}
+        aria-labelledby="offline-modal"
+        onHide={() => setShowingOfflineModal(false)}
+      >
+        <Modal.Header>
+          <Modal.Title id="offline-modal">Run this app offline</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>
+            <strong>Volca Sampler</strong> can be downloaded and run offline if
+            you prefer!
+          </p>
+          <p>How to run Volca Sampler offline:</p>
+          <ol>
+            <li>
+              Install{' '}
+              <a
+                href="https://www.python.org/downloads/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Python 3
+              </a>
+              .
+            </li>
+            <li>
+              Download the{' '}
+              <a href="Volca-Sampler-Offline.zip" download>
+                zipped app
+              </a>{' '}
+              and extract the contents.
+            </li>
+            <li>
+              Run <code>VOLCASAMPLER.py</code> with Python 3. You can open
+              Command Prompt on Windows, or a Terminal on macOS and Linux, to{' '}
+              <code>Volca-Sampler-Offline/</code> and run{' '}
+              <code>python3 VOLCASAMPLER.py</code>.
+            </li>
+            <li>
+              Normally,{' '}
+              <a href="http://localhost:54411" target="_blank" rel="noreferrer">
+                http://localhost:54411
+              </a>{' '}
+              should open in a web browser.
+            </li>
+          </ol>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            type="button"
+            variant="primary"
+            onClick={() => setShowingOfflineModal(false)}
+          >
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
+      <Modal
+        show={showingFAQModal}
         aria-labelledby="faq-modal"
-        onHide={() => setShowingModal(false)}
+        onHide={() => setShowingFAQModal(false)}
       >
         <Modal.Header>
           <Modal.Title id="faq-modal">About Volca Sampler</Modal.Title>
@@ -57,7 +126,7 @@ const Footer = React.memo(function Footer() {
           <Button
             type="button"
             variant="primary"
-            onClick={() => setShowingModal(false)}
+            onClick={() => setShowingFAQModal(false)}
           >
             Close
           </Button>

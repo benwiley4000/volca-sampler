@@ -269,9 +269,34 @@ const SampleMenu = React.memo(
 
     const cancelExportRef = useRef(() => {});
 
+    const [showExportConfirm, setShowExportConfirm] = useState(false);
+
     const [exportProgress, setExportProgress] = useState(
       /** @type {number | null} */ (null)
     );
+
+    /** @param {boolean} includeSyro */
+    const onBackup = async (includeSyro) => {
+      setShowExportConfirm(false);
+      if (!multiSelectedUserSamples) return;
+      let cancelled = false;
+      cancelExportRef.current = () => {
+        cancelled = true;
+        setExportProgress(null);
+        // TODO: find a way to actually abort the stream. for now
+        // we let it silently finish in the background.
+      };
+      const zipFile = await exportSampleContainersToZip(
+        multiSelectedUserSamples,
+        (progress) => {
+          if (!cancelled) setExportProgress(progress);
+        },
+        includeSyro
+      );
+      if (cancelled) return;
+      downloadBlob(zipFile, 'volcasampler.zip');
+      setExportProgress(null);
+    };
 
     const [deleting, setDeleting] = useState(false);
 
@@ -359,29 +384,12 @@ const SampleMenu = React.memo(
               !multiSelectedUserSamples || !multiSelectedUserSamples.length
             }
             variant={exportProgress === null ? 'outline-secondary' : 'primary'}
-            onClick={async () => {
-              if (!multiSelectedUserSamples) return;
+            onClick={() => {
               if (exportProgress !== null) {
                 cancelExportRef.current();
                 return;
               }
-              let cancelled = false;
-              cancelExportRef.current = () => {
-                cancelled = true;
-                setExportProgress(null);
-                // TODO: find a way to actually abort the stream. for now
-                // we let it silently finish in the background.
-              };
-              const zipFile = await exportSampleContainersToZip(
-                multiSelectedUserSamples,
-                (progress) => {
-                  if (!cancelled) setExportProgress(progress);
-                },
-                false
-              );
-              if (cancelled) return;
-              downloadBlob(zipFile, 'volcasampler.zip');
-              setExportProgress(null);
+              setShowExportConfirm(true);
             }}
           >
             <span>{exportProgress === null ? 'Backup' : 'Cancel'}</span>
@@ -513,6 +521,38 @@ const SampleMenu = React.memo(
               )
             )}
         </ListGroup>
+        <Modal
+          onHide={() => setShowExportConfirm(false)}
+          show={showExportConfirm}
+          aria-labelledby="export-confirm-modal"
+        >
+          <Modal.Header>
+            <Modal.Title id="export-confirm-modal">Sample backup</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <p>
+              Your backup will contain your selected samples (with any related
+              settings and plugins). You can also choose to include the volca
+              transfer audio.
+            </p>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button
+              type="button"
+              variant="light"
+              onClick={() => onBackup(false)}
+            >
+              Just the samples
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              onClick={() => onBackup(true)}
+            >
+              Include transfer audio
+            </Button>
+          </Modal.Footer>
+        </Modal>
         <Modal
           onHide={() => setDeleting(false)}
           show={deleting}

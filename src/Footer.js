@@ -102,6 +102,16 @@ const Footer = React.memo(function Footer() {
               should open in a web browser.
             </li>
           </ol>
+          <p>
+            NOTE: Python is used for serving web assets to your browser. Opening
+            the folder directly in your web browser will <i>not</i> work 100%,
+            because the app relies on certain features that only work in web
+            pages served via HTTP.
+          </p>
+          <p>
+            If you already have a static HTTP server utility you like to use,
+            you're not obliged to use Python.
+          </p>
         </Modal.Body>
         <Modal.Footer>
           <Button

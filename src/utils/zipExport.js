@@ -70,22 +70,23 @@ export async function exportSampleContainersToZip(
   for (const sampleContainer of sampleContainersToExport) {
     const { sourceFileId, userFileInfo, name, plugins } =
       sampleContainer.metadata;
-    if (!processedSourceFileIds.has(sourceFileId)) {
+    // assume dots mean urls to factory samples, don't include in zip
+    if (
+      !sourceFileId.includes('.') &&
+      !processedSourceFileIds.has(sourceFileId)
+    ) {
       processedSourceFileIds.add(sourceFileId);
-      // assume dots mean urls to factory samples, don't include in zip
-      if (!sourceFileId.includes('.')) {
-        const filename = `${name} - ${sourceFileId}${
-          userFileInfo ? userFileInfo.ext : '.wav'
-        }`;
-        samplesFolder.file(
-          filename,
-          SampleContainer.getSourceFileData(sourceFileId, true).then((data) => {
-            return new Blob([data], {
-              type: userFileInfo ? userFileInfo.type : 'audio/x-wav',
-            });
-          })
-        );
-      }
+      const filename = `${name} - ${sourceFileId}${
+        userFileInfo ? userFileInfo.ext : '.wav'
+      }`;
+      samplesFolder.file(
+        filename,
+        SampleContainer.getSourceFileData(sourceFileId, true).then((data) => {
+          return new Blob([data], {
+            type: userFileInfo ? userFileInfo.type : 'audio/x-wav',
+          });
+        })
+      );
     }
     for (const { pluginName } of plugins) {
       if (!processedPluginNames.has(pluginName)) {
@@ -99,6 +100,9 @@ export async function exportSampleContainersToZip(
         }
       }
     }
+  }
+  if (!processedSourceFileIds.size) {
+    zipRoot.remove(samplesFolderName);
   }
   if (!processedPluginNames.size) {
     zipRoot.remove(pluginsFolderName);

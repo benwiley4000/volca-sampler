@@ -511,10 +511,11 @@ function VolcaTransferControl({
                 If you see <strong>[Err dcod]</strong>:
               </h5>
               <p>
-                Check your volume level and make sure no other application is
-                creating noise, then try again. If your volume is at a decent
-                level but the transfer failed, you might also want to try a new
-                audio cable.
+                Check your volume level, and make sure no other application is
+                creating noise or applying any EQ or resampling to your audio,
+                then try again. If your volume is at a decent level (not
+                overdriven and not too soft) but the transfer still fails, you
+                might also want to try a new audio cable.
               </p>
               <h5>
                 If you see <strong>[Err PArA]</strong>:

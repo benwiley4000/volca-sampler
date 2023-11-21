@@ -7,6 +7,7 @@ import {
 } from '../store';
 import { SampleCache } from '../sampleCacheStore';
 import { addPlugin, getPluginSource } from '../pluginStore';
+import { getSyroSampleBuffer } from './syro';
 
 /** @typedef {import('../store').SampleMetadataExport} SampleMetadataExport */
 /** @typedef {Record<string, SampleMetadataExport>} MetadataMap */
@@ -14,16 +15,19 @@ import { addPlugin, getPluginSource } from '../pluginStore';
 const rootFolderName = 'volcasampler';
 const samplesFolderName = 'user samples';
 const pluginsFolderName = 'plugins';
+const syroFolderName = 'transfer audio';
 const metadataJSONName = 'volcasampler.json';
 
 /**
  * @param {SampleContainer[]} sampleContainers
  * @param {(progress: number) => void} onProgress
+ * @param {boolean} includeSyro
  * @returns {Promise<Blob>}
  */
 export async function exportSampleContainersToZip(
   sampleContainers,
-  onProgress
+  onProgress,
+  includeSyro
 ) {
   // don't support exporting list of factory samples
   const sampleContainersToExport = sampleContainers.filter(
@@ -51,6 +55,10 @@ export async function exportSampleContainersToZip(
   if (!pluginsFolder) {
     throw new Error('Failed to create plugins folder');
   }
+  const syroFolder = includeSyro ? zipRoot.folder(syroFolderName) : null;
+  if (includeSyro && !syroFolder) {
+    throw new Error('Failed to create transfer audio folder');
+  }
   const metadataMap = sampleContainersToExport.reduce(
     (metadataMap, sampleContainer) => {
       metadataMap[sampleContainer.id] = sampleContainer.metadata;
@@ -68,7 +76,7 @@ export async function exportSampleContainersToZip(
   /** @type {Set<string>} */
   const processedPluginNames = new Set();
   for (const sampleContainer of sampleContainersToExport) {
-    const { sourceFileId, userFileInfo, name, plugins } =
+    const { sourceFileId, userFileInfo, name, plugins, slotNumber } =
       sampleContainer.metadata;
     // assume dots mean urls to factory samples, don't include in zip
     if (
@@ -99,6 +107,23 @@ export async function exportSampleContainersToZip(
           );
         }
       }
+    }
+    if (syroFolder) {
+      const syroSourceIdName = sourceFileId.includes('.')
+        ? `FACTORY-${slotNumber}`
+        : sourceFileId;
+      const syroFilename = `[SYRO] ${name} - ${syroSourceIdName}.wav`;
+      syroFolder.file(
+        syroFilename,
+        getSyroSampleBuffer(
+          [sampleContainer],
+          () => null
+        ).syroBufferPromise.then(({ syroBuffer }) => {
+          return new Blob([syroBuffer], {
+            type: 'audio/x-wav',
+          });
+        })
+      );
     }
   }
   if (!processedSourceFileIds.size) {

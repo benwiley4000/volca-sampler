@@ -376,7 +376,8 @@ const SampleMenu = React.memo(
                 multiSelectedUserSamples,
                 (progress) => {
                   if (!cancelled) setExportProgress(progress);
-                }
+                },
+                false
               );
               if (cancelled) return;
               downloadBlob(zipFile, 'volcasampler.zip');

@@ -31,16 +31,18 @@ const Footer = React.memo(function Footer() {
           </a>
           .
         </p>
-        <p>
-          <Button
-            type="button"
-            variant="link"
-            onClick={() => setShowingOfflineModal(true)}
-          >
-            Run this app offline
-          </Button>
-          .
-        </p>
+        {window.location.protocol !== 'http:' && (
+          <p>
+            <Button
+              type="button"
+              variant="link"
+              onClick={() => setShowingOfflineModal(true)}
+            >
+              Run this app offline
+            </Button>
+            .
+          </p>
+        )}
         <Button
           className={classes.faqAndLicensesButton}
           type="button"

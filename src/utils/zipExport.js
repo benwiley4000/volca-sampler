@@ -112,7 +112,9 @@ export async function exportSampleContainersToZip(
       const syroSourceIdName = sourceFileId.includes('.')
         ? `FACTORY-${slotNumber}`
         : sourceFileId;
-      const syroFilename = `[SYRO] ${name} - ${syroSourceIdName}.wav`;
+      const syroFilename = `[SYRO] [SLOT ${slotNumber
+        .toString()
+        .padStart(3, '0')}] ${name} - ${syroSourceIdName}.wav`;
       syroFolder.file(
         syroFilename,
         getSyroSampleBuffer(

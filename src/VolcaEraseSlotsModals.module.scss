@@ -1,41 +1,16 @@
+$form-range-track-bg: green;
+
 @import 'bootstrap_custom_variables';
 @import '~bootstrap/scss/functions';
 @import '~bootstrap/scss/mixins';
 @import '~bootstrap/scss/variables';
 
-.transferInfoBox {
-  width: 240px;
-  white-space: nowrap;
-  margin-bottom: 1rem;
-  background-color: #f3f3f3;
-  padding: 0.75rem;
-  border-radius: 0.25rem;
+
+.slotNumbersTable {
+  table-layout: fixed;
 }
-
-.summary {
-  position: relative;
-}
-
-
-.transferInfoForModal {
-  display: flex;
-  column-gap: 1rem;
-  flex-wrap: wrap;
-
-  &.cannotTransfer {
-    opacity: 0;
-    pointer-events: none;
-  }
-}
-.errors {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-}
-
-.invalidMessage {
-  color: var(--bs-primary);
+.rangeLabels {
+  width: 78px;
 }
 
 .transferButton {
@@ -45,10 +20,6 @@
   @include media-breakpoint-up(sm) {
     width: unset;
   }
-}
-
-.clearSpaceButton {
-  margin-top: 1rem;
 }
 
 .preTransferModal {

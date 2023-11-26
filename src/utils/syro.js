@@ -229,6 +229,7 @@ export function useSyroTransfer({
     /** @type {AudioBuffer | Error | null} */ (null)
   );
   useEffect(() => {
+    setSyroAudioBuffer(null);
     setDataStartPoints(
       syroBuffer && syroBuffer instanceof Uint8Array
         ? _dataStartPoints.map((p) => p / syroBuffer.length)

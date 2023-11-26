@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useMemo, useRef } from 'react';
+import React, { useMemo, useRef } from 'react';
 import { Table } from 'react-bootstrap';
 
 import { SampleContainer } from './store.js';
@@ -38,11 +38,6 @@ const SampleSelectionTable = React.memo(
     if (checkboxRef.current) {
       checkboxRef.current.indeterminate = indeterminate;
     }
-    useLayoutEffect(() => {
-      if (checkboxRef.current) {
-        checkboxRef.current.indeterminate = indeterminate;
-      }
-    }, [indeterminate]);
     const duplicateSlots = useMemo(() => {
       if (!highlightDuplicateSlots)
         return /** @type {Set<number>} */ (new Set());

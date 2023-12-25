@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import './bootstrap.scss';
 import App from './App.js';
+import GlobalErrorBoundary from './GlobalErrorBoundary.js';
 import reportWebVitals from './reportWebVitals.js';
 import { AudioPlaybackContextProvider } from './utils/audioData.js';
 import { initPlugins } from './pluginStore';
@@ -25,9 +26,11 @@ if (typeof TouchEvent === 'undefined') {
 
 ReactDOM.render(
   <React.StrictMode>
-    <AudioPlaybackContextProvider>
-      <App />
-    </AudioPlaybackContextProvider>
+    <GlobalErrorBoundary>
+      <AudioPlaybackContextProvider>
+        <App />
+      </AudioPlaybackContextProvider>
+    </GlobalErrorBoundary>
   </React.StrictMode>,
   document.getElementById('root')
 );

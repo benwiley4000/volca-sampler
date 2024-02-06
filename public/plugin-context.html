@@ -94,7 +94,7 @@
           }
         })();
 
-        async function callPlugin(audioBuffer, params) {
+        const callPlugin = async function callPlugin(audioBuffer, params) {
           const unlock = await mutex.lock();
           try {
             if (window.samplePlugin.params) {
@@ -114,7 +114,7 @@
             unlock();
             throw err;
           }
-        }
+        };
 
         window.addEventListener('message', async ({ data, origin }) => {
           function respond(data) {

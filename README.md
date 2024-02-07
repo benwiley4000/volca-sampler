@@ -12,6 +12,18 @@ This is an app that aims to make it easy to record a sample and transfer it to t
 - Backup and restore sample archives along with pre-processing settings and plugins (to transport across different devices)
 - Everything runs in user's browser, no files are uploaded to external servers
 
+### README Table of contents
+ * [Developing locally](#developing-locally)
+    + [Clone repository](#clone-repository)
+    + [Install dependencies](#install-dependencies)
+       - [Alternative: Docker container](#alternative-docker-container)
+    + [Install and build app](#install-and-build-app)
+    + [Local development server](#local-development-server)
+    + [Run tests](#run-tests)
+ * [Run it yourself (offline or hosted)](#run-it-yourself-offline-or-hosted)
+   + [Running offline](#running-offline)
+   + [Hosting online](#hosting-online)
+
 ## Developing locally
 
 ### Clone repository
@@ -98,3 +110,30 @@ Currently this runs tests for validating the functions used to create Syro strea
 If Puppeteer complains about missing system-level dependencies, you might need to install some additional packages: https://github.com/puppeteer/puppeteer/blob/main/docs/troubleshooting.md#chrome-headless-doesnt-launch-on-unix
 
 Note that if you use the Docker image recommended above, you will already have these dependencies installed.
+
+## Run it yourself (offline or hosted)
+
+If volcasampler.com goes offline (or you go offline), you might want to still access this app! It's pretty easy to do.
+
+First, grab a copy of the web assets. You can either download the latest from [volcasampler.com/Volca-Sampler-Offline.zip](https://volcasampler.com/Volca-Sampler-Offline.zip) or else you can build it yourself, [following the above instructions](#install-and-build-app) (once the build is done the web assets are in a folder called `build`).
+
+### Running offline
+
+If you want to run offline, you need a local web server (more detailed instructions in the footer at [volcasampler.com](https://volcasampler.com).
+
+Serve the app over HTTP, not HTTPS, since there's little advantage to HTTPS when running locally. If you use HTTPS, it will use the hosted version of the plugins context, which probably isn't what you want.
+
+### Hosting online
+
+You can get a live version of the app by just throwing the web assets into a static web server and accessing the server from its web URL in a browser.
+
+However, plugins won't work because I've hardcoded the URL where their iframe is fetched from, [here](https://github.com/benwiley4000/volca-sampler/blob/master/src/utils/plugins.js#L16).
+
+Technically they will work, as long as that URL is still online, but it's not a great idea because the code fetched from that URL might not be running the same version as the code you're serving from your domain.
+
+So if you want plugins to work, the correct way of deploying a live copy of this app is to:
+
+1. Download the source code in this repository (not the built web assets).
+2. Change the domain name at [this line](https://github.com/benwiley4000/volca-sampler/blob/master/src/utils/plugins.js#L16) to a public domain name that you control. It can be the same as your main domain name you use to serve Volca Sampler, but in order to achieve the best performance for plugins, you should use a different domain name (this enables plugins to run on a parallel thread in browsers like Chrome and Firefox).
+4. Build the app.
+5. Now upload and serve the web assets in the `build` directory from your web server. If you're using two domain names as suggested, you should configure each domain to point to the same web assets folder.

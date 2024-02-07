@@ -220,11 +220,11 @@ function FAQAndLicensesContent() {
           <strong>Q: Can I export my samples to another device?</strong>
         </p>
         <p>
-          A: You can download the audio for any sample (either the source audio
-          or the optimized audio with your settings applied), but we don't
-          currently support any type of bulk export of your samples and
-          configurations. Some type of peer-to-peer syncing support might be
-          coming in the near future if there's interest from users.
+          A: The answer recently became "yes"! To export a zip file that can be
+          imported from a different device and/or different web browser, choose
+          "Select multiple" above the sample list, select the samples you want
+          to export, and hit "backup". To import, choose "Load from Volca
+          Sampler backup".
         </p>
       </div>
       <div className={classes.qAndA}>

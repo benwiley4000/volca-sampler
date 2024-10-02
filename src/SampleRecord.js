@@ -29,6 +29,8 @@ import { userOS } from './utils/os.js';
 
 import classes from './SampleRecord.module.scss';
 
+const ANY_FILE = new URLSearchParams(location.search).has('any_file');
+
 const captureDevicePreferenceKey = 'capture_device_preference';
 
 /**
@@ -731,7 +733,7 @@ function SampleRecord({
             <input
               hidden
               type="file"
-              accept="audio/*,video/*,.wav,.mp3,.ogg"
+              accept={ANY_FILE ? undefined : 'audio/*,video/*,.wav,.mp3,.ogg'}
               onChange={importFile}
             />
           </Button>

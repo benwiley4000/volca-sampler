@@ -29,7 +29,7 @@ import { userOS } from './utils/os.js';
 
 import classes from './SampleRecord.module.scss';
 
-const ANY_FILE = new URLSearchParams(location.search).has('any_file');
+const ANY_FILE = new URLSearchParams(window.location.search).has('any_file');
 
 const captureDevicePreferenceKey = 'capture_device_preference';
 

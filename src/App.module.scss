@@ -120,10 +120,10 @@
 
   &:not(.force) {
     display: none;
-  }
 
-  @include media-breakpoint-up(md) {
-    display: unset;
+    @include media-breakpoint-up(md) {
+      display: unset;
+    }
   }
 }
 

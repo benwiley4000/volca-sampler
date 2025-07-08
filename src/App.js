@@ -760,7 +760,7 @@ function App() {
             </>
           )}
         </div>
-        <div className={classes.mobileFooterContainer}>
+        <div className={`${classes.mobileFooterContainer} SCRIPT_ONLY`}>
           <Container fluid="sm">
             <h2>About Volca Sampler</h2>
             <Footer />

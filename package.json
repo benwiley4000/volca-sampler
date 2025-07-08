@@ -33,8 +33,6 @@
     "deploy": "gh-pages -m '[skip ci] Updates' -d build",
     "test": "node test/syro-bindings.test.js | tap-spec-emoji",
     "eject": "react-scripts eject",
-    "//": "puppeteer installs chromium automatically but we also want firefox",
-    "postinstall": "PUPPETEER_PRODUCT=firefox npm run install --prefix ./node_modules/puppeteer",
     "zip": "rimraf build/Volca-Sampler-Offline.zip && rimraf Volca-Sampler-Offline && cp -r build Volca-Sampler-Offline && bestzip build/Volca-Sampler-Offline.zip Volca-Sampler-Offline/* && rimraf Volca-Sampler-Offline"
   },
   "homepage": ".",
@@ -74,7 +72,7 @@
     "mkdirp": "^1.0.4",
     "node-sass": "^6.0.1",
     "pcm-convert": "^1.6.5",
-    "puppeteer": "^24.12.0",
+    "puppeteer": "^13.5.1",
     "rimraf": "^5.0.5",
     "tap-spec-emoji": "^6.1.2",
     "tape": "^5.3.1",

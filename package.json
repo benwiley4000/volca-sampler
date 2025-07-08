@@ -74,7 +74,7 @@
     "mkdirp": "^1.0.4",
     "node-sass": "^6.0.1",
     "pcm-convert": "^1.6.5",
-    "puppeteer": "^10.4.0",
+    "puppeteer": "^24.12.0",
     "rimraf": "^5.0.5",
     "tap-spec-emoji": "^6.1.2",
     "tape": "^5.3.1",

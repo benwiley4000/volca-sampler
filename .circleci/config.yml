@@ -13,7 +13,7 @@ jobs:
       - store_artifacts:
           path: ~/volca-sampler/test/artifacts
       - persist_to_workspace:
-          root: .
+          root: ~/volca-sampler
           paths:
             - .
 

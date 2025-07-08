@@ -39,12 +39,15 @@ module.exports = {
 
       // Customize CSS module class names to use a consistent format
       filteredOneOf.forEach((rule) => {
-        const testString = '.module.css';
+        const testStrings = ['.module.css', '.module.scss'];
         if (
-          rule.test &&
-          (rule.test instanceof RegExp
-            ? rule.test.test(testString)
-            : rule.test.toString().includes(testString))
+          testStrings.some(
+            (testString) =>
+              rule.test &&
+              (rule.test instanceof RegExp
+                ? rule.test.test(testString)
+                : rule.test.toString().includes(testString))
+          )
         ) {
           rule.use?.forEach((useEntry) => {
             if (

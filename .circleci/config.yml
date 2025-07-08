@@ -64,17 +64,18 @@ jobs:
 workflows:
   build:
     jobs:
-      - setup
-      - build:
+      - install and test
+      - build app:
           requires:
-            - setup
-      - build-static:
+            - install and test
+      - build static html:
           requires:
-            - setup
-      - build-finish:
+            - install and test
+      - complete build and zip:
           requires:
-            - build
-            - build-static
+            - build app
+            - build static html
       - deploy:
           requires:
-            - build-finish
+            - complete build and zip
+

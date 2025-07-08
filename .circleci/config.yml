@@ -1,56 +1,18 @@
 version: 2.1
 
 jobs:
-  install and test:
+  pipeline:
     docker:
       - image: benwiley4000/emsdk-puppeteer
     working_directory: ~/volca-sampler
     steps:
       - checkout
       - run: git submodule init && git submodule update --recursive
-      - run: npm ci
+      - run: npm install
       - run: npm test
       - store_artifacts:
           path: ~/volca-sampler/test/artifacts
-      - persist_to_workspace:
-          root: ~/volca-sampler
-          paths:
-            - .
-
-  build app:
-    docker:
-      - image: benwiley4000/emsdk-puppeteer
-    working_directory: ~/volca-sampler
-    steps:
-      - attach_workspace:
-          at: .
-      - run: npm run build:normal
-
-  build static html:
-    docker:
-      - image: benwiley4000/emsdk-puppeteer
-    working_directory: ~/volca-sampler
-    steps:
-      - attach_workspace:
-          at: .
-      - run: npm run build:static
-
-  complete build and zip:
-    docker:
-      - image: benwiley4000/emsdk-puppeteer
-    working_directory: ~/volca-sampler
-    steps:
-      - attach_workspace:
-          at: .
-      - run: npm run build:finish
-
-  deploy:
-    docker:
-      - image: benwiley4000/emsdk-puppeteer
-    working_directory: ~/volca-sampler
-    steps:
-      - attach_workspace:
-          at: .
+      - run: npm run build
       - add_ssh_keys:
           fingerprints:
             - 'b2:9e:19:9a:08:bf:99:8f:3e:ba:c3:7f:70:da:b4:d1'
@@ -64,18 +26,4 @@ jobs:
 workflows:
   build:
     jobs:
-      - install and test
-      - build app:
-          requires:
-            - install and test
-      - build static html:
-          requires:
-            - install and test
-      - complete build and zip:
-          requires:
-            - build app
-            - build static html
-      - deploy:
-          requires:
-            - complete build and zip
-
+      - pipeline

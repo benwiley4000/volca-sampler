@@ -15,7 +15,7 @@ jobs:
       - persist_to_workspace:
           root: .
           paths:
-            - volca-sampler
+            - .
 
   build:
     docker:

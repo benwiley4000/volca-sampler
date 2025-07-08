@@ -35,6 +35,7 @@ const Footer = React.memo(function Footer() {
           window.location.protocol !== 'http:') && (
           <p>
             <Button
+              className="SCRIPT_ONLY"
               type="button"
               variant="link"
               onClick={() => setShowingOfflineModal(true)}
@@ -52,7 +53,7 @@ const Footer = React.memo(function Footer() {
         >
           FAQ / Licenses
         </Button>
-        <div className={classes.faqAndLicensesEmbedded}>
+        <div className={`${classes.faqAndLicensesEmbedded} SCRIPT_ONLY`}>
           <FAQAndLicensesContent />
         </div>
       </div>

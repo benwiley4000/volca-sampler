@@ -699,7 +699,7 @@ function App() {
             onSampleDelete={handleSampleDelete}
           />
         </div>
-        <div className={`${classes.mainLayout} NOSCRIPT`}>
+        <div className={`${classes.mainLayout} ${classes.noAbsolute} NOSCRIPT`}>
           <h2>
             Send a new sound to your volca sample!
             <span style={{ fontSize: '0.7em' }}>
@@ -760,7 +760,7 @@ function App() {
             </>
           )}
         </div>
-        <div className={`${classes.mobileFooterContainer} SCRIPT_ONLY`}>
+        <div className={classes.mobileFooterContainer}>
           <Container fluid="sm">
             <h2>About Volca Sampler</h2>
             <Footer />
@@ -768,7 +768,7 @@ function App() {
         </div>
       </div>
       <Nav
-        className={classes.mobilePageNav}
+        className={`${classes.mobilePageNav} SCRIPT_ONLY`}
         activeKey={selectedMobilePage}
         variant="underline"
       >

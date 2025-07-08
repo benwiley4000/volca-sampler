@@ -4,7 +4,7 @@ module.exports = {
   plugins: [
     {
       plugin: CracoEsbuildPlugin,
-      options: { enableSvgr: true },
+      options: { enableSvgr: false },
     },
   ],
   configure: (webpackConfig) => {
@@ -17,7 +17,7 @@ module.exports = {
        * Use bem classnames so the static build can predictably generate the same
        * classnames
        */
-      if (rule.test && rule.test.toString().includes('module.css')) {
+      if (rule.test && rule.test.toString().includes('.css')) {
         rule.use.forEach((useEntry) => {
           if (useEntry.loader && useEntry.loader.includes('css-loader')) {
             if (useEntry.options && useEntry.options.modules) {
@@ -26,15 +26,24 @@ module.exports = {
           }
         });
       }
+
       // use default exports for svgr
       // (for babel compat for static build)
-      if (rule.test && rule.test.toString().includes('svg')) {
-        rule.use.forEach((useEntry) => {
-          if (useEntry.loader && useEntry.loader.includes('@svgr/webpack')) {
-            useEntry.options.export = 'default';
-          }
-        });
-      }
+      rule.oneOf = rule.oneOf.filter(
+        (r) => !(r.test && r.test.toString().includes('svg'))
+      );
+      // Add custom svgr rule
+      rule.oneOf.unshift({
+        test: /\.svg$/,
+        use: [
+          {
+            loader: '@svgr/webpack',
+            options: {
+              exportType: 'default', // use `default` export
+            },
+          },
+        ],
+      });
     });
 
     return webpackConfig;

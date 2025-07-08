@@ -35,11 +35,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@700&family=Kaushan+Script&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-      .NOSCRIPT {
-        display: none !important;
-      }
-    </style>
     <noscript>
       <style>
         :root {
@@ -48,11 +43,13 @@
         .SCRIPT_ONLY {
           display: none !important;
         }
-        .NOSCRIPT {
-          display: unset;
-        }
       </style>
     </noscript>
+    <script>
+      const style = document.createElement('style');
+      style.innerHTML = `.NOSCRIPT { display: none !important; }`;
+      document.head.appendChild(style);
+    </script>
   </head>
   <body>
     <div id="root"></div>

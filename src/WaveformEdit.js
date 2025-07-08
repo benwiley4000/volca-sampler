@@ -19,7 +19,7 @@ import WaveformDisplay from './WaveformDisplay.js';
 import WaveformPlayback from './WaveformPlayback.js';
 import NormalizeControl from './NomalizeControl.js';
 import { usePreviewAudio } from './sampleCacheStore.js';
-import { ReactComponent as ScissorsCuttingIcon } from './icons/scissors-cutting.svg';
+import ScissorsCuttingIcon from './icons/scissors-cutting.svg';
 
 import classes from './WaveformEdit.module.scss';
 

@@ -31,7 +31,8 @@ const Footer = React.memo(function Footer() {
           </a>
           .
         </p>
-        {window.location.protocol !== 'http:' && (
+        {(typeof window === 'undefined' ||
+          window.location.protocol !== 'http:') && (
           <p>
             <Button
               type="button"
@@ -44,7 +45,7 @@ const Footer = React.memo(function Footer() {
           </p>
         )}
         <Button
-          className={classes.faqAndLicensesButton}
+          className={`${classes.faqAndLicensesButton} SCRIPT_ONLY`}
           type="button"
           variant="link"
           onClick={() => setShowingFAQModal(true)}

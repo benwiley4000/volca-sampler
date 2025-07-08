@@ -22,18 +22,18 @@ import {
   useAccordionButton,
 } from 'react-bootstrap';
 import RangeSlider from 'react-bootstrap-range-slider';
-import { ReactComponent as PowerSettingsNewIcon } from '@material-design-icons/svg/filled/power_settings_new.svg';
-import { ReactComponent as ArrowUpwardIcon } from '@material-design-icons/svg/filled/arrow_upward.svg';
-import { ReactComponent as ArrowDownwardIcon } from '@material-design-icons/svg/filled/arrow_downward.svg';
-import { ReactComponent as TuneIcon } from '@material-design-icons/svg/filled/tune.svg';
-import { ReactComponent as MoreVertIcon } from '@material-design-icons/svg/filled/more_vert.svg';
-import { ReactComponent as InfoIcon } from '@material-design-icons/svg/filled/info.svg';
-import { ReactComponent as SyncProblemIcon } from '@material-design-icons/svg/filled/sync_problem.svg';
-import { ReactComponent as PriorityHighIcon } from '@material-design-icons/svg/filled/priority_high.svg';
-import { ReactComponent as QuestionMarkIcon } from '@material-design-icons/svg/filled/question_mark.svg';
+import PowerSettingsNewIcon from '@material-design-icons/svg/filled/power_settings_new.svg';
+import ArrowUpwardIcon from '@material-design-icons/svg/filled/arrow_upward.svg';
+import ArrowDownwardIcon from '@material-design-icons/svg/filled/arrow_downward.svg';
+import TuneIcon from '@material-design-icons/svg/filled/tune.svg';
+import MoreVertIcon from '@material-design-icons/svg/filled/more_vert.svg';
+import InfoIcon from '@material-design-icons/svg/filled/info.svg';
+import SyncProblemIcon from '@material-design-icons/svg/filled/sync_problem.svg';
+import PriorityHighIcon from '@material-design-icons/svg/filled/priority_high.svg';
+import QuestionMarkIcon from '@material-design-icons/svg/filled/question_mark.svg';
 
 import { getDefaultParams } from './utils/plugins';
-import { ReactComponent as ToyBrickPlus } from './icons/toy-brick-plus.svg';
+import ToyBrickPlus from './icons/toy-brick-plus.svg';
 
 import classes from './PluginsControl.module.scss';
 import { reinitPlugin } from './pluginStore';

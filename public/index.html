@@ -7,11 +7,14 @@
     <meta name="theme-color" content="#000000" />
     <meta
       name="description"
-      content="Sample sounds and send them to your Volca Sample."
+      content="Easily sample new sounds and send them to your KORG volca sample or volca sample 2 using this free browser tool. No software or drivers required."
     />
+    <meta name="keywords" content="Volca Sample, Korg Volca Sample 2, upload samples to Volca, Volca Sample web app, send samples to Korg Volca">
     <meta property="og:title" content="Volca Sampler" />
-    <meta property="og:description" content="Sample sounds and send them to your Volca Sample." />
+    <meta property="og:description" content="The fastest way to load new sounds onto your KORG volca sample or volca sample 2. Record, edit, and send samples from any device." />
     <meta property="og:image" content="https://volcasampler.com/volca-sampler-splash.png" />
+    <meta property="og:url" content="https://volcasampler.com" />
+    <meta property="og:type" content="website" />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
     <!--
       manifest.json provides metadata used when your web app is installed on a
@@ -27,14 +30,31 @@
       work correctly both with client-side routing and a non-root public URL.
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
-    <title>Volca Sampler</title>
+    <title>Volca Sampler - Easily send sounds to KORG volca sample</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@700&family=Kaushan+Script&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+      .NOSCRIPT {
+        display: none !important;
+      }
+    </style>
+    <noscript>
+      <style>
+        :root {
+          --sidebar-width: 0px !important;
+        }
+        .SCRIPT_ONLY {
+          display: none !important;
+        }
+        .NOSCRIPT {
+          display: unset;
+        }
+      </style>
+    </noscript>
   </head>
   <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
     <!--
       This HTML file is a template.

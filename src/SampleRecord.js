@@ -29,7 +29,9 @@ import { userOS } from './utils/os.js';
 
 import classes from './SampleRecord.module.scss';
 
-const ANY_FILE = new URLSearchParams(window.location.search).has('any_file');
+const ANY_FILE =
+  typeof window !== 'undefined' &&
+  new URLSearchParams(window.location.search).has('any_file');
 
 const captureDevicePreferenceKey = 'capture_device_preference';
 
@@ -57,7 +59,11 @@ let cachedCaptureDevices = null;
 function useMediaRecording(onRecordUpdate, onRecordFinish) {
   const restoringCaptureDevice = useRef(
     /** @type {CaptureDevicePreference | null} */ (
-      JSON.parse(localStorage.getItem(captureDevicePreferenceKey) || 'null')
+      JSON.parse(
+        (typeof localStorage !== 'undefined' &&
+          localStorage.getItem(captureDevicePreferenceKey)) ||
+          'null'
+      )
     )
   );
   // just for displaying stuff in the UI while the selection is validating
@@ -539,7 +545,13 @@ function SampleRecord({
         </p>
       ) : (
         <>
-          <h2>Send a new sound to your volca sample!</h2>
+          <h2>
+            Send a new sound to your volca sample!
+            <span style={{ fontSize: '0.7em' }}>
+              <br />
+              <span>(or volca sample 2!)</span>
+            </span>
+          </h2>
           {showSilenceWarning && (
             <div className={classes.alertContainer}>
               <Alert

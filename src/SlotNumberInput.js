@@ -2,9 +2,9 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import SevenSegmentDisplay, { Digit } from 'seven-segment-display';
 import { Form, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { findDOMNode as _findDOMNode } from 'react-dom';
-import { ReactComponent as KeyboardArrowUpIcon } from '@material-design-icons/svg/filled/keyboard_arrow_up.svg';
-import { ReactComponent as KeyboardArrowDownIcon } from '@material-design-icons/svg/filled/keyboard_arrow_down.svg';
-import { ReactComponent as WarningIcon } from '@material-design-icons/svg/filled/warning.svg';
+import KeyboardArrowUpIcon from '@material-design-icons/svg/filled/keyboard_arrow_up.svg';
+import KeyboardArrowDownIcon from '@material-design-icons/svg/filled/keyboard_arrow_down.svg';
+import WarningIcon from '@material-design-icons/svg/filled/warning.svg';
 
 import classes from './SlotNumberInput.module.scss';
 

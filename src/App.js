@@ -72,7 +72,10 @@ function App() {
       })
       .catch(console.error);
   }, []);
-  const restoredFocusedSampleId = sessionStorage.getItem(sessionStorageKey);
+  const restoredFocusedSampleId =
+    typeof sessionStorage === 'undefined'
+      ? null
+      : sessionStorage.getItem(sessionStorageKey);
   const [focusedSampleId, setFocusedSampleId] = useState(
     /** @type {string | null} */ (
       restoredFocusedSampleId && typeof restoredFocusedSampleId === 'string'
@@ -684,7 +687,7 @@ function App() {
       <div
         className={`${classes.mobileLayoutContainer} ${classes[selectedMobilePage]}`}
       >
-        <div className={classes.sampleListSidebar}>
+        <div className={`${classes.sampleListSidebar} SCRIPT_ONLY`}>
           <SampleMenu
             loading={loadingSamples}
             focusedSampleId={focusedSampleId}
@@ -696,7 +699,23 @@ function App() {
             onSampleDelete={handleSampleDelete}
           />
         </div>
-        <div className={classes.mainLayout}>
+        <div className={`${classes.mainLayout} NOSCRIPT`}>
+          <h2>
+            Send a new sound to your volca sample!
+            <span style={{ fontSize: '0.7em' }}>
+              <br />
+              <span>(or volca sample 2!)</span>
+            </span>
+          </h2>
+          <p>
+            This free web app lets you record (or select), edit, and send custom
+            samples to your KORG Volca Sample. No installation needed — send the
+            samples straight from your browser to the volca sample, using a
+            3.5mm audio cable.
+          </p>
+          <p>Enable JavaScript and refresh the page to get started.</p>
+        </div>
+        <div className={`${classes.mainLayout} SCRIPT_ONLY`}>
           {!sample ? null : sample instanceof SampleContainer.Mutable ? (
             <SampleDetail
               sample={sample}
@@ -729,9 +748,16 @@ function App() {
             />
           )}
           {(!focusedSampleId || sample) && (
-            <div className={classes.normalFooterContainer}>
-              <Footer />
-            </div>
+            <>
+              <div className={`${classes.normalFooterContainer} SCRIPT_ONLY`}>
+                <Footer />
+              </div>
+              <div
+                className={`${classes.normalFooterContainer} ${classes.force} NOSCRIPT`}
+              >
+                <Footer />
+              </div>
+            </>
           )}
         </div>
         <div className={classes.mobileFooterContainer}>

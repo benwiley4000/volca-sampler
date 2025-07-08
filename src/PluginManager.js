@@ -6,10 +6,10 @@ import React, {
   useState,
 } from 'react';
 import { Button, ListGroup, Modal } from 'react-bootstrap';
-import { ReactComponent as EditIcon } from '@material-design-icons/svg/filled/edit.svg';
-import { ReactComponent as SyncProblemIcon } from '@material-design-icons/svg/filled/sync_problem.svg';
-import { ReactComponent as CodeIcon } from '@material-design-icons/svg/filled/code.svg';
-import { ReactComponent as DownloadIcon } from '@material-design-icons/svg/filled/download.svg';
+import EditIcon from '@material-design-icons/svg/filled/edit.svg';
+import SyncProblemIcon from '@material-design-icons/svg/filled/sync_problem.svg';
+import CodeIcon from '@material-design-icons/svg/filled/code.svg';
+import DownloadIcon from '@material-design-icons/svg/filled/download.svg';
 
 import {
   addPlugin,
@@ -20,8 +20,8 @@ import {
   renamePlugin,
 } from './pluginStore';
 import PluginConfirmModal from './PluginConfirmModal';
-import { ReactComponent as ToyBrickPlus } from './icons/toy-brick-plus.svg';
-import { ReactComponent as ToyBrickRemove } from './icons/toy-brick-remove.svg';
+import ToyBrickPlus from './icons/toy-brick-plus.svg';
+import ToyBrickRemove from './icons/toy-brick-remove.svg';
 
 import classes from './PluginManager.module.scss';
 import { getExamplePlugins, getPluginSourceLink } from './utils/github';

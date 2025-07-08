@@ -1,7 +1,7 @@
 @import 'bootstrap_custom_variables';
-@import '~bootstrap/scss/functions';
-@import '~bootstrap/scss/variables';
-@import '~bootstrap/scss/mixins';
+@import 'bootstrap/scss/functions';
+@import 'bootstrap/scss/variables';
+@import 'bootstrap/scss/mixins';
 
 .app {
   display: flex;
@@ -117,7 +117,10 @@
 
 .normalFooterContainer {
   padding-top: 3rem;
-  display: none;
+
+  &:not(.force) {
+    display: none;
+  }
 
   @include media-breakpoint-up(md) {
     display: unset;

@@ -15,7 +15,7 @@ import {
   Modal,
   ProgressBar,
 } from 'react-bootstrap';
-import { ReactComponent as WarningIcon } from '@material-design-icons/svg/filled/warning.svg';
+import WarningIcon from '@material-design-icons/svg/filled/warning.svg';
 
 import SampleList from './SampleList.js';
 

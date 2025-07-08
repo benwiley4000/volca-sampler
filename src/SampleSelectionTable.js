@@ -2,7 +2,7 @@ import React, { useMemo, useRef } from 'react';
 import { Table } from 'react-bootstrap';
 
 import { SampleContainer } from './store.js';
-import { ReactComponent as ToyBrick } from './icons/toy-brick.svg';
+import ToyBrick from './icons/toy-brick.svg';
 
 import classes from './SampleSelectionTable.module.scss';
 

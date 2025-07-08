@@ -15,7 +15,7 @@ import {
   OverlayTrigger,
   Tooltip,
 } from 'react-bootstrap';
-import { ReactComponent as WarningIcon } from '@material-design-icons/svg/filled/warning.svg';
+import WarningIcon from '@material-design-icons/svg/filled/warning.svg';
 
 import WaveformEdit from './WaveformEdit.js';
 import VolcaTransferControl from './VolcaTransferControl.js';

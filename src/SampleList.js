@@ -6,8 +6,8 @@ import React, {
   useState,
 } from 'react';
 import { Button, Form } from 'react-bootstrap';
-import { ReactComponent as PlayIcon } from '@material-design-icons/svg/filled/play_arrow.svg';
-import { ReactComponent as StopIcon } from '@material-design-icons/svg/filled/stop.svg';
+import PlayIcon from '@material-design-icons/svg/filled/play_arrow.svg';
+import StopIcon from '@material-design-icons/svg/filled/stop.svg';
 
 import {
   useWaveformPlayback,

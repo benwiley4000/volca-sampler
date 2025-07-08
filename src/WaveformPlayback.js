@@ -1,8 +1,8 @@
 import React, { useCallback } from 'react';
 import { Button, OverlayTrigger, Tooltip } from 'react-bootstrap';
-import { ReactComponent as PlayIcon } from '@material-design-icons/svg/filled/play_arrow.svg';
-import { ReactComponent as StopIcon } from '@material-design-icons/svg/filled/stop.svg';
-import { ReactComponent as DownloadIcon } from '@material-design-icons/svg/filled/download.svg';
+import PlayIcon from '@material-design-icons/svg/filled/play_arrow.svg';
+import StopIcon from '@material-design-icons/svg/filled/stop.svg';
+import DownloadIcon from '@material-design-icons/svg/filled/download.svg';
 
 import { downloadBlob } from './utils/download.js';
 

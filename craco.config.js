@@ -45,6 +45,7 @@ module.exports = {
               useEntry.loader?.includes('css-loader') &&
               useEntry.options?.modules
             ) {
+              delete useEntry.options.modules.getLocalIdent;
               useEntry.options.modules.localIdentName = '[name]__[local]';
             }
           });

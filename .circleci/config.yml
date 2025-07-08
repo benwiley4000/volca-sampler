@@ -1,7 +1,7 @@
 version: 2.1
 
 jobs:
-  setup:
+  install and test:
     docker:
       - image: benwiley4000/emsdk-puppeteer
     working_directory: ~/volca-sampler
@@ -17,7 +17,7 @@ jobs:
           paths:
             - .
 
-  build:
+  build app:
     docker:
       - image: benwiley4000/emsdk-puppeteer
     working_directory: ~/volca-sampler
@@ -26,7 +26,7 @@ jobs:
           at: .
       - run: npm run build:normal
 
-  build-static:
+  build static html:
     docker:
       - image: benwiley4000/emsdk-puppeteer
     working_directory: ~/volca-sampler
@@ -35,7 +35,7 @@ jobs:
           at: .
       - run: npm run build:static
 
-  build-finish:
+  complete build and zip:
     docker:
       - image: benwiley4000/emsdk-puppeteer
     working_directory: ~/volca-sampler

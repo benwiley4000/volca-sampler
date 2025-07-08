@@ -67,7 +67,7 @@
   width: 100vw;
   overflow-y: auto;
 
-  :not(.noAbsolute) {
+  &:not(.noAbsolute) {
     position: absolute;
   }
 

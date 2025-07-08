@@ -699,7 +699,7 @@ function App() {
             onSampleDelete={handleSampleDelete}
           />
         </div>
-        <div className={`${classes.mainLayout} ${classes.noAbsolute} NOSCRIPT`}>
+        <div className={`${classes.mainLayout} NOSCRIPT`}>
           <h2>
             Send a new sound to your volca sample!
             <span style={{ fontSize: '0.7em' }}>
@@ -714,6 +714,11 @@ function App() {
             3.5mm audio cable.
           </p>
           <p>Enable JavaScript and refresh the page to get started.</p>
+          <div
+            className={`${classes.normalFooterContainer} ${classes.force}`}
+          >
+            <Footer />
+          </div>
         </div>
         <div className={`${classes.mainLayout} SCRIPT_ONLY`}>
           {!sample ? null : sample instanceof SampleContainer.Mutable ? (
@@ -748,16 +753,9 @@ function App() {
             />
           )}
           {(!focusedSampleId || sample) && (
-            <>
-              <div className={`${classes.normalFooterContainer} SCRIPT_ONLY`}>
-                <Footer />
-              </div>
-              <div
-                className={`${classes.normalFooterContainer} ${classes.force} NOSCRIPT`}
-              >
-                <Footer />
-              </div>
-            </>
+            <div className={classes.normalFooterContainer}>
+              <Footer />
+            </div>
           )}
         </div>
         <div className={classes.mobileFooterContainer}>

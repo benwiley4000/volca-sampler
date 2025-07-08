@@ -20,7 +20,13 @@ require('@babel/register')({
 
 // Register the CSS Modules hook *before* importing your components
 hook({
-  generateScopedName: '[name]__[local]', // must match your craco config
+  generateScopedName: (name, filename) => {
+    const base = path
+      .basename(filename)
+      // Don't include ".module."
+      .split('.')[0];
+    return `${base}__${name}`;
+  },
   extensions: ['.css', '.scss'],
   rootDir: path.resolve('src'),
   preprocessCss: (data, filename) => {

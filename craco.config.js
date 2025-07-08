@@ -4,48 +4,54 @@ module.exports = {
   plugins: [
     {
       plugin: CracoEsbuildPlugin,
-      options: { enableSvgr: false },
+      options: {
+        enableSvgr: false, // disable esbuild's default SVG handling so we can customize it
+      },
     },
   ],
-  configure: (webpackConfig) => {
-    const oneOf = webpackConfig.module.rules.find((rule) =>
-      Array.isArray(rule.oneOf)
-    ).oneOf;
-
-    oneOf.forEach((rule) => {
-      /**
-       * Use bem classnames so the static build can predictably generate the same
-       * classnames
-       */
-      if (rule.test && rule.test.toString().includes('.css')) {
-        rule.use.forEach((useEntry) => {
-          if (useEntry.loader && useEntry.loader.includes('css-loader')) {
-            if (useEntry.options && useEntry.options.modules) {
-              useEntry.options.modules.localIdentName = '[name]__[local]';
-            }
-          }
-        });
-      }
-
-      // use default exports for svgr
-      // (for babel compat for static build)
-      rule.oneOf = rule.oneOf.filter(
-        (r) => !(r.test && r.test.toString().includes('svg'))
+  webpack: {
+    configure: (webpackConfig) => {
+      // Find the rule block containing 'oneOf' (where loaders are defined)
+      const oneOfContainer = webpackConfig.module.rules.find((rule) =>
+        Array.isArray(rule.oneOf)
       );
-      // Add custom svgr rule
-      rule.oneOf.unshift({
+
+      // Remove any existing SVG rules so we can add our own
+      const filteredOneOf = oneOfContainer.oneOf.filter(
+        (rule) => !(rule.test && rule.test.toString().includes('svg'))
+      );
+
+      // Add custom rule to use @svgr/webpack for SVGs
+      filteredOneOf.unshift({
         test: /\.svg$/,
         use: [
           {
             loader: '@svgr/webpack',
             options: {
-              exportType: 'default', // use `default` export
+              exportType: 'default', // use default export for SVGs (e.g. import Icon from './icon.svg')
             },
           },
         ],
       });
-    });
 
-    return webpackConfig;
+      // Replace the original oneOf rules with the modified set
+      oneOfContainer.oneOf = filteredOneOf;
+
+      // Customize CSS module class names to use a consistent format
+      filteredOneOf.forEach((rule) => {
+        if (rule.test && rule.test.toString().includes('.css')) {
+          rule.use?.forEach((useEntry) => {
+            if (
+              useEntry.loader?.includes('css-loader') &&
+              useEntry.options?.modules
+            ) {
+              useEntry.options.modules.localIdentName = '[name]__[local]';
+            }
+          });
+        }
+      });
+
+      return webpackConfig;
+    },
   },
 };

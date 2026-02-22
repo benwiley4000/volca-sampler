@@ -9,7 +9,7 @@ const mkdirp = require('mkdirp');
 
 console.log('Building necessary files...');
 child_process.execSync(
-  path.join(__dirname, '..', 'build-factory-samples-index'),
+  'node ' + path.join(__dirname, '..', 'build-factory-samples-index.mjs'),
   { cwd: path.join(__dirname, '..') }
 );
 child_process.execSync(path.join(__dirname, '..', 'build-bindings.sh'), {
@@ -123,9 +123,7 @@ async function forEachBrowser({ scripts, modules }, callback, t) {
   const testServer = getTestServer();
   // TODO: support firefox when named import maps can work
   for (const product of ['chrome' /*, 'firefox'*/]) {
-    // TODO: find another way to do this (needed for Drone at the moment
-    // because we run the Docker container as root)
-    const browser = await puppeteer.launch({ product, args: ['--no-sandbox'] });
+    const browser = await puppeteer.launch({ args: ['--no-sandbox'] });
     const page = await browser.newPage();
     await page.goto(`http://localhost:${testPort}`);
     // allow importing node modules by name (non-relative) in the browser

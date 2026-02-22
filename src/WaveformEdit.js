@@ -17,7 +17,7 @@ import {
 import { formatShortTime } from './utils/datetime.js';
 import WaveformDisplay from './WaveformDisplay.js';
 import WaveformPlayback from './WaveformPlayback.js';
-import NormalizeControl from './NomalizeControl.js';
+import NormalizeControl from './NormalizeControl.js';
 import { usePreviewAudio } from './sampleCacheStore.js';
 import ScissorsCuttingIcon from './icons/scissors-cutting.svg';
 

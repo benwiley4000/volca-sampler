@@ -25,12 +25,11 @@ hook({
   rootDir: path.resolve('src'),
   preprocessCss: (data, filename) => {
     return sass
-      .renderSync({
-        data,
-        file: filename,
-        includePaths: [path.dirname(filename), path.resolve('node_modules')],
+      .compileString(data, {
+        url: new URL(`file://${filename}`),
+        loadPaths: [path.dirname(filename), path.resolve('node_modules')],
       })
-      .css.toString();
+      .css;
   },
 });
 

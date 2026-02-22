@@ -1,14 +1,4 @@
-const CracoEsbuildPlugin = require('craco-esbuild');
-
 module.exports = {
-  plugins: [
-    {
-      plugin: CracoEsbuildPlugin,
-      options: {
-        enableSvgr: false, // disable esbuild's default SVG handling so we can customize it
-      },
-    },
-  ],
   webpack: {
     configure: (webpackConfig) => {
       // Find the rule block containing 'oneOf' (where loaders are defined)
@@ -28,7 +18,7 @@ module.exports = {
           {
             loader: '@svgr/webpack',
             options: {
-              exportType: 'default', // use default export for SVGs (e.g. import Icon from './icon.svg')
+              exportType: 'default',
             },
           },
         ],
